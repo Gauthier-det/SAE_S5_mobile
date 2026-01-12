@@ -28,13 +28,21 @@ class SanglierExplorerApp extends StatelessWidget {
   }
 }
 
-/// Application home page
+/// Application home page (temporary placeholder/demo)
+///
+/// This screen is a simple landing page used to showcase the current
+/// theme setup (typography, colors, buttons, and AppBar styling) while
+/// the real navigation flow is being implemented.
 ///
 /// Displays:
 /// - Welcome message with hero title
 /// - Description text
 /// - Call-to-action buttons showcasing theme
 /// - AppBar with Sanglier Explorer branding
+///
+/// Note: The navigation actions (profile icon and CTA buttons) are
+/// currently placeholders and will be wired to real routes in a later
+/// iteration.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
