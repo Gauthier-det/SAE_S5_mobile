@@ -42,12 +42,13 @@ class AppTheme {
       // Typography
       // ========================================
       textTheme: TextTheme(
-        // Titres
+        // Titres (Display)
         displayLarge: AppTypography.h1,
         displayMedium: AppTypography.h2,
         displaySmall: AppTypography.h3,
-        headlineLarge: AppTypography.h2,
-        headlineMedium: AppTypography.h3,
+        // Titres (Headlines) - distinct sizes for flexibility
+        headlineLarge: AppTypography.h2.copyWith(fontSize: 40),
+        headlineMedium: AppTypography.h3.copyWith(fontSize: 20),
         // Corps de texte
         bodyLarge: AppTypography.bodyLarge,
         bodyMedium: AppTypography.bodyMedium,

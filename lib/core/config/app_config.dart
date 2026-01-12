@@ -9,5 +9,8 @@ class AppConfig {
   static const String appVersion = '1.0.0';
 
   /// API Base URL
-  static const String apiBaseUrl = 'https://api.sanglier-explorer.fr';
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://api.sanglier-explorer.fr',
+  );
 }
