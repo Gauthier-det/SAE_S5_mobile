@@ -1,52 +1,49 @@
-// lib/features/raids/domain/models/club.dart
-import '../../address/domain/address.dart';
-import '../../user/domain/user.dart';
-
-/// Represents an orienteering club
-/// Corresponds to SAN_CLUBS table
+/// Club entity representing a sports club
 class Club {
-  final int id;
-  final int userId; // Manager ID
-  final int addressId;
+  final String id;
   final String name;
-
-  // Related objects (loaded via JOIN)
-  final Address? address;
-  final User? manager;
+  final String responsibleName;
+  final DateTime createdAt;
 
   Club({
     required this.id,
-    required this.userId,
-    required this.addressId,
     required this.name,
-    this.address,
-    this.manager,
+    required this.responsibleName,
+    required this.createdAt,
   });
 
-  /// Creates Club from database JSON
-  factory Club.fromJson(Map<String, dynamic> json) {
-    // Parse address if present in JOIN
-    Address? address;
-    if (json.containsKey('ADD_POSTAL_CODE')) {
-      address = Address.fromJson(json);
-    }
-
+  /// Copy with method for immutability
+  Club copyWith({
+    String? id,
+    String? name,
+    String? responsibleName,
+    DateTime? createdAt,
+  }) {
     return Club(
-      id: json['CLU_ID'],
-      userId: json['USE_ID'],
-      addressId: json['ADD_ID'],
-      name: json['CLU_NAME'],
-      address: address,
+      id: id ?? this.id,
+      name: name ?? this.name,
+      responsibleName: responsibleName ?? this.responsibleName,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
-  /// Converts Club to JSON for database storage
+  /// Convert to JSON for storage
   Map<String, dynamic> toJson() {
     return {
-      'CLU_ID': id,
-      'USE_ID': userId,
-      'ADD_ID': addressId,
-      'CLU_NAME': name,
+      'id': id,
+      'name': name,
+      'responsibleName': responsibleName,
+      'createdAt': createdAt.toIso8601String(),
     };
+  }
+
+  /// Create from JSON
+  factory Club.fromJson(Map<String, dynamic> json) {
+    return Club(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      responsibleName: json['responsibleName'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
   }
 }

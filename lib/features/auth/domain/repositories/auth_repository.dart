@@ -13,9 +13,6 @@ abstract class AuthRepository {
     required String password,
     required String firstName,
     required String lastName,
-    required String birthDate,
-    String? phoneNumber,
-    String? licenceNumber,
   });
 
   /// Login with email and password
@@ -41,6 +38,12 @@ abstract class AuthRepository {
   Future<User> updateProfile({
     String? firstName,
     String? lastName,
+    String? phoneNumber,
+    String? birthDate,
+    String? club,
+    String? licenceNumber,
+    String? ppsNumber,
+    String? chipNumber,
     String? profileImageUrl,
   });
 }

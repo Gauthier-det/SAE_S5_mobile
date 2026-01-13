@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/config/app_config.dart';
@@ -20,8 +21,12 @@ import 'features/user/data/repositories/user_repository_impl.dart';
 import 'features/races/data/datasources/RaceApiSources.dart';
 import 'features/races/data/datasources/RaceLocalSources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/club/domain/club_repository.dart';
-import 'features/user/domain/user_repository.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
+import 'features/user/presentation/user_detail_view.dart';
+import 'features/club/presentation/providers/club_provider.dart';
+import 'features/club/presentation/screens/club_list_screen.dart';
+import 'features/Home.dart';
 
 /// Entry point of the Sanglier Explorer application
 void main() async {
@@ -58,6 +63,7 @@ class SanglierExplorerApp extends StatelessWidget {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+            ChangeNotifierProvider<ClubProvider>(create: (_) => ClubProvider()),
             Provider<RaidRepository>.value(
               value: snapshot.data!['raidRepository'],
             ),
@@ -75,7 +81,23 @@ class SanglierExplorerApp extends StatelessWidget {
             title: '${AppConfig.appName} - Course d\'Orientation',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
-            home: const HomePage(),
+            locale: const Locale('fr', 'FR'),
+            supportedLocales: const [
+              Locale('fr', 'FR'),
+              Locale('en', 'US'),
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const MainScreen(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/home': (context) => const MainScreen(),
+              '/raids': (context) => const RaidsScreen(),
+            },
           ),
         );
       },
@@ -84,25 +106,17 @@ class SanglierExplorerApp extends StatelessWidget {
 
   Future<Map<String, dynamic>> _createRepositories() async {
     final db = await DatabaseHelper.database;
-  return {
-    'raidRepository': RaidRepositoryImpl(
-      apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: RaidLocalSources(),
-    ),
-    'raceRepository': RacesRepositoryImpl(
-      apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: RaceLocalSources(database: db),
-    ),
-    'userRepository': UserRepositoryImpl(
-      apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: UserLocalSources(),
-    ),
-    'clubRepository': ClubRepositoryImpl(
-      apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: ClubLocalSources(),
-    ),
-  };
-}
+    return {
+      'raidRepository': RaidRepositoryImpl(
+        apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: RaidLocalSources(database: db),
+      ),
+      'raceRepository': RacesRepositoryImpl(
+        apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: RaceLocalSources(database: db),
+      ),
+    };
+  }
 }
 
 /// Application home page
@@ -118,145 +132,122 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final repository = Provider.of<RaidRepository>(context, listen: false);
-
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final user = authProvider.currentUser;
         final isAuthenticated = authProvider.isAuthenticated;
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(AppConfig.appName),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  isAuthenticated ? Icons.account_circle : Icons.login,
-                ),
-                tooltip: isAuthenticated ? 'Profil' : 'Se connecter',
-                onPressed: () {
-                  if (isAuthenticated) {
-                    // Show profile menu
-                    showMenu<dynamic>(
-                      context: context,
-                      position: const RelativeRect.fromLTRB(1000, 80, 0, 0),
-                      items: <PopupMenuEntry<dynamic>>[
-                        PopupMenuItem<dynamic>(
-                          enabled: false,
-                          child: ListTile(
-                            leading: const Icon(Icons.person),
-                            title: Text(user?.fullName ?? ''),
-                            subtitle: Text(user?.email ?? ''),
-                          ),
-                        ),
-                        const PopupMenuDivider(),
-                        PopupMenuItem<dynamic>(
-                          child: const ListTile(
-                            leading: Icon(Icons.logout),
-                            title: Text('Se déconnecter'),
-                          ),
-                          onTap: () async {
-                            await authProvider.logout();
-                          },
-                        ),
-                      ],
-                    );
-                  } else {
-                    // Navigate to login
-                    Navigator.of(context).pushNamed('/login');
-                  }
-                },
-              ),
-            ],
-          ),
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-
-                  // Hero Title
-                  Text(
-                    isAuthenticated
-                        ? 'Bienvenue ${user?.firstName}!'
-                        : 'Bienvenue',
-                    style: theme.textTheme.displayMedium,
-                    textAlign: TextAlign.center,
+          drawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                UserAccountsDrawerHeader(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1B4332),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Subtitle
-                  Text(
-                    'Application de gestion de courses d\'orientation',
-                    style: theme.textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
+                  accountName: Text(
+                    isAuthenticated ? user?.fullName ?? 'Utilisateur' : 'Visiteur',
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Additional info
-                  Text(
-                    'Explorez la nature, défiez-vous et progressez',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  accountEmail: Text(
+                    isAuthenticated ? user?.email ?? '' : 'Non connecté',
+                  ),
+                  currentAccountPicture: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      isAuthenticated ? Icons.person : Icons.person_outline,
+                      size: 40,
+                      color: const Color(0xFF1B4332),
                     ),
-                    textAlign: TextAlign.center,
                   ),
-
-                  const SizedBox(height: 48),
-
-                  // Primary CTA Button - Orange Balise
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to raid list
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Accueil'),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.event),
+                  title: const Text('Voir les Raids'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/raids');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.groups),
+                  title: const Text('Clubs'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ClubListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(),
+                if (!isAuthenticated) ...[
+                  ListTile(
+                    leading: const Icon(Icons.login),
+                    title: const Text('Se connecter'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/login');
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.person_add),
+                    title: const Text('S\'inscrire'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/register');
+                    },
+                  ),
+                ],
+                if (isAuthenticated) ...[
+                  ListTile(
+                    leading: const Icon(Icons.account_circle),
+                    title: const Text('Mon profil'),
+                    onTap: () {
+                      Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              RaidListView(repository: repository),
+                          builder: (context) => const ProfileScreen(),
                         ),
                       );
                     },
-                    child: const Text('VOIR LES RAIDS'),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Tertiary Button - Text
-                  TextButton(
-                    onPressed: () {
-                      // Navigate to info
+                  ListTile(
+                    leading: const Icon(Icons.logout),
+                    title: const Text('Se déconnecter'),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await authProvider.logout();
                     },
-                    child: const Text('EN SAVOIR PLUS'),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await DatabaseHelper.resetDatabase();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Base de données réinitialisée !'),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('RESET DATABASE'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
+          body: const Home(),
         );
       },
     );
+  }
+}
+
+/// Screen for displaying raids list
+class RaidsScreen extends StatelessWidget {
+  const RaidsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final repository = Provider.of<RaidRepository>(context, listen: false);
+    return RaidListView(repository: repository);
   }
 }

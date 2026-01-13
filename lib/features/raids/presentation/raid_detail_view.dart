@@ -1,10 +1,10 @@
 // lib/features/raids/presentation/RaidDetailView.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
-import '../../races/presentation/RaceListView.dart';
-import '../../races/domain/RaceRepository.dart';
+import '../../races/presentation/widgets/race_card.dart';
+import '../../races/domain/race_repository.dart';
+import '../../races/domain/models/race.dart';
 
 /// StatefulWidget that displays complete details of a raid
 ///
@@ -14,49 +14,41 @@ import '../../races/domain/RaceRepository.dart';
 class RaidDetailView extends StatefulWidget {
   final int raidId;
   final RaidRepository repository;
+  final RacesRepository raceRepository;
 
   const RaidDetailView({
     Key? key,
     required this.raidId,
     required this.repository,
+    required this.raceRepository,
   }) : super(key: key);
 
   @override
   State<RaidDetailView> createState() => _RaidDetailViewState();
 }
 
-/// State associated with RaidDetailView
-/// Manages the lifecycle and state of the widget
 class _RaidDetailViewState extends State<RaidDetailView> {
-  /// Future that will contain the raid fetched from the repository
-  /// Allows handling async states (loading, success, error)
   late Future<Raid?> _raidFuture;
+  late Future<List<Race>> _racesFuture;
 
-  /// Method called once when the widget is created
-  /// Launches the raid fetch from the repository
   @override
   void initState() {
     super.initState();
     _raidFuture = widget.repository.getRaidById(widget.raidId);
+    _racesFuture = widget.raceRepository.getRacesByRaidId(widget.raidId);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar at the top of the screen
       appBar: AppBar(title: const Text('Détails du Raid')),
-
-      // FutureBuilder: widget that rebuilds automatically based on Future state
-      // Handles 3 states: loading (waiting), error (error), success (data available)
       body: FutureBuilder<Raid?>(
         future: _raidFuture,
         builder: (context, snapshot) {
-          // State 1: LOADING - While data is being fetched
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // State 2: ERROR - In case of error during fetch
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -66,7 +58,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   const SizedBox(height: 16),
                   Text('Erreur: ${snapshot.error}'),
                   const SizedBox(height: 16),
-                  // Button to retry loading the data
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
@@ -82,27 +73,22 @@ class _RaidDetailViewState extends State<RaidDetailView> {
             );
           }
 
-          // State 3a: SUCCESS but data is null or empty
           if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('Raid introuvable'));
           }
 
-          // State 3b: SUCCESS with data available
           final raid = snapshot.data!;
 
-          // SingleChildScrollView: makes the content scrollable if it exceeds screen height
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header image of the raid (if available)
                 if (raid.image != null)
                   Image.network(
                     raid.image!,
                     width: double.infinity,
                     height: 250,
                     fit: BoxFit.cover,
-                    // Error builder: displays placeholder if image fails to load
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         width: double.infinity,
@@ -112,20 +98,18 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                       );
                     },
                   ),
-
-                // Main content with padding
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Raid name - styled as main title
                       Text(
                         raid.name,
                         style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 24),
+<<<<<<< HEAD
 
                       // NEW: Card for Location and Manager
                       _buildInfoCard(
@@ -149,6 +133,8 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                       const SizedBox(height: 16),
 
                       // Card 1: Event dates (start and end)
+=======
+>>>>>>> main
                       _buildInfoCard(
                         context,
                         icon: Icons.calendar_today,
@@ -161,10 +147,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                           _buildInfoRow('Fin', _formatDateTime(raid.timeEnd)),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Card 2: Registration information
                       _buildInfoCard(
                         context,
                         icon: Icons.app_registration,
@@ -178,7 +161,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                             'Clôture',
                             _formatDateTime(raid.registrationEnd),
                           ),
-                          // Status with dynamic color based on current date
                           _buildInfoRow(
                             'Statut',
                             _getRegistrationStatus(raid),
@@ -186,10 +168,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Card 3: Contact information (only shows available fields)
                       _buildInfoCard(
                         context,
                         icon: Icons.contact_mail,
@@ -203,32 +182,64 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                             _buildInfoRow('Site web', raid.website!),
                         ],
                       ),
-
                       const SizedBox(height: 24),
-
-                      // Button to view races for this raid
-                      SizedBox(
-                        width: double.infinity, // Full width button
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            final raceRepository = Provider.of<RacesRepository>(
-                              context,
-                              listen: false,
+                      Text(
+                        'Courses disponibles',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FutureBuilder<List<Race>>(
+                        future: _racesFuture,
+                        builder: (context, raceSnapshot) {
+                          if (raceSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
                             );
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => RaceListView(
-                                  repository: raceRepository,
-                                  raidId: raid.id,
-                                  raidName: raid.name,
-                                ),
+                          }
+
+                          if (raceSnapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Erreur: ${raceSnapshot.error}',
+                                style: const TextStyle(color: Colors.red),
                               ),
                             );
-                          },
-                          icon: const Icon(Icons.directions_run),
-                          label: const Text('VOIR LES COURSES'),
-                        ),
+                          }
+
+                          if (!raceSnapshot.hasData ||
+                              raceSnapshot.data!.isEmpty) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(24.0),
+                                child: Text('Aucune course disponible'),
+                              ),
+                            );
+                          }
+
+                          final races = raceSnapshot.data!;
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: races.length,
+                            itemBuilder: (context, index) {
+                              return RaceCard(
+                                race: races[index],
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Détails de la course #${races[index].id}',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -241,8 +252,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-  /// Builds a reusable info card with icon, title and children widgets
-  /// Used to display structured information sections
   Widget _buildInfoCard(
     BuildContext context, {
     required IconData icon,
@@ -256,7 +265,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Card header with icon and title
             Row(
               children: [
                 Icon(icon, color: Theme.of(context).colorScheme.primary),
@@ -270,7 +278,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
               ],
             ),
             const SizedBox(height: 12),
-            // Card content (list of info rows)
             ...children,
           ],
         ),
@@ -278,24 +285,20 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-  /// Builds a single info row with label on the left and value on the right
-  /// Optionally accepts a custom color for the value
   Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Label (left side, grey color)
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          // Value (right side, flexible to handle long text)
           Flexible(
             child: Text(
               value,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: valueColor, // Custom color if provided
+                color: valueColor,
               ),
               textAlign: TextAlign.right,
             ),
@@ -305,8 +308,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-  /// Formats a DateTime to French readable format
-  /// Example: "13 janvier 2026 à 10h30"
   String _formatDateTime(DateTime dateTime) {
     final months = [
       'janvier',
@@ -325,21 +326,17 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year} à ${dateTime.hour}h${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-  /// Returns the registration status as a string
-  /// Compares current date with registration start/end dates
   String _getRegistrationStatus(Raid raid) {
     final now = DateTime.now();
     if (now.isBefore(raid.registrationStart)) {
-      return 'Pas encore ouvertes'; // Not yet open
+      return 'Pas encore ouvertes';
     } else if (now.isAfter(raid.registrationEnd)) {
-      return 'Clôturées'; // Closed
+      return 'Clôturées';
     } else {
-      return 'Ouvertes'; // Open
+      return 'Ouvertes';
     }
   }
 
-  /// Returns the appropriate color for registration status
-  /// Orange: not yet open, Red: closed, Green: open
   Color _getRegistrationStatusColor(Raid raid) {
     final now = DateTime.now();
     if (now.isBefore(raid.registrationStart)) {

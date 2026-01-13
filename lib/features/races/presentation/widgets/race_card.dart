@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+<<<<<<< HEAD
 import '../../domain/Race.dart';
+=======
+import '../../domain/models/race.dart';
+>>>>>>> main
 
 /// Card pour afficher une course dans la liste
 class RaceCard extends StatelessWidget {
