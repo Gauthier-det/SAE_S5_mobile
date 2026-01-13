@@ -14,6 +14,9 @@ import 'features/races/data/repositories/RaceRepositoryImpl.dart';
 import 'features/races/data/datasources/RaceApiSources.dart';
 import 'features/races/data/datasources/RaceLocalSources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
+import 'features/user/presentation/user_detail_view.dart';
 
 /// Entry point of the Sanglier Explorer application
 void main() async {
@@ -62,6 +65,11 @@ class SanglierExplorerApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             home: const HomePage(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/home': (context) => const HomePage(),
+            },
           ),
         );
       },
@@ -129,6 +137,19 @@ class HomePage extends StatelessWidget {
                           ),
                         ),
                         const PopupMenuDivider(),
+                        PopupMenuItem<dynamic>(
+                          child: const ListTile(
+                            leading: Icon(Icons.visibility),
+                            title: Text('Voir le profil'),
+                          ),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileScreen(),
+                              ),
+                            );
+                          },
+                        ),
                         PopupMenuItem<dynamic>(
                           child: const ListTile(
                             leading: Icon(Icons.logout),
