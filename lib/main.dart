@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:sae5_g13_mobile/features/address/data/datasources/address_local_sources.dart';
+import 'package:sae5_g13_mobile/features/address/data/repositories/address_repository_impl.dart';
+import 'package:sae5_g13_mobile/features/address/domain/address_repository.dart';
+import 'package:sae5_g13_mobile/features/club/data/datasources/club_api_sources.dart';
+import 'package:sae5_g13_mobile/features/club/data/datasources/club_local_sources.dart';
+import 'package:sae5_g13_mobile/features/club/data/repositories/club_repository_impl.dart';
+import 'package:sae5_g13_mobile/features/club/domain/club_repository.dart';
+import 'package:sae5_g13_mobile/features/user/data/datasources/user_api_sources.dart';
+import 'package:sae5_g13_mobile/features/user/data/datasources/user_local_sources.dart';
+import 'package:sae5_g13_mobile/features/user/data/repositories/user_repository_impl.dart';
+import 'package:sae5_g13_mobile/features/user/domain/user_repository.dart';
 
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
@@ -22,7 +33,7 @@ import 'features/club/presentation/providers/club_provider.dart';
 import 'features/club/presentation/screens/club_list_screen.dart';
 import 'features/Home.dart';
 
-/// Entry point of the Sanglier Explorer application
+/// Entry point of the Orient'\Action application
 void main() async {
   // Ensure Flutter bindings are initialized before using async operations
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +75,16 @@ class SanglierExplorerApp extends StatelessWidget {
             Provider<RacesRepository>.value(
               value: snapshot.data!['raceRepository'],
             ),
+            Provider<UserRepository>.value(
+              value: snapshot.data!['userRepository'],
+            ),
+            Provider<ClubRepository>.value(
+              value: snapshot.data!['clubRepository'],
+            ),
+            Provider<AddressRepository>.value(
+              value: snapshot.data!['addressRepository'],
+            ),
+            
           ],
           child: MaterialApp(
             title: '${AppConfig.appName} - Course d\'Orientation',
@@ -102,6 +123,17 @@ class SanglierExplorerApp extends StatelessWidget {
       'raceRepository': RacesRepositoryImpl(
         apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
         localSources: RaceLocalSources(database: db),
+      ),
+      'userRepository': UserRepositoryImpl(
+      apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
+      localSources: UserLocalSources(),
+      ),
+      'clubRepository': ClubRepositoryImpl(
+        apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: ClubLocalSources(),
+      ),
+      'addressRepository': AddressRepositoryImpl(
+        localSources: AddressLocalSources(),
       ),
     };
   }

@@ -1,23 +1,20 @@
+// lib/features/auth/data/repositories/auth_repository_impl.dart
 import '../../domain/user_auth.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_sources.dart';
 
-/// Implementation of AuthRepository for local storage
 class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalSources _localDataSource;
 
   AuthRepositoryImpl(this._localDataSource);
 
-  /// Validate email format
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     return emailRegex.hasMatch(email);
   }
 
-  /// Validate password strength
   bool _isValidPassword(String password) {
-    // At least 8 characters
     return password.length >= 8;
   }
 
@@ -27,11 +24,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     required String firstName,
     required String lastName,
-    String ? birthDate,
-    String ? phoneNumber,
-    String ? licenceNumber,
+    String? birthDate,
+    String? phoneNumber,
+    String? licenceNumber,
   }) async {
-    // Validation
     if (!_isValidEmail(email)) {
       throw ValidationException('Email invalide');
     }
@@ -45,12 +41,11 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     // Check if email already exists
-    final registeredUsers = _localDataSource.getRegisteredUsers();
+    final registeredUsers = await _localDataSource.getRegisteredUsers();
     if (registeredUsers.any((user) => user['email'] == email)) {
       throw EmailAlreadyExistsException();
     }
 
-    // Create new user
     final user = User(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       email: email,
@@ -62,17 +57,15 @@ class AuthRepositoryImpl implements AuthRepository {
       licenceNumber: licenceNumber,
     );
 
-    // Save to registered users list
     final updatedUsers = [
       ...registeredUsers,
       {
         ...user.toJson(),
-        'password': password, // In production, this would be hashed
+        'password': password,
       }
     ];
     await _localDataSource.saveRegisteredUsers(updatedUsers);
 
-    // Save current user and token
     await _localDataSource.saveUser(user);
     await _localDataSource.saveToken('token_${user.id}');
 
@@ -84,7 +77,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
   }) async {
-    // Validation
     if (!_isValidEmail(email)) {
       throw ValidationException('Email invalide');
     }
@@ -93,8 +85,8 @@ class AuthRepositoryImpl implements AuthRepository {
       throw ValidationException('Le mot de passe est requis');
     }
 
-    // Find user in registered users
-    final registeredUsers = _localDataSource.getRegisteredUsers();
+    // Find user in SQLite database
+    final registeredUsers = await _localDataSource.getRegisteredUsers();
     final userIndex = registeredUsers.indexWhere(
       (user) => user['email'] == email && user['password'] == password,
     );
@@ -103,11 +95,9 @@ class AuthRepositoryImpl implements AuthRepository {
       throw InvalidCredentialsException();
     }
 
-    // Create user object
     final userData = registeredUsers[userIndex];
     final user = User.fromJson(userData);
 
-    // Save current user and token
     await _localDataSource.saveUser(user);
     await _localDataSource.saveToken('token_${user.id}');
 

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// Configuration typographique de Sanglier Explorer
+/// Configuration typographique de Orient'\Action
 ///
 /// - Titres : Archivo Black (Impact & Aventure)
 /// - Corps : Inter (Clarté & Lecture)

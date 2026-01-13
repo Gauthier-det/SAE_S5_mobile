@@ -42,14 +42,9 @@ class Home extends StatelessWidget {
             // Logo
             Row(
               children: [
-                Image.asset(
-                  'assets/sanglier-explorer.png',
-                  height: 40,
-                  width: 40,
-                ),
                 const SizedBox(width: 8),
                 Text(
-                  'Sanglier Explorer',
+                  'Orient\'Action',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -111,46 +106,99 @@ class Home extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/raids');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF1B4332),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'Voir les Raids',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 16),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/register');
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white, width: 2),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'S\'inscrire',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+          // Dans _buildHeroSection, remplace la Row des boutons par :
+
+          // Boutons responsive
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 500) {
+                // Mobile : boutons empilés verticalement
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/raids');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF1B4332),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'Voir les Raids',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/register');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'S\'inscrire',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Desktop : boutons côte à côte
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/raids');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF1B4332),
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'Voir les Raids',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/register');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'S\'inscrire',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
+
         ],
       ),
     );
@@ -302,33 +350,28 @@ class Home extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
-          // Étapes
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          // UTILISER Column au lieu de Row pour mobile
+          Column(
             children: [
-              Expanded(
-                child: _buildTutorialStep(
-                  number: '1',
-                  icon: Icons.person_add,
-                  title: 'Créer un Profil',
-                  description: 'Inscrivez-vous en quelques secondes',
-                ),
+              _buildTutorialStep(
+                number: '1',
+                icon: Icons.person_add,
+                title: 'Créer un Profil',
+                description: 'Inscrivez-vous en quelques secondes',
               ),
-              Expanded(
-                child: _buildTutorialStep(
-                  number: '2',
-                  icon: Icons.location_on,
-                  title: 'Trouver un Raid',
-                  description: 'Explorez les raids disponibles',
-                ),
+              const SizedBox(height: 32),
+              _buildTutorialStep(
+                number: '2',
+                icon: Icons.location_on,
+                title: 'Trouver un Raid',
+                description: 'Explorez les raids disponibles',
               ),
-              Expanded(
-                child: _buildTutorialStep(
-                  number: '3',
-                  icon: Icons.group,
-                  title: 'Former son Équipe',
-                  description: 'Créez votre équipe et participez',
-                ),
+              const SizedBox(height: 32),
+              _buildTutorialStep(
+                number: '3',
+                icon: Icons.group,
+                title: 'Former son Équipe',
+                description: 'Créez votre équipe et participez',
               ),
             ],
           ),
@@ -336,6 +379,7 @@ class Home extends StatelessWidget {
       ),
     );
   }
+
 
   // Footer
   Widget _buildFooter(BuildContext context) {
@@ -346,7 +390,7 @@ class Home extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Sanglier Explorer',
+            'Orient'\Action',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -477,39 +521,47 @@ class Home extends StatelessWidget {
     required String title,
     required String description,
   }) {
-    return Column(
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1B4332),
-            shape: BoxShape.circle,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200), // Limiter la largeur
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1B4332),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Icon(icon, color: Colors.white, size: 40),
+            ),
           ),
-          child: Center(
-            child: Icon(icon, color: Colors.white, size: 40),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF1B4332),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF1B4332),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          description,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 12,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+        ],
+      ),
     );
   }
+
 }
