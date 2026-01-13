@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart';
-import '../../domain/models/race.dart';
+import '../../domain/Race.dart';
 
 class RaceLocalSources {
   final Database database;

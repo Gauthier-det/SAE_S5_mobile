@@ -109,6 +109,29 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 24),
+
+                      // NEW: Card for Location and Manager
+                      _buildInfoCard(
+                        context,
+                        icon: Icons.info_outline,
+                        title: 'Informations générales',
+                        children: [
+                          // Location
+                          _buildInfoRow(
+                            'Lieu',
+                            raid.address?.fullAddress ?? 'Non spécifié',
+                          ),
+                          // Manager
+                          _buildInfoRow(
+                            'Responsable',
+                            raid.manager?.fullName ?? 'Non spécifié',
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Card 1: Event dates (start and end)
                       _buildInfoCard(
                         context,
                         icon: Icons.calendar_today,

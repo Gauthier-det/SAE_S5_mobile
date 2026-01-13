@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
 import 'raid_detail_view.dart';
-import '../../races/domain/race_repository.dart';
+import 'raid_creation_view.dart';
 
 /// StatefulWidget that displays a scrollable list of available raids
 ///
@@ -54,10 +54,10 @@ class _RaidListViewState extends State<RaidListView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Circular progress indicator using theme color
-                  CircularProgressIndicator(color: theme.colorScheme.primary),
+                  CircularProgressIndicator(
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(height: 16),
-                  // Loading message
                   Text(
                     'Chargement des raids...',
                     style: theme.textTheme.bodyLarge,
@@ -75,27 +75,23 @@ class _RaidListViewState extends State<RaidListView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Error icon with theme error color
                     Icon(
                       Icons.error_outline,
                       size: 64,
                       color: theme.colorScheme.error,
                     ),
                     const SizedBox(height: 16),
-                    // Error title
                     Text(
                       'Erreur de chargement',
                       style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
-                    // Error message with actual error details
                     Text(
                       '${snapshot.error}',
                       style: theme.textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    // Retry button - triggers a new fetch
                     ElevatedButton.icon(
                       onPressed: () {
                         setState(() {
@@ -112,7 +108,6 @@ class _RaidListViewState extends State<RaidListView> {
           }
 
           // State 3: SUCCESS - Data is available
-          // Get the list, defaulting to empty list if null
           final raids = snapshot.data ?? [];
 
           // State 3a: SUCCESS but list is empty
@@ -123,20 +118,17 @@ class _RaidListViewState extends State<RaidListView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Empty state icon with semi-transparent theme color
                     Icon(
                       Icons.hiking,
                       size: 64,
                       color: theme.colorScheme.onSurface.withOpacity(0.3),
                     ),
                     const SizedBox(height: 16),
-                    // Empty state title
                     Text(
                       'Aucun raid disponible',
                       style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
-                    // Empty state message
                     Text(
                       'Revenez plus tard pour découvrir de nouvelles courses',
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -151,37 +143,27 @@ class _RaidListViewState extends State<RaidListView> {
           }
 
           // State 3b: SUCCESS with data - Display the list
-          // RefreshIndicator: enables pull-to-refresh gesture
           return RefreshIndicator(
             onRefresh: () async {
-              // Trigger a new fetch when user pulls down
               setState(() {
                 _raidsFuture = widget.repository.getAllRaids();
               });
             },
-            // ListView.builder: efficiently builds list items on-demand
-            // Only renders visible items + a few offscreen for smooth scrolling
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: raids.length,
               itemBuilder: (context, index) {
-                // Get the current raid for this list item
                 final raid = raids[index];
-                final isRegistrationOpen = _isRegistrationOpen(raid);
-
+                final raidStatus = _getRaidStatus(raid);
+                final registrationStatus = _getRegistrationStatus(raid);
+                
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  // Card: Material Design card with elevation
                   child: Card(
                     elevation: 2,
-                    clipBehavior: Clip.antiAlias, // Clips child to card shape
-                    // InkWell: adds ripple effect on tap
+                    clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: () {
-                        final raceRepository = Provider.of<RacesRepository>(
-                          context,
-                          listen: false,
-                        );
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -196,15 +178,13 @@ class _RaidListViewState extends State<RaidListView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Image section (only displayed if image URL exists)
+                          // Image section
                           if (raid.image != null)
-                            // AspectRatio: maintains 16:9 ratio for consistent card heights
                             AspectRatio(
                               aspectRatio: 16 / 9,
                               child: Image.network(
                                 raid.image!,
-                                fit: BoxFit.cover, // Fills the space, may crop
-                                // Error builder: displays placeholder if image fails to load
+                                fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
                                     color: theme.colorScheme.surfaceVariant,
@@ -217,99 +197,70 @@ class _RaidListViewState extends State<RaidListView> {
                                 },
                               ),
                             ),
-
-                          // Content section with raid information
+                          
+                          // Content section
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Raid name - bold title
+                                // Raid name
                                 Text(
                                   raid.name,
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-
-                                const SizedBox(height: 8),
-
-                                // Date row with icon
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      size: 16,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _formatDate(raid.timeStart),
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                // Location row with icon
-                                // Currently just says "Voir détails" - could be enhanced to show actual location
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.place,
-                                      size: 16,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Voir détails',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-
+                                
                                 const SizedBox(height: 12),
-
-                                // Status badge - shows if registration is open or upcoming
-                                Row(
+                                
+                                // Status badges row
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      // Decoration with rounded corners and conditional colors
-                                      decoration: BoxDecoration(
-                                        color: isRegistrationOpen
-                                            ? Colors.green.withOpacity(0.1)
-                                            : Colors.orange.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Text(
-                                        isRegistrationOpen
-                                            ? 'INSCRIPTIONS OUVERTES'
-                                            : 'À VENIR',
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color: isRegistrationOpen
-                                                  ? Colors.green.shade700
-                                                  : Colors.orange.shade700,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
+                                    _buildStatusChip(
+                                      label: raidStatus.label,
+                                      color: raidStatus.color,
+                                      icon: Icons.event,
+                                    ),
+                                    _buildStatusChip(
+                                      label: registrationStatus.label,
+                                      color: registrationStatus.color,
+                                      icon: Icons.app_registration,
                                     ),
                                   ],
+                                ),
+                                
+                                const SizedBox(height: 16),
+                                
+                                // Location
+                                _buildInfoRow(
+                                  icon: Icons.place,
+                                  label: 'Lieu',
+                                  value: raid.address?.cityName ?? 'Non spécifié', // ✅ Affiche la ville
+                                  theme: theme,
+                                ),
+
+                                
+                                const SizedBox(height: 8),
+                                
+                                // Event dates
+                                _buildInfoRow(
+                                  icon: Icons.calendar_today,
+                                  label: 'Dates',
+                                  value: '${_formatDate(raid.timeStart)} - ${_formatDate(raid.timeEnd)}',
+                                  theme: theme,
+                                ),
+                                
+                                const SizedBox(height: 8),
+                                
+                                // Registration period
+                                _buildInfoRow(
+                                  icon: Icons.edit_calendar,
+                                  label: 'Inscriptions',
+                                  value: '${_formatDate(raid.registrationStart)} - ${_formatDate(raid.registrationEnd)}',
+                                  theme: theme,
                                 ),
                               ],
                             ),
@@ -324,6 +275,95 @@ class _RaidListViewState extends State<RaidListView> {
           );
         },
       ),
+      
+      // FloatingActionButton to create new raid
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RaidCreateView(
+                repository: widget.repository,
+              ),
+            ),
+          );
+          
+          if (result == true && mounted) {
+            setState(() {
+              _raidsFuture = widget.repository.getAllRaids();
+            });
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('CRÉER UN RAID'),
+      ),
+    );
+  }
+
+  /// Builds a reusable info row with icon, label and value
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required ThemeData theme,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              children: [
+                TextSpan(
+                  text: '$label: ',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                TextSpan(text: value),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a status chip with icon, label and color
+  Widget _buildStatusChip({
+    required String label,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -331,28 +371,70 @@ class _RaidListViewState extends State<RaidListView> {
   /// Example: "13 janvier 2026"
   String _formatDate(DateTime date) {
     final months = [
-      'janvier',
-      'février',
-      'mars',
-      'avril',
-      'mai',
-      'juin',
-      'juillet',
-      'août',
-      'septembre',
-      'octobre',
-      'novembre',
-      'décembre',
+      'jan', 'fév', 'mar', 'avr', 'mai', 'juin',
+      'juil', 'août', 'sep', 'oct', 'nov', 'déc'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
+  /// Returns raid status (À venir, En cours, Terminé)
+  /// Based on event start and end dates
+  _StatusInfo _getRaidStatus(Raid raid) {
+    final now = DateTime.now();
+    
+    if (now.isBefore(raid.timeStart)) {
+      return _StatusInfo(
+        label: 'À VENIR',
+        color: Colors.blue,
+      );
+    } else if (now.isAfter(raid.timeEnd)) {
+      return _StatusInfo(
+        label: 'TERMINÉ',
+        color: Colors.grey,
+      );
+    } else {
+      return _StatusInfo(
+        label: 'EN COURS',
+        color: Colors.green,
+      );
+    }
+  }
+
+  /// Returns registration status (À venir, Ouvertes, Closes)
+  /// Based on registration start and end dates
+  _StatusInfo _getRegistrationStatus(Raid raid) {
+    final now = DateTime.now();
+    
+    if (now.isBefore(raid.registrationStart)) {
+      return _StatusInfo(
+        label: 'À VENIR',
+        color: Colors.orange,
+      );
+    } else if (now.isAfter(raid.registrationEnd)) {
+      return _StatusInfo(
+        label: 'CLOSES',
+        color: Colors.red,
+      );
+    } else {
+      return _StatusInfo(
+        label: 'OUVERTES',
+        color: Colors.green,
+      );
+    }
+  }
+
   /// Checks if registration is currently open for a given raid
-  /// Compares current date with registration start and end dates
-  /// Returns true if we're between start and end dates
   bool _isRegistrationOpen(Raid raid) {
     final now = DateTime.now();
     return now.isAfter(raid.registrationStart) &&
         now.isBefore(raid.registrationEnd);
   }
+}
+
+/// Helper class to store status information (label and color)
+class _StatusInfo {
+  final String label;
+  final Color color;
+
+  _StatusInfo({required this.label, required this.color});
 }

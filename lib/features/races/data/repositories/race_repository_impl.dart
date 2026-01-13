@@ -1,5 +1,5 @@
 import '../../domain/race_repository.dart';
-import '../../domain/models/race.dart';
+import '../../domain/race.dart';
 import '../datasources/race_api_sources.dart';
 import '../datasources/race_local_sources.dart';
 

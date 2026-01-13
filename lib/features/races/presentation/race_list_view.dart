@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../domain/models/race.dart';
-import '../domain/race_repository.dart';
+import '../domain/Race.dart';
+import '../domain/RaceRepository.dart';
 import 'widgets/race_card.dart';
 
 /// Vue de la liste des courses avec filtres et tri
