@@ -1,52 +1,85 @@
-// lib/features/raids/data/datasources/RaidLocalSources.dart
+// lib/features/raids/data/datasources/raid_local_sources.dart
+import 'package:sae5_g13_mobile/core/database/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../domain/raid.dart';
+import 'package:sae5_g13_mobile/features/user/domain/user.dart';
 
 class RaidLocalSources {
-  final Database database;
-
-  RaidLocalSources({required this.database});
-
-  Future<Raid?> getRaidById(int id) async {
-    try {
-      final List<Map<String, dynamic>> maps = await database.query(
-        'SAN_RAIDS',
-        where: 'RAI_ID = ?',
-        whereArgs: [id],
-      );
-
-      if (maps.isEmpty) {
-        return null;
-      }
-
-      return Raid.fromJson(maps.first);
-    } catch (e) {
-      throw Exception('Database error: $e');
-    }
-  }
-
+  /// Fetches all raids with their addresses and manager names (JOIN query)
   Future<List<Raid>> getAllRaids() async {
-    try {
-      final List<Map<String, dynamic>> maps = await database.query(
-        'SAN_RAIDS',
-        orderBy: 'RAI_TIME_START DESC',
-      );
-      return maps.map((map) => Raid.fromJson(map)).toList();
-    } catch (e) {
-      throw Exception('Database error: $e');
-    }
+    final db = await DatabaseHelper.database;
+    
+    // SQL JOIN with ALIASES to avoid column conflicts
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        r.*,
+        a.ADD_POSTAL_CODE,
+        a.ADD_CITY,
+        a.ADD_STREET_NAME,
+        a.ADD_STREET_NUMBER,
+        u.USE_ID as MANAGER_ID,
+        u.USE_NAME as MANAGER_NAME,
+        u.USE_LAST_NAME as MANAGER_LAST_NAME,
+        u.USE_MAIL as MANAGER_MAIL,
+        u.ADD_ID as MANAGER_ADD_ID
+      FROM SAN_RAIDS r
+      LEFT JOIN SAN_ADDRESSES a ON r.ADD_ID = a.ADD_ID
+      LEFT JOIN SAN_USERS u ON r.USE_ID = u.USE_ID
+      ORDER BY r.RAI_TIME_START DESC
+    ''');
+    
+    return maps.map((map) => Raid.fromJson(map)).toList();
   }
 
+  /// Fetches a single raid by ID with its address and manager (JOIN query)
+  Future<Raid?> getRaidById(int id) async {
+    final db = await DatabaseHelper.database;
+    
+    // SQL JOIN with ALIASES to avoid column conflicts
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        r.*,
+        a.ADD_POSTAL_CODE,
+        a.ADD_CITY,
+        a.ADD_STREET_NAME,
+        a.ADD_STREET_NUMBER,
+        u.USE_ID as MANAGER_ID,
+        u.USE_NAME as MANAGER_NAME,
+        u.USE_LAST_NAME as MANAGER_LAST_NAME,
+        u.USE_MAIL as MANAGER_MAIL,
+        u.ADD_ID as MANAGER_ADD_ID
+      FROM SAN_RAIDS r
+      LEFT JOIN SAN_ADDRESSES a ON r.ADD_ID = a.ADD_ID
+      LEFT JOIN SAN_USERS u ON r.USE_ID = u.USE_ID
+      WHERE r.RAI_ID = ?
+    ''', [id]);
+    
+    if (maps.isEmpty) return null;
+    
+    return Raid.fromJson(maps.first);
+  }
+
+  /// Inserts a new raid into the database
   Future<void> insertRaid(Raid raid) async {
-    await database.insert(
+    final db = await DatabaseHelper.database;
+    await db.insert(
       'SAN_RAIDS',
       raid.toJson(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
+  /// Clears all raids from the database
+  Future<void> clearAllRaids() async {
+    final db = await DatabaseHelper.database;
+    await db.delete('SAN_RAIDS');
+  }
+
+  /// Inserts multiple raids (used for API sync)
   Future<void> insertRaids(List<Raid> raids) async {
-    final batch = database.batch();
+    final db = await DatabaseHelper.database;
+    final batch = db.batch();
+    
     for (var raid in raids) {
       batch.insert(
         'SAN_RAIDS',
@@ -54,23 +87,23 @@ class RaidLocalSources {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
+    
     await batch.commit(noResult: true);
   }
 
-  Future<void> deleteRaid(int id) async {
-    await database.delete(
-      'SAN_RAIDS',
-      where: 'RAI_ID = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<void> clearAllRaids() async {
-    await database.delete('SAN_RAIDS');
-  }
-
-  Future<int> getRaidsCount() async {
-    final result = await database.rawQuery('SELECT COUNT(*) as count FROM SAN_RAIDS');
-    return Sqflite.firstIntValue(result) ?? 0;
+  /// Fetches users with a specific role (for raid manager selection)
+  Future<List<User>> getUsersByRole(int roleId) async {
+    final db = await DatabaseHelper.database;
+    
+    // SQL JOIN to get users who have the specified role
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT u.*
+      FROM SAN_USERS u
+      INNER JOIN SAN_ROLES_USERS ru ON u.USE_ID = ru.USE_ID
+      WHERE ru.ROL_ID = ?
+      ORDER BY u.USE_NAME, u.USE_LAST_NAME
+    ''', [roleId]);
+    
+    return maps.map((map) => User.fromJson(map)).toList();
   }
 }

@@ -83,9 +83,6 @@ class SeedData {
     final roles = [
       {'ROL_ID': 1, 'ROL_NAME': 'Coureur'},
       {'ROL_ID': 2, 'ROL_NAME': 'Gestionnaire de site'},
-      {'ROL_ID': 3, 'ROL_NAME': 'Responsable de club'},
-      {'ROL_ID': 4, 'ROL_NAME': 'Responsable de raid'},
-      {'ROL_ID': 5, 'ROL_NAME': 'Responsable de course'},
     ];
     for (var role in roles) {
       await db.insert('SAN_ROLES', role);
@@ -94,11 +91,10 @@ class SeedData {
     // 7. Roles_Users
     final rolesUsers = [
       {'USE_ID': 1, 'ROL_ID': 2}, // admin
-      {'USE_ID': 2, 'ROL_ID': 3}, {'USE_ID': 3, 'ROL_ID': 3}, // Club responsible
-      {'USE_ID': 4, 'ROL_ID': 4}, {'USE_ID': 5, 'ROL_ID': 4}, // Raid responsible
-      {'USE_ID': 4, 'ROL_ID': 5}, {'USE_ID': 6, 'ROL_ID': 5}, // Race responsible
-      {'USE_ID': 2, 'ROL_ID': 1}, {'USE_ID': 3, 'ROL_ID': 1}, {'USE_ID': 5, 'ROL_ID': 1},
-      {'USE_ID': 6, 'ROL_ID': 1}, {'USE_ID': 7, 'ROL_ID': 1}, {'USE_ID': 8, 'ROL_ID': 1},
+      {'USE_ID': 2, 'ROL_ID': 1}, {'USE_ID': 3, 'ROL_ID': 1}, // Club responsible
+      {'USE_ID': 4, 'ROL_ID': 1}, {'USE_ID': 5, 'ROL_ID': 1}, // Raid responsible
+      {'USE_ID': 6, 'ROL_ID': 1}, // Race responsible
+      {'USE_ID': 7, 'ROL_ID': 1}, {'USE_ID': 8, 'ROL_ID': 1},
       {'USE_ID': 9, 'ROL_ID': 1}, {'USE_ID': 10, 'ROL_ID': 1}, {'USE_ID': 11, 'ROL_ID': 1},
       {'USE_ID': 12, 'ROL_ID': 1}, // Runners
     ];

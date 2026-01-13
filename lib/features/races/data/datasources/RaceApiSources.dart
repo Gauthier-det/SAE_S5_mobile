@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../domain/models/Race.dart';
+import '../../domain/Race.dart';
 
 class RaceApiSources {
   final String baseUrl;

@@ -1,4 +1,4 @@
-import '../domain/models/Race.dart';
+import '../domain/Race.dart';
 
 /// Données mockées pour tester l'interface
 class MockRaceData {

@@ -11,9 +11,17 @@ import 'features/raids/data/datasources/raid_api_sources.dart';
 import 'features/raids/data/datasources/raid_local_sources.dart';
 import 'features/races/domain/RaceRepository.dart';
 import 'features/races/data/repositories/RaceRepositoryImpl.dart';
+import 'features/club/data/repositories/club_repository_impl.dart';
+import 'features/club/data/datasources/club_api_sources.dart';
+import 'features/user/data/datasources/user_api_sources.dart';
+import 'features/club/data/datasources/club_local_sources.dart';
+import 'features/user/data/datasources/user_local_sources.dart';
+import 'features/user/data/repositories/user_repository_impl.dart';
 import 'features/races/data/datasources/RaceApiSources.dart';
 import 'features/races/data/datasources/RaceLocalSources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/club/domain/club_repository.dart';
+import 'features/user/domain/user_repository.dart';
 
 /// Entry point of the Sanglier Explorer application
 void main() async {
@@ -56,6 +64,12 @@ class SanglierExplorerApp extends StatelessWidget {
             Provider<RacesRepository>.value(
               value: snapshot.data!['raceRepository'],
             ),
+            Provider<UserRepository>.value(
+              value: snapshot.data!['userRepository'] as UserRepository,
+            ),
+            Provider<ClubRepository>.value(
+              value: snapshot.data!['clubRepository'] as ClubRepository,
+            ),
           ],
           child: MaterialApp(
             title: '${AppConfig.appName} - Course d\'Orientation',
@@ -70,17 +84,25 @@ class SanglierExplorerApp extends StatelessWidget {
 
   Future<Map<String, dynamic>> _createRepositories() async {
     final db = await DatabaseHelper.database;
-    return {
-      'raidRepository': RaidRepositoryImpl(
-        apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
-        localSources: RaidLocalSources(database: db),
-      ),
-      'raceRepository': RacesRepositoryImpl(
-        apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
-        localSources: RaceLocalSources(database: db),
-      ),
-    };
-  }
+  return {
+    'raidRepository': RaidRepositoryImpl(
+      apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
+      localSources: RaidLocalSources(),
+    ),
+    'raceRepository': RacesRepositoryImpl(
+      apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
+      localSources: RaceLocalSources(database: db),
+    ),
+    'userRepository': UserRepositoryImpl(
+      apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
+      localSources: UserLocalSources(),
+    ),
+    'clubRepository': ClubRepositoryImpl(
+      apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),
+      localSources: ClubLocalSources(),
+    ),
+  };
+}
 }
 
 /// Application home page

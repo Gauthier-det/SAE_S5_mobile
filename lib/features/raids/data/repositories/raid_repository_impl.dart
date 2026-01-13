@@ -62,4 +62,17 @@ class RaidRepositoryImpl implements RaidRepository {
       }
     }
   }
+
+  @override
+  Future<void> createRaid(Raid raid) async {
+    // Sauvegarder en local
+    await localSources.insertRaid(raid);
+    
+    // Envoyer à l'API (si disponible)
+    try {
+      await apiSources.createRaid(raid);
+    } catch (e) {
+      print('API sync failed, saved locally: $e');
+    }
+  }
 }

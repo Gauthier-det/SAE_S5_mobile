@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../domain/models/Race.dart';
+import '../domain/Race.dart';
 import '../domain/RaceRepository.dart';
 import 'widgets/race_card.dart';
 
