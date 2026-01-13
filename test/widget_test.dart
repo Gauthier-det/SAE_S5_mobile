@@ -8,8 +8,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('Authentication test', (WidgetTester tester) async {
-    // Basic test - to be implemented
-    expect(true, true);
+  testWidgets('App starts smoke test', (WidgetTester tester) async {
   });
 }

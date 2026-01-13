@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/races/presentation/RaceListView.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -150,6 +151,18 @@ class HomePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
 
+              // Primary CTA Button - Orange Balise
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RaceListView(),
+                    ),
+                  );
+                },
+                child: const Text('VOIR LES COURSES'),
+              ),
                   const SizedBox(height: 48),
 
                   // User info (only if authenticated)

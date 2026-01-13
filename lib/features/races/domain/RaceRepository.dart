@@ -1,6 +1,6 @@
-import 'package:sae5_g13_mobile/features/races/domain/Race.dart';
+import 'models/Race.dart';
 
 abstract class RacesRepository {
-  Future<List<Race>> getRaids();
+  Future<List<Race>> getRaces();
   // (ou getRacesByRaid, etc. selon ton choix)
 }
