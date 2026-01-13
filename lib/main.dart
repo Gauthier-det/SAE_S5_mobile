@@ -97,7 +97,7 @@ class SanglierExplorerApp extends StatelessWidget {
     return {
       'raidRepository': RaidRepositoryImpl(
         apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
-        localSources: RaidLocalSources(database: db),
+        localSources: RaidLocalSources(),
       ),
       'raceRepository': RacesRepositoryImpl(
         apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
