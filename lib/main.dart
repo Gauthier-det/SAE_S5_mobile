@@ -4,16 +4,18 @@ import 'package:provider/provider.dart';
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/theme/app_theme.dart';
-import 'features/races/presentation/RaceListView.dart';
-import 'features/auth/presentation/login_screen.dart';
-import 'features/auth/presentation/register_screen.dart';
+import 'features/raids/presentation/raid_list_view.dart';
+import 'features/raids/domain/raid_repository.dart';
+import 'features/raids/data/repositories/raid_repository_impl.dart';
+import 'features/raids/data/datasources/raid_api_sources.dart';
+import 'features/raids/data/datasources/raid_local_sources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 
 /// Entry point of the Sanglier Explorer application
 void main() async {
   // Ensure Flutter bindings are initialized before using async operations
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize AuthProvider
   final authProvider = await AuthProvider.create();
   runApp(SanglierExplorerApp(authProvider: authProvider));
@@ -28,21 +30,40 @@ void main() async {
 class SanglierExplorerApp extends StatelessWidget {
   final AuthProvider authProvider;
 
-  const SanglierExplorerApp({
-    required this.authProvider,
-    super.key,
-  });
+  const SanglierExplorerApp({required this.authProvider, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Provider<RaidRepository>.value(
-      value: raidRepository,
-      child: MaterialApp(
-        title: '${AppConfig.appName} - Course d\'Orientation',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const HomePage(),
-      ),
+    return FutureBuilder<RaidRepository>(
+      future: _createRaidRepository(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const MaterialApp(
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
+          );
+        }
+
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+            Provider<RaidRepository>.value(value: snapshot.data!),
+          ],
+          child: MaterialApp(
+            title: '${AppConfig.appName} - Course d\'Orientation',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: const HomePage(),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<RaidRepository> _createRaidRepository() async {
+    final db = await DatabaseHelper.database;
+    return RaidRepositoryImpl(
+      apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
+      localSources: RaidLocalSources(database: db),
     );
   }
 }
@@ -138,14 +159,7 @@ class HomePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
 
-              // Additional info
-              Text(
-                'Explorez la nature, défiez-vous et progressez',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(),
-                ),
-                textAlign: TextAlign.center,
-              ),
+                  const SizedBox(height: 16),
 
                   // Additional info
                   Text(
@@ -156,42 +170,51 @@ class HomePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
 
-              // Primary CTA Button - Orange Balise
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate to raid list
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RaidListView(repository: repository),
-                    ),
-                  );
-                },
-                child: const Text('VOIR LES RAIDS'),
-              ),
                   const SizedBox(height: 48),
 
-              // Tertiary Button - Text
-              TextButton(
-                onPressed: () {
-                  // Navigate to info
-                },
-                child: const Text('EN SAVOIR PLUS'),
+                  // Primary CTA Button - Orange Balise
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navigate to raid list
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              RaidListView(repository: repository),
+                        ),
+                      );
+                    },
+                    child: const Text('VOIR LES RAIDS'),
+                  ),
 
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await DatabaseHelper.resetDatabase();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Base de données réinitialisée !')),
-                  );
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('RESET DATABASE'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
+                  const SizedBox(height: 16),
+
+                  // Tertiary Button - Text
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to info
+                    },
+                    child: const Text('EN SAVOIR PLUS'),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await DatabaseHelper.resetDatabase();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Base de données réinitialisée !'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('RESET DATABASE'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
