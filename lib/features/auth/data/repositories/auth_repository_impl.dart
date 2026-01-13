@@ -133,6 +133,12 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> updateProfile({
     String? firstName,
     String? lastName,
+    String? phoneNumber,
+    String? birthDate,
+    String? club,
+    String? licenceNumber,
+    String? ppsNumber,
+    String? chipNumber,
     String? profileImageUrl,
   }) async {
     final currentUser = _localDataSource.getUser();
@@ -143,6 +149,12 @@ class AuthRepositoryImpl implements AuthRepository {
     final updatedUser = currentUser.copyWith(
       firstName: firstName ?? currentUser.firstName,
       lastName: lastName ?? currentUser.lastName,
+      phoneNumber: phoneNumber ?? currentUser.phoneNumber,
+      birthDate: birthDate ?? currentUser.birthDate,
+      club: club ?? currentUser.club,
+      licenceNumber: licenceNumber ?? currentUser.licenceNumber,
+      ppsNumber: ppsNumber ?? currentUser.ppsNumber,
+      chipNumber: chipNumber ?? currentUser.chipNumber,
       profileImageUrl: profileImageUrl ?? currentUser.profileImageUrl,
     );
 

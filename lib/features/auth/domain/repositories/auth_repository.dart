@@ -38,6 +38,12 @@ abstract class AuthRepository {
   Future<User> updateProfile({
     String? firstName,
     String? lastName,
+    String? phoneNumber,
+    String? birthDate,
+    String? club,
+    String? licenceNumber,
+    String? ppsNumber,
+    String? chipNumber,
     String? profileImageUrl,
   });
 }
