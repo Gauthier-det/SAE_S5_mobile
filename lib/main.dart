@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/config/app_config.dart';
@@ -17,6 +18,8 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/user/presentation/user_detail_view.dart';
+import 'features/club/presentation/providers/club_provider.dart';
+import 'features/club/presentation/screens/club_list_screen.dart';
 import 'features/Home.dart';
 
 /// Entry point of the Sanglier Explorer application
@@ -54,6 +57,7 @@ class SanglierExplorerApp extends StatelessWidget {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+            ChangeNotifierProvider<ClubProvider>(create: (_) => ClubProvider()),
             Provider<RaidRepository>.value(
               value: snapshot.data!['raidRepository'],
             ),
@@ -65,6 +69,16 @@ class SanglierExplorerApp extends StatelessWidget {
             title: '${AppConfig.appName} - Course d\'Orientation',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
+            locale: const Locale('fr', 'FR'),
+            supportedLocales: const [
+              Locale('fr', 'FR'),
+              Locale('en', 'US'),
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             home: const MainScreen(),
             routes: {
               '/login': (context) => const LoginScreen(),
@@ -141,6 +155,19 @@ class MainScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/raids');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.groups),
+                  title: const Text('Clubs'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ClubListScreen(),
+                      ),
+                    );
                   },
                 ),
                 const Divider(),
