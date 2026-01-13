@@ -27,7 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     required String firstName,
     required String lastName,
-    required String birthDate,
+    String ? birthDate,
     String ? phoneNumber,
     String ? licenceNumber,
   }) async {
@@ -42,10 +42,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
     if (firstName.isEmpty || lastName.isEmpty) {
       throw ValidationException('Le prénom et le nom sont requis');
-    }
-
-    if (birthDate.isEmpty) {
-      throw ValidationException('La date de naissance est requise');
     }
 
     // Check if email already exists
