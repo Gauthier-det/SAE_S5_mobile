@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import '../domain/models/Race.dart';
-import '../data/mock_race_data.dart';
+import '../domain/RaceRepository.dart';
 import 'widgets/race_card.dart';
 
 /// Vue de la liste des courses avec filtres et tri
 class RaceListView extends StatefulWidget {
-  const RaceListView({super.key});
+  final RacesRepository repository;
+  final int? raidId; // ID du raid pour filtrer les courses (optionnel)
+  final String? raidName; // Nom du raid pour l'affichage (optionnel)
+
+  const RaceListView({
+    super.key,
+    required this.repository,
+    this.raidId,
+    this.raidName,
+  });
 
   @override
   State<RaceListView> createState() => _RaceListViewState();
 }
 
 class _RaceListViewState extends State<RaceListView> {
+  late Future<List<Race>> _racesFuture;
   List<Race> _allRaces = [];
   List<Race> _filteredRaces = [];
 
@@ -26,8 +36,14 @@ class _RaceListViewState extends State<RaceListView> {
   @override
   void initState() {
     super.initState();
-    _allRaces = MockRaceData.getMockRaces();
-    _applyFiltersAndSort();
+    _loadRaces();
+  }
+
+  void _loadRaces() {
+    // Si un raidId est fourni, charger les courses de ce raid uniquement
+    _racesFuture = widget.raidId != null
+        ? widget.repository.getRacesByRaidId(widget.raidId!)
+        : widget.repository.getRaces();
   }
 
   void _applyFiltersAndSort() {
@@ -186,11 +202,15 @@ class _RaceListViewState extends State<RaceListView> {
         _selectedType != null || _selectedDifficulty != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFCF8),
+      backgroundColor: const Color(0xFFFDCF8),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1B3022),
         foregroundColor: Colors.white,
-        title: const Text('Courses d\'Orientation'),
+        title: Text(
+          widget.raidName != null
+              ? 'Courses - ${widget.raidName}'
+              : 'Courses d\'Orientation',
+        ),
         actions: [
           // Bouton tri
           IconButton(
@@ -233,132 +253,198 @@ class _RaceListViewState extends State<RaceListView> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Barre de filtres actifs
-          if (hasActiveFilters)
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: Colors.grey.shade100,
-              child: Row(
+      body: FutureBuilder<List<Race>>(
+        future: _racesFuture,
+        builder: (context, snapshot) {
+          // État: Chargement
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // État: Erreur
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (_selectedType != null)
-                          Chip(
-                            label: Text(_selectedType!),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () {
-                              setState(() {
-                                _selectedType = null;
-                                _applyFiltersAndSort();
-                              });
-                            },
-                          ),
-                        if (_selectedDifficulty != null)
-                          Chip(
-                            label: Text(_selectedDifficulty!),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () {
-                              setState(() {
-                                _selectedDifficulty = null;
-                                _applyFiltersAndSort();
-                              });
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _resetFilters,
-                    child: const Text('Tout effacer'),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Erreur: ${snapshot.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _loadRaces();
+                      });
+                    },
+                    child: const Text('Réessayer'),
                   ),
                 ],
               ),
-            ),
-          // Info résultats
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${_filteredRaces.length} course(s) trouvée(s)',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+            );
+          }
+
+          // État: Pas de données
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.event_busy, size: 64, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Aucune course disponible',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // État: Données disponibles
+          _allRaces = snapshot.data!;
+          if (_filteredRaces.isEmpty ||
+              _filteredRaces.length != _allRaces.length) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _applyFiltersAndSort();
+            });
+          }
+
+          return Column(
+            children: [
+              // Barre de filtres actifs
+              if (hasActiveFilters)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  color: Colors.grey.shade100,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (_selectedType != null)
+                              Chip(
+                                label: Text(_selectedType!),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                onDeleted: () {
+                                  setState(() {
+                                    _selectedType = null;
+                                    _applyFiltersAndSort();
+                                  });
+                                },
+                              ),
+                            if (_selectedDifficulty != null)
+                              Chip(
+                                label: Text(_selectedDifficulty!),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                onDeleted: () {
+                                  setState(() {
+                                    _selectedDifficulty = null;
+                                    _applyFiltersAndSort();
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _resetFilters,
+                        child: const Text('Tout effacer'),
+                      ),
+                    ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _sortByDate = !_sortByDate;
-                      _applyFiltersAndSort();
-                    });
-                  },
-                  icon: const Icon(Icons.sort),
-                  label: Text(_sortByDate ? 'Par date' : 'Par défaut'),
+              // Info résultats
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-              ],
-            ),
-          ),
-          // Liste des courses
-          Expanded(
-            child: _filteredRaces.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Aucune course trouvée',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(color: Colors.grey.shade600),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Essayez de modifier vos filtres',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey.shade500),
-                        ),
-                        const SizedBox(height: 24),
-                        if (hasActiveFilters)
-                          ElevatedButton.icon(
-                            onPressed: _resetFilters,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Réinitialiser les filtres'),
-                          ),
-                      ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${_filteredRaces.length} course(s) trouvée(s)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: _filteredRaces.length,
-                    itemBuilder: (context, index) {
-                      final race = _filteredRaces[index];
-                      return RaceCard(
-                        race: race,
-                        onTap: () {
-                          // TODO: Navigation vers les détails de la course
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Détails de la course #${race.id}'),
-                              duration: const Duration(seconds: 2),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _sortByDate = !_sortByDate;
+                          _applyFiltersAndSort();
+                        });
+                      },
+                      icon: const Icon(Icons.sort),
+                      label: Text(_sortByDate ? 'Par date' : 'Par défaut'),
+                    ),
+                  ],
+                ),
+              ),
+              // Liste des courses
+              Expanded(
+                child: _filteredRaces.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: Colors.grey.shade400,
                             ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Aucune course trouvée',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(color: Colors.grey.shade600),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Essayez de modifier vos filtres',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.grey.shade500),
+                            ),
+                            const SizedBox(height: 24),
+                            if (hasActiveFilters)
+                              ElevatedButton.icon(
+                                onPressed: _resetFilters,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Réinitialiser les filtres'),
+                              ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: _filteredRaces.length,
+                        itemBuilder: (context, index) {
+                          final race = _filteredRaces[index];
+                          return RaceCard(
+                            race: race,
+                            onTap: () {
+                              // TODO: Navigation vers les détails de la course
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Détails de la course #${race.id}',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                  ),
-          ),
-        ],
+                      ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {

@@ -1,21 +1,26 @@
-import 'package:sae5_g13_mobile/features/races/domain/RaceRepository.dart';
-import 'package:sae5_g13_mobile/features/races/domain/models/Race.dart';
+import '../../domain/RaceRepository.dart';
+import '../../domain/models/Race.dart';
+import '../datasources/RaceApiSources.dart';
+import '../datasources/RaceLocalSources.dart';
 
-class RacesrepositoryImpl implements RacesRepository {
-  // TODO: Implémenter les data sources
-  // final RaceApiDataSource api;
-  // final RaceLocalDataSource local;
+class RacesRepositoryImpl implements RacesRepository {
+  final RaceApiSources apiSources;
+  final RaceLocalSources localSources;
+
+  RacesRepositoryImpl({required this.apiSources, required this.localSources});
 
   @override
   Future<List<Race>> getRaces() async {
-    // TODO: Implémenter la logique avec les data sources
-    return [];
-    // try {
-    //   final remote = await api.fetchRaces();
-    //   await local.saveRaces(remote);
-    //   return remote;
-    // } catch (_) {
-    //   return local.getRaces();
-    // }
+    return await localSources.getAllRaces();
+  }
+
+  @override
+  Future<List<Race>> getRacesByRaidId(int raidId) async {
+    return await localSources.getRacesByRaidId(raidId);
+  }
+
+  @override
+  Future<Race?> getRaceById(int id) async {
+    return await localSources.getRaceById(id);
   }
 }

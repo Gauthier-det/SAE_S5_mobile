@@ -1,6 +1,12 @@
 import 'models/Race.dart';
 
 abstract class RacesRepository {
+  /// Récupère toutes les courses
   Future<List<Race>> getRaces();
-  // (ou getRacesByRaid, etc. selon ton choix)
+  
+  /// Récupère les courses d'un raid spécifique
+  Future<List<Race>> getRacesByRaidId(int raidId);
+  
+  /// Récupère une course par son ID
+  Future<Race?> getRaceById(int id);
 }
