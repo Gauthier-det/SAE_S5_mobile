@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/races/presentation/RaceListView.dart';
 
 /// Entry point of the Sanglier Explorer application
 void main() {
@@ -102,7 +103,12 @@ class HomePage extends StatelessWidget {
               // Primary CTA Button - Orange Balise
               ElevatedButton(
                 onPressed: () {
-                  // Navigate to races
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RaceListView(),
+                    ),
+                  );
                 },
                 child: const Text('VOIR LES COURSES'),
               ),
