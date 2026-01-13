@@ -4,50 +4,33 @@ import 'package:provider/provider.dart';
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/theme/app_theme.dart';
-import 'features/raids/data/datasources/raid_api_sources.dart';
-import 'features/raids/data/datasources/raid_local_sources.dart';
-import 'features/raids/data/repositories/raid_repository_impl.dart';
-import 'features/raids/domain/raid_repository.dart';
-import 'features/raids/presentation/raid_list_view.dart';
+import 'features/races/presentation/RaceListView.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
 
 /// Entry point of the Sanglier Explorer application
 void main() async {
+  // Ensure Flutter bindings are initialized before using async operations
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialiser la base de données
-  final database = await DatabaseHelper.database;
-  
-  // Créer les datasources
-  final apiSources = RaidApiSources(
-    baseUrl: AppConfig.apiBaseUrl, // Ajoute cette constante dans AppConfig
-  );
-  
-  final localSources = RaidLocalSources(
-    database: database,
-  );
-  
-  // Créer le repository
-  final raidRepository = RaidRepositoryImpl(
-    apiSources: apiSources,
-    localSources: localSources,
-  );
-  
-  runApp(SanglierExplorerApp(raidRepository: raidRepository));
+  // Initialize AuthProvider
+  final authProvider = await AuthProvider.create();
+  runApp(SanglierExplorerApp(authProvider: authProvider));
 }
 
 /// Root widget of the application
 ///
 /// Configures the MaterialApp with:
 /// - Custom theme
-/// - Navigation
-/// - Home page
-/// - Dependency injection via Provider
+/// - Provider for state management
+/// - Navigation based on authentication status
 class SanglierExplorerApp extends StatelessWidget {
-  final RaidRepository raidRepository;
-  
+  final AuthProvider authProvider;
+
   const SanglierExplorerApp({
+    required this.authProvider,
     super.key,
-    required this.raidRepository,
   });
 
   @override
@@ -64,12 +47,9 @@ class SanglierExplorerApp extends StatelessWidget {
   }
 }
 
-/// Application home page (temporary placeholder/demo)
+/// Application home page
 ///
-/// This screen is a simple landing page used to showcase the current
-/// theme setup (typography, colors, buttons, and AppBar styling) while
-/// the real navigation flow is being implemented.
-///
+/// This screen is the main landing page of the application.
 /// Displays:
 /// - Welcome message with hero title
 /// - Description text
@@ -83,43 +63,80 @@ class HomePage extends StatelessWidget {
     final theme = Theme.of(context);
     final repository = Provider.of<RaidRepository>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppConfig.appName),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () {
-              // Navigate to profile
-            },
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        final user = authProvider.currentUser;
+        final isAuthenticated = authProvider.isAuthenticated;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(AppConfig.appName),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  isAuthenticated ? Icons.account_circle : Icons.login,
+                ),
+                tooltip: isAuthenticated ? 'Profil' : 'Se connecter',
+                onPressed: () {
+                  if (isAuthenticated) {
+                    // Show profile menu
+                    showMenu<dynamic>(
+                      context: context,
+                      position: const RelativeRect.fromLTRB(1000, 80, 0, 0),
+                      items: <PopupMenuEntry<dynamic>>[
+                        PopupMenuItem<dynamic>(
+                          enabled: false,
+                          child: ListTile(
+                            leading: const Icon(Icons.person),
+                            title: Text(user?.fullName ?? ''),
+                            subtitle: Text(user?.email ?? ''),
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        PopupMenuItem<dynamic>(
+                          child: const ListTile(
+                            leading: Icon(Icons.logout),
+                            title: Text('Se déconnecter'),
+                          ),
+                          onTap: () async {
+                            await authProvider.logout();
+                          },
+                        ),
+                      ],
+                    );
+                  } else {
+                    // Navigate to login
+                    Navigator.of(context).pushNamed('/login');
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
 
-              // Hero Title - Archivo Black
-              Text(
-                'Bienvenue',
-                style: theme.textTheme.displayMedium,
-                textAlign: TextAlign.center,
-              ),
+                  // Hero Title
+                  Text(
+                    isAuthenticated
+                        ? 'Bienvenue ${user?.firstName}!'
+                        : 'Bienvenue',
+                    style: theme.textTheme.displayMedium,
+                    textAlign: TextAlign.center,
+                  ),
 
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // Subtitle - Inter
-              Text(
-                'Application de gestion de courses d\'orientation',
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 8),
+                  // Subtitle
+                  Text(
+                    'Application de gestion de courses d\'orientation',
+                    style: theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
 
               // Additional info
               Text(
@@ -130,7 +147,14 @@ class HomePage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 48),
+                  // Additional info
+                  Text(
+                    'Explorez la nature, défiez-vous et progressez',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
 
               // Primary CTA Button - Orange Balise
               ElevatedButton(
@@ -145,6 +169,7 @@ class HomePage extends StatelessWidget {
                 },
                 child: const Text('VOIR LES RAIDS'),
               ),
+                  const SizedBox(height: 48),
 
               // Tertiary Button - Text
               TextButton(
@@ -168,10 +193,10 @@ class HomePage extends StatelessWidget {
                   backgroundColor: Colors.red,
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
