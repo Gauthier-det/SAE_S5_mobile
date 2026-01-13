@@ -1,5 +1,6 @@
+import 'package:sae5_g13_mobile/core/database/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../domain/models/race.dart';
+import '../../domain/race.dart';
 
 class RaceLocalSources {
   final Database database;
@@ -33,6 +34,18 @@ class RaceLocalSources {
       throw Exception('Database error: $e');
     }
   }
+
+  Future<int> getRegisteredTeamsCount(int raceId) async {
+  final db = await DatabaseHelper.database;
+  
+  final result = await db.rawQuery('''
+    SELECT COUNT(*) as count
+    FROM SAN_TEAMS_RACES
+    WHERE RAC_ID = ?
+  ''', [raceId]);
+  
+  return Sqflite.firstIntValue(result) ?? 0;
+}
 
   /// Récupère une course par son ID
   Future<Race?> getRaceById(int id) async {
