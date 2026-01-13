@@ -25,8 +25,8 @@ class Race {
   final double? mealPrice; // RAC_MEAL_PRICE
   final String? results; // RAC_RESULTS
   final int ageMin; // RAC_AGE_MIN
-  final String ageMiddle; // RAC_AGE_MIDDLE
-  final String ageMax; // RAC_AGE_MAX
+  final int ageMiddle; // RAC_AGE_MIDDLE
+  final int ageMax; // RAC_AGE_MAX
 
   Race({
     required this.id,
@@ -62,26 +62,30 @@ class Race {
   /// Conversion depuis JSON (API/Base de données)
   factory Race.fromJson(Map<String, dynamic> json) {
     return Race(
-      id: json['RAC_ID'] as int,
-      userId: json['USE_ID'] as int,
-      raidId: json['RAI_ID'] as int,
-      startDate: DateTime.parse(json['RAC_TIME_START'] as String),
-      endDate: DateTime.parse(json['RAC_TIME_END'] as String),
-      type: json['RAC_TYPE'] as String,
-      duration: json['RAC_DURATION'] as int,
-      difficulty: json['RAC_DIFFICULTY'] as String,
-      minParticipants: json['RAC_MIN_PARTICIPANTS'] as int,
-      maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int,
-      minTeams: json['RAC_MIN_TEAMS'] as int,
-      maxTeams: json['RAC_MAX_TEAMS'] as int,
-      teamMembers: json['RAC_TEAM_MEMBERS'] as int,
+      id: json['RAC_ID'] as int? ?? 0,
+      userId: json['USE_ID'] as int? ?? 0,
+      raidId: json['RAI_ID'] as int? ?? 0,
+      startDate: json['RAC_TIME_START'] != null
+          ? DateTime.parse(json['RAC_TIME_START'] as String)
+          : DateTime.now(),
+      endDate: json['RAC_TIME_END'] != null
+          ? DateTime.parse(json['RAC_TIME_END'] as String)
+          : DateTime.now(),
+      type: json['RAC_TYPE'] as String? ?? '',
+      duration: json['RAC_DURATION'] as int? ?? 0,
+      difficulty: json['RAC_DIFFICULTY'] as String? ?? '',
+      minParticipants: json['RAC_MIN_PARTICIPANTS'] as int? ?? 0,
+      maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int? ?? 0,
+      minTeams: json['RAC_MIN_TEAMS'] as int? ?? 0,
+      maxTeams: json['RAC_MAX_TEAMS'] as int? ?? 0,
+      teamMembers: json['RAC_TEAM_MEMBERS'] as int? ?? 0,
       mealPrice: json['RAC_MEAL_PRICE'] != null
           ? (json['RAC_MEAL_PRICE'] as num).toDouble()
           : null,
       results: json['RAC_RESULTS'] as String?,
-      ageMin: json['RAC_AGE_MIN'] as int,
-      ageMiddle: json['RAC_AGE_MIDDLE'] as String,
-      ageMax: json['RAC_AGE_MAX'] as String,
+      ageMin: json['RAC_AGE_MIN'] as int? ?? 0,
+      ageMiddle: json['RAC_AGE_MIDDLE'] as int? ?? 0,
+      ageMax: json['RAC_AGE_MAX'] as int? ?? 0,
     );
   }
 
@@ -127,8 +131,8 @@ class Race {
     double? mealPrice,
     String? results,
     int? ageMin,
-    String? ageMiddle,
-    String? ageMax,
+    int? ageMiddle,
+    int? ageMax,
   }) {
     return Race(
       id: id ?? this.id,

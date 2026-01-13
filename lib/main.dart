@@ -9,10 +9,10 @@ import 'features/raids/domain/raid_repository.dart';
 import 'features/raids/data/repositories/raid_repository_impl.dart';
 import 'features/raids/data/datasources/raid_api_sources.dart';
 import 'features/raids/data/datasources/raid_local_sources.dart';
-import 'features/races/domain/RaceRepository.dart';
-import 'features/races/data/repositories/RaceRepositoryImpl.dart';
-import 'features/races/data/datasources/RaceApiSources.dart';
-import 'features/races/data/datasources/RaceLocalSources.dart';
+import 'features/races/domain/race_repository.dart';
+import 'features/races/data/repositories/race_repository_impl.dart';
+import 'features/races/data/datasources/race_api_sources.dart';
+import 'features/races/data/datasources/race_local_sources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 
 /// Entry point of the Sanglier Explorer application
