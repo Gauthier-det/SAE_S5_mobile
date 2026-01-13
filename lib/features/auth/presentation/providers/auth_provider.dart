@@ -134,6 +134,12 @@ class AuthProvider extends ChangeNotifier {
   Future<void> updateProfile({
     String? firstName,
     String? lastName,
+    String? phoneNumber,
+    String? birthDate,
+    String? club,
+    String? licenceNumber,
+    String? ppsNumber,
+    String? chipNumber,
     String? profileImageUrl,
   }) async {
     _isLoading = true;
@@ -144,6 +150,12 @@ class AuthProvider extends ChangeNotifier {
       final updatedUser = await _repository.updateProfile(
         firstName: firstName,
         lastName: lastName,
+        phoneNumber: phoneNumber,
+        birthDate: birthDate,
+        club: club,
+        licenceNumber: licenceNumber,
+        ppsNumber: ppsNumber,
+        chipNumber: chipNumber,
         profileImageUrl: profileImageUrl,
       );
       _currentUser = updatedUser;

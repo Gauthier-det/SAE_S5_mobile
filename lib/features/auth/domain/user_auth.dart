@@ -8,6 +8,9 @@ class User {
   final String? birthDate;
   final String? phoneNumber;
   final String? licenceNumber;
+  final String? club;
+  final String? ppsNumber;
+  final String? chipNumber;
   final DateTime createdAt;
 
   User({
@@ -18,6 +21,9 @@ class User {
     this.birthDate,
     this.phoneNumber,
     this.licenceNumber,
+    this.club,
+    this.ppsNumber,
+    this.chipNumber,
     this.profileImageUrl,
     required this.createdAt,
   });
@@ -34,6 +40,9 @@ class User {
     String? birthDate,
     String? phoneNumber,
     String? licenceNumber,
+    String? club,
+    String? ppsNumber,
+    String? chipNumber,
     String? profileImageUrl,
     DateTime? createdAt,
   }) {
@@ -45,6 +54,9 @@ class User {
       birthDate: birthDate ?? this.birthDate,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       licenceNumber: licenceNumber ?? this.licenceNumber,
+      club: club ?? this.club,
+      ppsNumber: ppsNumber ?? this.ppsNumber,
+      chipNumber: chipNumber ?? this.chipNumber,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -60,6 +72,9 @@ class User {
       'birthDate': birthDate,
       'phoneNumber': phoneNumber,
       'licenceNumber': licenceNumber,
+      'club': club,
+      'ppsNumber': ppsNumber,
+      'chipNumber': chipNumber,
       'profileImageUrl': profileImageUrl,
       'createdAt': createdAt.toIso8601String(),
     };
@@ -75,6 +90,9 @@ class User {
       birthDate: json['birthDate'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
       licenceNumber: json['licenceNumber'] as String?,
+      club: json['club'] as String?,
+      ppsNumber: json['ppsNumber'] as String?,
+      chipNumber: json['chipNumber'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );

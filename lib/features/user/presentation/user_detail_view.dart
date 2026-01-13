@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -97,26 +98,67 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         ListTile(
-                          leading: Icon(Icons.person, color: theme.colorScheme.primary),
-                          title: const Text('Prénom'),
-                          subtitle: Text(user.firstName),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
                           leading: Icon(Icons.person_outline, color: theme.colorScheme.primary),
                           title: const Text('Nom'),
                           subtitle: Text(user.lastName),
                         ),
                         const Divider(height: 1),
                         ListTile(
+                          leading: Icon(Icons.person, color: theme.colorScheme.primary),
+                          title: const Text('Prénom'),
+                          subtitle: Text(user.firstName),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
                           leading: Icon(Icons.email, color: theme.colorScheme.primary),
                           title: const Text('Email'),
                           subtitle: Text(user.email),
+                          trailing: Icon(
+                            Icons.lock,
+                            size: 16,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.phone, color: theme.colorScheme.primary),
+                          title: const Text('Téléphone'),
+                          subtitle: Text(user.phoneNumber ?? 'Non renseigné'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.cake, color: theme.colorScheme.primary),
+                          title: const Text('Âge'),
+                          subtitle: Text(_calculateAge(user.birthDate)),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.groups, color: theme.colorScheme.primary),
+                          title: const Text('Club'),
+                          subtitle: Text(user.club ?? 'Non renseigné'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.badge, color: theme.colorScheme.primary),
+                          title: const Text('Numéro de licence'),
+                          subtitle: Text(user.licenceNumber ?? 'Non renseigné'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.numbers, color: theme.colorScheme.primary),
+                          title: const Text('Numéro PPS'),
+                          subtitle: Text(user.ppsNumber ?? 'Non renseigné'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.memory, color: theme.colorScheme.primary),
+                          title: const Text('Numéro de puce'),
+                          subtitle: Text(user.chipNumber ?? 'Non renseigné'),
                         ),
                         const Divider(height: 1),
                         ListTile(
                           leading: Icon(Icons.calendar_today, color: theme.colorScheme.primary),
-                          title: const Text('Membre depuis'),
+                          title: const Text('Date de création du compte'),
                           subtitle: Text(
                             _formatDate(user.createdAt),
                           ),
@@ -133,10 +175,9 @@ class ProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: Navigate to edit profile screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Modification du profil à venir'),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const EditProfileScreen(),
                         ),
                       );
                     },
@@ -163,5 +204,23 @@ class ProfileScreen extends StatelessWidget {
       'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _calculateAge(String? birthDate) {
+    if (birthDate == null || birthDate.isEmpty) {
+      return 'Non renseigné';
+    }
+    try {
+      final birth = DateTime.parse(birthDate);
+      final now = DateTime.now();
+      int age = now.year - birth.year;
+      if (now.month < birth.month || 
+          (now.month == birth.month && now.day < birth.day)) {
+        age--;
+      }
+      return '$age ans';
+    } catch (e) {
+      return 'Non renseigné';
+    }
   }
 }
