@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/config/app_config.dart';
+import 'core/database/database_helper.dart';
 import 'core/theme/app_theme.dart';
 import 'features/races/presentation/RaceListView.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -34,18 +35,13 @@ class SanglierExplorerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<AuthProvider>.value(
-      value: authProvider,
+    return Provider<RaidRepository>.value(
+      value: raidRepository,
       child: MaterialApp(
         title: '${AppConfig.appName} - Course d\'Orientation',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const HomePage(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const HomePage(),
-        },
       ),
     );
   }
@@ -55,15 +51,17 @@ class SanglierExplorerApp extends StatelessWidget {
 ///
 /// This screen is the main landing page of the application.
 /// Displays:
-/// - Welcome message
-/// - Information about the app
-/// - Login/Profile icon in AppBar
+/// - Welcome message with hero title
+/// - Description text
+/// - Call-to-action buttons showcasing theme
+/// - AppBar with Sanglier Explorer branding
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final repository = Provider.of<RaidRepository>(context, listen: false);
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
@@ -140,7 +138,14 @@ class HomePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: 8),
+              // Additional info
+              Text(
+                'Explorez la nature, défiez-vous et progressez',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(),
+                ),
+                textAlign: TextAlign.center,
+              ),
 
                   // Additional info
                   Text(
@@ -154,76 +159,39 @@ class HomePage extends StatelessWidget {
               // Primary CTA Button - Orange Balise
               ElevatedButton(
                 onPressed: () {
+                  // Navigate to raid list
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const RaceListView(),
+                      builder: (context) => RaidListView(repository: repository),
                     ),
                   );
                 },
-                child: const Text('VOIR LES COURSES'),
+                child: const Text('VOIR LES RAIDS'),
               ),
                   const SizedBox(height: 48),
 
-                  // User info (only if authenticated)
-                  if (isAuthenticated) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Profil utilisateur',
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Nom: ${user?.fullName}',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Email: ${user?.email}',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                  ],
+              // Tertiary Button - Text
+              TextButton(
+                onPressed: () {
+                  // Navigate to info
+                },
+                child: const Text('EN SAVOIR PLUS'),
 
-                  // Primary CTA Button
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to races
-                    },
-                    child: const Text('VOIR LES COURSES'),
-                  ),
-
-                  // Tertiary Button
-                  TextButton(
-                    onPressed: () {
-                      // Navigate to info
-                    },
-                    child: const Text('EN SAVOIR PLUS'),
-                  ),
-
-                  // Login button if not authenticated
-                  if (!isAuthenticated) ...[
-                    const SizedBox(height: 32),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed('/login');
-                      },
-                      icon: const Icon(Icons.login),
-                      label: const Text('Se connecter'),
-                    ),
-                  ],
-                ],
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await DatabaseHelper.resetDatabase();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Base de données réinitialisée !')),
+                  );
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('RESET DATABASE'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
               ),
             ),
           ),
