@@ -33,7 +33,7 @@ import 'features/club/presentation/providers/club_provider.dart';
 import 'features/club/presentation/screens/club_list_screen.dart';
 import 'features/Home.dart';
 
-/// Entry point of the Orient''Action application
+/// Entry point of the Orient'\Action application
 void main() async {
   // Ensure Flutter bindings are initialized before using async operations
   WidgetsFlutterBinding.ensureInitialized();

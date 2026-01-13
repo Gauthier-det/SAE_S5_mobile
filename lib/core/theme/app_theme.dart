@@ -5,7 +5,7 @@ import 'app_typography.dart';
 
 /// Application theme configuration
 ///
-/// Configuration complète du thème Orient''Action avec :
+/// Configuration complète du thème Orient'\Action avec :
 /// - Palette de couleurs nature/forêt
 /// - Typographies Google Fonts (Archivo Black + Inter)
 /// - Composants UI personnalisés
