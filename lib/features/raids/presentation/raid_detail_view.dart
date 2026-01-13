@@ -1,10 +1,13 @@
 // lib/features/raids/presentation/RaidDetailView.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
+import '../../races/presentation/RaceListView.dart';
+import '../../races/domain/RaceRepository.dart';
 
 /// StatefulWidget that displays complete details of a raid
-/// 
+///
 /// Takes as parameters:
 /// - raidId: the ID of the raid to display
 /// - repository: the repository to fetch data (follows clean architecture pattern)
@@ -41,10 +44,8 @@ class _RaidDetailViewState extends State<RaidDetailView> {
   Widget build(BuildContext context) {
     return Scaffold(
       // AppBar at the top of the screen
-      appBar: AppBar(
-        title: const Text('Détails du Raid'),
-      ),
-      
+      appBar: AppBar(title: const Text('Détails du Raid')),
+
       // FutureBuilder: widget that rebuilds automatically based on Future state
       // Handles 3 states: loading (waiting), error (error), success (data available)
       body: FutureBuilder<Raid?>(
@@ -69,7 +70,9 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _raidFuture = widget.repository.getRaidById(widget.raidId);
+                        _raidFuture = widget.repository.getRaidById(
+                          widget.raidId,
+                        );
                       });
                     },
                     child: const Text('Réessayer'),
@@ -81,14 +84,12 @@ class _RaidDetailViewState extends State<RaidDetailView> {
 
           // State 3a: SUCCESS but data is null or empty
           if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(
-              child: Text('Raid introuvable'),
-            );
+            return const Center(child: Text('Raid introuvable'));
           }
 
           // State 3b: SUCCESS with data available
           final raid = snapshot.data!;
-          
+
           // SingleChildScrollView: makes the content scrollable if it exceeds screen height
           return SingleChildScrollView(
             child: Column(
@@ -121,9 +122,8 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                       // Raid name - styled as main title
                       Text(
                         raid.name,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 24),
 
@@ -133,7 +133,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                         icon: Icons.calendar_today,
                         title: 'Dates de l\'événement',
                         children: [
-                          _buildInfoRow('Début', _formatDateTime(raid.timeStart)),
+                          _buildInfoRow(
+                            'Début',
+                            _formatDateTime(raid.timeStart),
+                          ),
                           _buildInfoRow('Fin', _formatDateTime(raid.timeEnd)),
                         ],
                       ),
@@ -146,8 +149,14 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                         icon: Icons.app_registration,
                         title: 'Inscriptions',
                         children: [
-                          _buildInfoRow('Ouverture', _formatDateTime(raid.registrationStart)),
-                          _buildInfoRow('Clôture', _formatDateTime(raid.registrationEnd)),
+                          _buildInfoRow(
+                            'Ouverture',
+                            _formatDateTime(raid.registrationStart),
+                          ),
+                          _buildInfoRow(
+                            'Clôture',
+                            _formatDateTime(raid.registrationEnd),
+                          ),
                           // Status with dynamic color based on current date
                           _buildInfoRow(
                             'Statut',
@@ -176,26 +185,29 @@ class _RaidDetailViewState extends State<RaidDetailView> {
 
                       const SizedBox(height: 24),
 
-                      // Registration button
-                      // Enabled only if registrations are open
+                      // Button to view races for this raid
                       SizedBox(
                         width: double.infinity, // Full width button
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            /*Navigator.push(
+                            final raceRepository = Provider.of<RacesRepository>(
+                              context,
+                              listen: false,
+                            );
+                            Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => RaceListView(raidId: raid.id),
+                                builder: (context) => RaceListView(
+                                  repository: raceRepository,
+                                  raidId: raid.id,
+                                  raidName: raid.name,
+                                ),
                               ),
-                            );*/
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Chargement des courses...')),
                             );
                           },
                           icon: const Icon(Icons.directions_run),
-                          label: const Text('VOIR LES COURSES'), // ← Ici pour les races/courses
+                          label: const Text('VOIR LES COURSES'),
                         ),
-                        
                       ),
                     ],
                   ),
@@ -231,8 +243,8 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -254,13 +266,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Label (left side, grey color)
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
-          ),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
           // Value (right side, flexible to handle long text)
           Flexible(
             child: Text(
@@ -282,8 +288,18 @@ class _RaidDetailViewState extends State<RaidDetailView> {
   /// Example: "13 janvier 2026 à 10h30"
   String _formatDateTime(DateTime dateTime) {
     final months = [
-      'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
     ];
     return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year} à ${dateTime.hour}h${dateTime.minute.toString().padLeft(2, '0')}';
   }
@@ -312,12 +328,5 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     } else {
       return Colors.green;
     }
-  }
-
-  /// Checks if registration is currently open
-  /// Used to enable/disable the registration button
-  bool _isRegistrationOpen(Raid raid) {
-    final now = DateTime.now();
-    return now.isAfter(raid.registrationStart) && now.isBefore(raid.registrationEnd);
   }
 }

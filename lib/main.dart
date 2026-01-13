@@ -9,6 +9,10 @@ import 'features/raids/domain/raid_repository.dart';
 import 'features/raids/data/repositories/raid_repository_impl.dart';
 import 'features/raids/data/datasources/raid_api_sources.dart';
 import 'features/raids/data/datasources/raid_local_sources.dart';
+import 'features/races/domain/RaceRepository.dart';
+import 'features/races/data/repositories/RaceRepositoryImpl.dart';
+import 'features/races/data/datasources/RaceApiSources.dart';
+import 'features/races/data/datasources/RaceLocalSources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 
 /// Entry point of the Sanglier Explorer application
@@ -34,8 +38,8 @@ class SanglierExplorerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<RaidRepository>(
-      future: _createRaidRepository(),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _createRepositories(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const MaterialApp(
@@ -46,7 +50,12 @@ class SanglierExplorerApp extends StatelessWidget {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-            Provider<RaidRepository>.value(value: snapshot.data!),
+            Provider<RaidRepository>.value(
+              value: snapshot.data!['raidRepository'],
+            ),
+            Provider<RacesRepository>.value(
+              value: snapshot.data!['raceRepository'],
+            ),
           ],
           child: MaterialApp(
             title: '${AppConfig.appName} - Course d\'Orientation',
@@ -59,12 +68,18 @@ class SanglierExplorerApp extends StatelessWidget {
     );
   }
 
-  Future<RaidRepository> _createRaidRepository() async {
+  Future<Map<String, dynamic>> _createRepositories() async {
     final db = await DatabaseHelper.database;
-    return RaidRepositoryImpl(
-      apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: RaidLocalSources(database: db),
-    );
+    return {
+      'raidRepository': RaidRepositoryImpl(
+        apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: RaidLocalSources(database: db),
+      ),
+      'raceRepository': RacesRepositoryImpl(
+        apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: RaceLocalSources(database: db),
+      ),
+    };
   }
 }
 
