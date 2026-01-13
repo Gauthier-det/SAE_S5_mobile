@@ -17,7 +17,7 @@ class RaidRepositoryImpl implements RaidRepository {
   Future<Raid?> getRaidById(int id) async {
     try {
       // Tentative de récupération depuis l'API
-      final remoteRaid = await apiSources.getRaidById(id);
+      /*final remoteRaid = await apiSources.getRaidById(id);
       
       if (remoteRaid != null) {
         // Sauvegarde en cache local
@@ -25,7 +25,8 @@ class RaidRepositoryImpl implements RaidRepository {
         return remoteRaid;
       }
       
-      return null;
+      return null;*/
+      return await localSources.getRaidById(id);
     } catch (e) {
       print('API fetch failed: $e. Falling back to local cache...');
       
@@ -33,7 +34,6 @@ class RaidRepositoryImpl implements RaidRepository {
       try {
         return await localSources.getRaidById(id);
       } catch (localError) {
-        print('Local fetch failed: $localError');
         rethrow;
       }
     }
@@ -43,21 +43,20 @@ class RaidRepositoryImpl implements RaidRepository {
   Future<List<Raid>> getAllRaids() async {
     try {
       // Récupération depuis l'API
-      final remoteRaids = await apiSources.getAllRaids();
+      /*final remoteRaids = await apiSources.getAllRaids();
       
       // Mise à jour du cache local
       await localSources.clearAllRaids();
       await localSources.insertRaids(remoteRaids);
       
-      return remoteRaids;
+      return remoteRaids;*/
+      return await localSources.getAllRaids();
     } catch (e) {
-      print('API fetch failed: $e. Using local cache...');
       
       // Fallback sur le cache local
       try {
         return await localSources.getAllRaids();
       } catch (localError) {
-        print('Local fetch failed: $localError');
         return [];
       }
     }
@@ -69,10 +68,10 @@ class RaidRepositoryImpl implements RaidRepository {
     await localSources.insertRaid(raid);
     
     // Envoyer à l'API (si disponible)
-    try {
+    /*try {
       await apiSources.createRaid(raid);
     } catch (e) {
       print('API sync failed, saved locally: $e');
-    }
+    }*/
   }
 }

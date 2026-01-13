@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Palette de couleurs Sanglier Explorer
+/// Palette de couleurs Orient''Action
 ///
 /// Inspirée par la nature et l'orientation forestière
 class AppColors {

@@ -1,9 +1,13 @@
 // lib/features/raids/presentation/raid_list_view.dart
 import 'package:flutter/material.dart';
+import 'package:sae5_g13_mobile/core/database/database_helper.dart';
+import 'package:sae5_g13_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sae5_g13_mobile/features/user/domain/user_repository.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
 import 'raid_detail_view.dart';
 import 'raid_creation_view.dart';
+import 'package:provider/provider.dart';
 
 /// StatefulWidget that displays a scrollable list of available raids
 /// 
@@ -277,27 +281,86 @@ class _RaidListViewState extends State<RaidListView> {
       ),
       
       // FloatingActionButton to create new raid
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RaidCreateView(
-                repository: widget.repository,
-              ),
-            ),
-          );
-          
-          if (result == true && mounted) {
-            setState(() {
-              _raidsFuture = widget.repository.getAllRaids();
-            });
+      floatingActionButton: FutureBuilder<bool>(
+        future: _canCreateRaid(),
+        builder: (context, snapshot) {
+          // Ne rien afficher pendant le chargement ou si pas autorisé
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox.shrink();
           }
+          
+          // Vérifier si l'utilisateur peut créer un raid
+          if (snapshot.data != true) {
+            return const SizedBox.shrink(); // Bouton caché
+          }
+          
+          // Afficher le bouton si autorisé
+          return FloatingActionButton.extended(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RaidCreateView(
+                    repository: widget.repository,
+                  ),
+                ),
+              );
+              
+              if (result == true && mounted) {
+                setState(() {
+                  _raidsFuture = widget.repository.getAllRaids();
+                });
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('CRÉER UN RAID'),
+          );
         },
-        icon: const Icon(Icons.add),
-        label: const Text('CRÉER UN RAID'),
       ),
     );
+  }
+
+  // Méthode pour vérifier si l'utilisateur peut créer un raid
+  Future<bool> _canCreateRaid() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userRepository = Provider.of<UserRepository>(context, listen: false);
+      
+      final currentUser = authProvider.currentUser;
+      
+      print('DEBUG: Checking if user can create raid...');
+      print('DEBUG: currentUser email = ${currentUser?.email}');
+      
+      if (currentUser == null) {
+        print('DEBUG: currentUser is null');
+        return false;
+      }
+      
+      // CHERCHER l'utilisateur dans SQLite par email
+      final db = await DatabaseHelper.database;
+      final List<Map<String, dynamic>> users = await db.query(
+        'SAN_USERS',
+        where: 'USE_MAIL = ?',
+        whereArgs: [currentUser.email],
+        limit: 1,
+      );
+      
+      if (users.isEmpty) {
+        print('DEBUG: User not found in SQLite');
+        return false;
+      }
+      
+      final sqliteUserId = users.first['USE_ID'] as int;
+      print('DEBUG: Found SQLite user with ID = $sqliteUserId');
+      
+      final clubId = await userRepository.getUserClubId(sqliteUserId);
+      print('DEBUG: User clubId = $clubId');
+      
+      return clubId != null;
+    } catch (e) {
+      print('DEBUG ERROR in _canCreateRaid: $e');
+      return false;
+    }
   }
 
   /// Builds a reusable info row with icon, label and value

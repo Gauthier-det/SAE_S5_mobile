@@ -1,13 +1,14 @@
-// lib/features/raids/domain/address.dart
+// lib/features/address/domain/address.dart
+
 class Address {
-  final int id;
+  final int? id;
   final int postalCode;
   final String city;
   final String streetName;
   final String streetNumber;
 
   Address({
-    required this.id,
+    this.id,
     required this.postalCode,
     required this.city,
     required this.streetName,
@@ -16,19 +17,24 @@ class Address {
 
   factory Address.fromJson(Map<String, dynamic> json) {
     return Address(
-      id: json['ADD_ID'],
-      postalCode: json['ADD_POSTAL_CODE'],
-      city: json['ADD_CITY'],
-      streetName: json['ADD_STREET_NAME'],
-      streetNumber: json['ADD_STREET_NUMBER'],
+      id: json['ADD_ID'] as int?,
+      postalCode: json['ADD_POSTAL_CODE'] as int,
+      city: json['ADD_CITY'] as String,
+      streetName: json['ADD_STREET_NAME'] as String,
+      streetNumber: json['ADD_STREET_NUMBER'] as String,
     );
   }
 
-  /// Returns full address formatted as string
-  /// Example: "12 Rue des Marins, 50100 Cherbourg-en-Cotentin"
-  String get fullAddress => 
-      '$streetNumber $streetName, $postalCode $city';
-  
-  /// Returns city name only
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'ADD_ID': id,
+      'ADD_POSTAL_CODE': postalCode,
+      'ADD_CITY': city,
+      'ADD_STREET_NAME': streetName,
+      'ADD_STREET_NUMBER': streetNumber,
+    };
+  }
+
+  String get fullAddress => '$streetNumber $streetName, $postalCode $city';
   String get cityName => city;
 }

@@ -1,12 +1,15 @@
 // lib/features/raids/presentation/raid_create_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sae5_g13_mobile/core/database/database_helper.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
 import '../../user/domain/user_repository.dart';
 import '../../user/domain/user.dart';
 import '../../club/domain/club_repository.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
+import '../../address/domain/address.dart';
+import '../../address/domain/address_repository.dart';
 
 /// Page for creating a new raid
 /// Uses a StatefulWidget because we need to manage form state
@@ -30,6 +33,8 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _websiteController = TextEditingController();
+  Address? _selectedAddress;
+  List<Address> _addresses = [];
   
   // Variables to store selected dates
   // DateTime? means "can be null" (not yet selected)
@@ -49,19 +54,21 @@ class _RaidCreateViewState extends State<RaidCreateView> {
 
   @override
   void initState() {
-    super.initState();
+  super.initState();
     // Appeler après que le widget soit monté
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadClubData();
     });
   }
 
-  /// Load club ID and members
+    /// Load club ID and members
+    /// Load club ID and members
   Future<void> _loadClubData() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final userRepository = Provider.of<UserRepository>(context, listen: false);
       final clubRepository = Provider.of<ClubRepository>(context, listen: false);
+      final addressRepository = Provider.of<AddressRepository>(context, listen: false);
       
       final currentUser = authProvider.currentUser;
       
@@ -69,23 +76,41 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         throw Exception('Utilisateur non connecté');
       }
       
-      // Get user's club ID
-      final clubId = await userRepository.getUserClubId(currentUser.id as int);
+      final db = await DatabaseHelper.database;
+      final List<Map<String, dynamic>> users = await db.query(
+        'SAN_USERS',
+        where: 'USE_MAIL = ?',
+        whereArgs: [currentUser.email],
+        limit: 1,
+      );
+      
+      if (users.isEmpty) {
+        throw Exception('Utilisateur non trouvé dans la base de données');
+      }
+      
+      final sqliteUserId = users.first['USE_ID'] as int;
+      final clubId = await userRepository.getUserClubId(sqliteUserId);
       
       if (clubId == null) {
         throw Exception('Vous devez être responsable de club pour créer un raid');
       }
       
-      // Get club members
-      final members = await clubRepository.getClubMembers(clubId);
+      // Charger membres ET adresses en parallèle
+      final results = await Future.wait([
+        clubRepository.getClubMembers(clubId),
+        addressRepository.getAllAddresses(),
+      ]);
+      
+      final members = results[0] as List<User>;
+      final addresses = results[1] as List<Address>;
       
       if (mounted) {
         setState(() {
           _clubId = clubId;
           _clubMembers = members;
-          // Auto-select current user as raid manager
+          _addresses = addresses;
           _selectedRaidManager = members.firstWhere(
-            (m) => m.id == currentUser.id,
+            (m) => m.id == sqliteUserId,
             orElse: () => members.first,
           );
           _isLoadingMembers = false;
@@ -104,16 +129,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
     }
   }
 
-  /// Method called when the widget is destroyed
-  /// IMPORTANT: free memory from controllers
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _websiteController.dispose();
-    super.dispose();
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +192,50 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                         return null;
                       },
                     ),
-                    
+
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<Address>(
+                            value: _selectedAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Lieu du raid *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.location_on),
+                            ),
+                            items: _addresses.map((Address address) {
+                              return DropdownMenuItem<Address>(
+                                value: address,
+                                child: Text(
+                                  address.fullAddress,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (Address? newValue) {
+                              setState(() {
+                                _selectedAddress = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Veuillez sélectionner un lieu';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filled(
+                          onPressed: () => _showAddAddressDialog(),
+                          icon: const Icon(Icons.add),
+                          tooltip: 'Ajouter une adresse',
+                        ),
+                      ],
+                    ),
+
                     const SizedBox(height: 16),
                     
                     // Email field
@@ -325,6 +384,135 @@ class _RaidCreateViewState extends State<RaidCreateView> {
     );
   }
 
+  Future<void> _showAddAddressDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final streetNumberController = TextEditingController();
+    final streetNameController = TextEditingController();
+    final postalCodeController = TextEditingController();
+    final cityController = TextEditingController();
+
+    final result = await showDialog<Address>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nouvelle adresse'),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: streetNumberController,
+                  decoration: const InputDecoration(
+                    labelText: 'Numéro *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: streetNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Rue *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: postalCodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Code postal *',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Nombre invalide';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ville *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ANNULER'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final addressRepository = Provider.of<AddressRepository>(
+                  context,
+                  listen: false,
+                );
+                
+                final newAddress = Address(
+                  postalCode: int.parse(postalCodeController.text),
+                  city: cityController.text,
+                  streetName: streetNameController.text,
+                  streetNumber: streetNumberController.text,
+                );
+                
+                final id = await addressRepository.createAddress(newAddress);
+                
+                Navigator.pop(
+                  context,
+                  Address(
+                    id: id,
+                    postalCode: newAddress.postalCode,
+                    city: newAddress.city,
+                    streetName: newAddress.streetName,
+                    streetNumber: newAddress.streetNumber,
+                  ),
+                );
+              }
+            },
+            child: const Text('CRÉER'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _addresses.add(result);
+        _selectedAddress = result;
+      });
+    }
+  }
+
+
   /// Displays the native date picker followed by time picker
   /// async = asynchronous function that can "await" a response
   Future<void> _selectDate(
@@ -455,7 +643,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
       final newRaid = Raid(
         id: DateTime.now().millisecondsSinceEpoch, // Temporary ID
         clubId: _clubId!, // Use connected user's club
-        addressId: 1, // TODO: add address selection
+        addressId: _selectedAddress!.id!,
         userId: _selectedRaidManager!.id, // Use selected raid manager
         name: _nameController.text,
         email: _emailController.text.isEmpty ? null : _emailController.text,
@@ -495,4 +683,6 @@ class _RaidCreateViewState extends State<RaidCreateView> {
       }
     }
   }
+
+  
 }
