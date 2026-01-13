@@ -1,7 +1,7 @@
-import '../../domain/RaceRepository.dart';
-import '../../domain/models/Race.dart';
-import '../datasources/RaceApiSources.dart';
-import '../datasources/RaceLocalSources.dart';
+import '../../domain/race_repository.dart';
+import '../../domain/models/race.dart';
+import '../datasources/race_api_sources.dart';
+import '../datasources/race_local_sources.dart';
 
 class RacesRepositoryImpl implements RacesRepository {
   final RaceApiSources apiSources;

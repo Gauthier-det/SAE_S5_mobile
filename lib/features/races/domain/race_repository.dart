@@ -1,4 +1,4 @@
-import 'models/Race.dart';
+import 'models/race.dart';
 
 abstract class RacesRepository {
   /// Récupère toutes les courses
