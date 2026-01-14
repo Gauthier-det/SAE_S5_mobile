@@ -104,8 +104,8 @@ class TeamRepositoryImpl implements TeamRepository {
   }
 
   @override
-  Future<void> updateUserPPS(int userId, String? ppsForm) async {
-    await localSources.updateUserPPS(userId, ppsForm);
+  Future<void> updateUserPPS(int userId, String? ppsForm, int raceId) async {
+    await localSources.updateUserPPS(userId, ppsForm, raceId);
   }
 
   @override

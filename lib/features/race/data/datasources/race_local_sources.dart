@@ -99,4 +99,50 @@ class RaceLocalSources {
     });
   }
 
+   // Ajoute cette méthode pour vérifier le nombre de courses
+  Future<bool> canAddRaceToRaid(int raidId) async {
+    final db = await DatabaseHelper.database;
+    
+    // Récupérer le raid avec sa limite
+    final raidResult = await db.query(
+      'SAN_RAIDS',
+      columns: ['RAI_RACE_COUNT'],
+      where: 'RAI_ID = ?',
+      whereArgs: [raidId],
+      limit: 1,
+    );
+    
+    if (raidResult.isEmpty) return false;
+    
+    final maxRaces = raidResult.first['RAI_RACE_COUNT'] as int?;
+    
+    // Si pas de limite définie, autoriser
+    if (maxRaces == null) return true;
+    
+    // Compter le nombre de courses existantes
+    final countResult = await db.rawQuery('''
+      SELECT COUNT(*) as count
+      FROM SAN_RACES
+      WHERE RAI_ID = ?
+    ''', [raidId]);
+    
+    final currentCount = countResult.first['count'] as int;
+    
+    return currentCount < maxRaces;
+  }
+
+  Future<int?> getMaxRaceCount(int raidId) async {
+    final db = await DatabaseHelper.database;
+    
+    final raidResult = await db.query(
+      'SAN_RAIDS',
+      columns: ['RAI_RACE_COUNT'],
+      where: 'RAI_ID = ?',
+      whereArgs: [raidId],
+      limit: 1,
+    );
+    if (raidResult.isEmpty) return null;
+
+    return raidResult.first['RAI_RACE_COUNT'] as int?;
+  }
 }

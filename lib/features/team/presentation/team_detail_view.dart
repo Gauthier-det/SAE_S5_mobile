@@ -41,15 +41,33 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     _loadTeamDetails();
   }
 
-  bool _canManageTeam() {
-    return _team?.managerId == widget.currentUserId || widget.isRaceManager;
+  // ✅ Vérifie si l'utilisateur est le créateur de l'équipe
+  bool _isTeamCreator() {
+    return _team?.managerId == widget.currentUserId;
   }
 
+  // ✅ Vérifie si l'utilisateur peut gérer l'équipe (créateur OU responsable course)
+  bool _canManageTeam() {
+    return _isTeamCreator() || widget.isRaceManager;
+  }
+
+  // ✅ Vérifie si l'utilisateur peut modifier un membre spécifique
+  bool _canEditMember(int memberId) {
+    // Responsable de course ou créateur d'équipe → peut modifier tout le monde
+    if (widget.isRaceManager || _isTeamCreator()) {
+      return true;
+    }
+    // Sinon, peut modifier seulement soi-même
+    return memberId == widget.currentUserId;
+  }
+
+  // ✅ Vérifie si l'équipe peut être validée (tous les membres ont licence OU PPS)
   bool _canValidateTeam() {
     for (var member in _membersWithDetails) {
-      final hasLicence = member['USE_LICENCE_NUMBER'] != null;
-      final hasPPS = member['USE_PPS_FORM'] != null && 
-                     (member['USE_PPS_FORM'] as String).isNotEmpty;
+      final hasLicence = member['USE_LICENCE_NUMBER'] != null &&
+          (member['USE_LICENCE_NUMBER']) != null ;
+      final hasPPS = member['USR_PPS_FORM'] != null && 
+                     (member['USR_PPS_FORM'] as String).isNotEmpty;
       
       if (!hasLicence && !hasPPS) {
         return false;
@@ -89,13 +107,26 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   Future<void> _toggleTeamValidation() async {
+    // ✅ Seul le responsable de course peut valider/invalider
+    if (!widget.isRaceManager) {
+      _showSnackBar('Seul le responsable de la course peut valider l\'équipe');
+      return;
+    }
+
+    print('Toggling team validation for team ${widget.teamId}');
+
     final isCurrentlyValid = _team?.isValid ?? false;
     final action = isCurrentlyValid ? 'invalider' : 'valider';
+
+    print('Toggling team validation. Currently valid: $isCurrentlyValid');
+
     
     if (!isCurrentlyValid && !_canValidateTeam()) {
       _showValidationErrorDialog();
       return;
     }
+
+    print('User confirmed to $action the team');
 
     final confirm = await _showConfirmDialog(
       title: '${action[0].toUpperCase()}${action.substring(1)} l\'équipe',
@@ -135,6 +166,12 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   Future<void> _addMember() async {
+    // ✅ Seuls le créateur et le responsable peuvent ajouter des membres
+    if (!_canManageTeam()) {
+      _showSnackBar('Vous n\'avez pas la permission d\'ajouter des membres');
+      return;
+    }
+
     final availableUsers = await widget.repository.getAvailableUsersForRace(
       widget.raceId,
     );
@@ -172,6 +209,12 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   Future<void> _removeMember(int userId, String memberName) async {
+    // ✅ Seuls le créateur et le responsable peuvent retirer des membres
+    if (!_canManageTeam()) {
+      _showSnackBar('Vous n\'avez pas la permission de retirer des membres');
+      return;
+    }
+
     final confirm = await _showConfirmDialog(
       title: 'Retirer le membre',
       content: 'Êtes-vous sûr de vouloir retirer $memberName de l\'équipe ?',
@@ -196,6 +239,12 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   Future<void> _deleteTeam() async {
+    // ✅ Seul le responsable de course peut supprimer l'équipe
+    if (!widget.isRaceManager) {
+      _showSnackBar('Seul le responsable de la course peut supprimer l\'équipe');
+      return;
+    }
+
     final confirm = await _showConfirmDialog(
       title: 'Supprimer l\'équipe',
       content: 'Êtes-vous sûr de vouloir supprimer cette équipe ? Cette action est irréversible.',
@@ -220,6 +269,22 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   Future<void> _editPPSForm(int userId, String currentPPS, String memberName) async {
+    if (!_canEditMember(userId)) {
+      _showSnackBar('Vous ne pouvez modifier que vos propres informations');
+      print('User $userId cannot edit member');
+      return;
+    }
+
+    final member = _membersWithDetails.firstWhere((m) => m['USE_ID'] == userId);
+    final hasLicence = member['USE_LICENCE_NUMBER'] != null &&
+        (member['USE_LICENCE_NUMBER'] as String).isNotEmpty;
+
+    if (hasLicence) {
+      _showSnackBar('Ce membre a déjà un numéro de licence');
+      print('Member $userId has a licence, cannot edit PPS');
+      return;
+    }
+
     final controller = TextEditingController(text: currentPPS);
     
     final result = await showDialog<String>(
@@ -248,10 +313,12 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       ),
     );
 
+    print('PPS edit result for user $userId: $result');
+
     if (result == null || result == currentPPS) return;
 
     try {
-      await widget.repository.updateUserPPS(userId, result.isEmpty ? null : result);
+      await widget.repository.updateUserPPS(userId, result.isEmpty ? null : result, widget.raceId);
 
       if (mounted) {
         _showSnackBar('Formulaire PPS mis à jour !', isSuccess: true);
@@ -260,11 +327,18 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     } catch (e) {
       if (mounted) {
         _showSnackBar('Erreur : $e');
+        print('Error updating PPS: $e');
       }
     }
   }
 
   Future<void> _editChipNumber(int userId, int? currentChip, String memberName) async {
+    // ✅ Vérifier si l'utilisateur peut modifier ce membre
+    if (!_canEditMember(userId)) {
+      _showSnackBar('Vous ne pouvez modifier que vos propres informations');
+      return;
+    }
+
     final controller = TextEditingController(text: currentChip?.toString() ?? '');
     
     final result = await showDialog<String>(
@@ -325,7 +399,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       builder: (context) => AlertDialog(
         title: const Text('Validation impossible'),
         content: const Text(
-          'Tous les membres doivent avoir un numéro de licence ou un formulaire PPS renseigné.',
+          'Tous les membres doivent avoir un numéro de licence OU un formulaire PPS renseigné avant de valider l\'équipe.',
         ),
         actions: [
           TextButton(
@@ -395,6 +469,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                         dossardNumber: _dossardNumber,
                       ),
                       
+                      // ✅ Bouton de validation visible UNIQUEMENT pour le responsable
                       if (widget.isRaceManager)
                         TeamValidationButton(
                           isValid: _team!.isValid ?? false,
@@ -406,6 +481,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                         members: _membersWithDetails,
                         canManageTeam: _canManageTeam(),
                         isRaceManager: widget.isRaceManager,
+                        currentUserId: widget.currentUserId, // ✅ AJOUTE
+                        canEditMember: _canEditMember, // ✅ AJOUTE
                         raceId: widget.raceId,
                         onAddMember: _addMember,
                         onRemoveMember: _removeMember,

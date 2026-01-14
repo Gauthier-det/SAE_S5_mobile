@@ -23,7 +23,7 @@ abstract class TeamRepository {
   Future<void> invalidateTeamForRace(int teamId, int raceId);
   Future<void> removeMemberFromTeam(int teamId, int userId);
   Future<void> deleteTeam(int teamId, int raceId);
-  Future<void> updateUserPPS(int userId, String? ppsForm);
+  Future<void> updateUserPPS(int userId, String? ppsForm, int raceId);
   Future<void> updateUserChipNumber(int userId, int raceId, int? chipNumber);
   
   // ← AJOUTE CETTE MÉTHODE

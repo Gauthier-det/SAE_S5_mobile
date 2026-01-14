@@ -238,14 +238,14 @@ class TeamLocalSources {
     );
   }
 
-  Future<void> updateUserPPS(int userId, String? ppsForm) async {
+  Future<void> updateUserPPS(int userId, String? ppsForm, int raceId) async {
     final db = await DatabaseHelper.database;
     
     await db.update(
       'SAN_USERS_RACES',
       {'USR_PPS_FORM': ppsForm},
-      where: 'USE_ID = ?',
-      whereArgs: [userId],
+      where: 'USE_ID = ? AND RAC_ID = ?',
+      whereArgs: [userId, raceId],
     );
   }
 

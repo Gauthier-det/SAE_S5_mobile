@@ -19,6 +19,7 @@ class Raid {
   final DateTime timeEnd;
   final DateTime registrationStart;
   final DateTime registrationEnd;
+  final int nbRaces;
 
   // Related objects (loaded via JOIN)
   final Address? address;
@@ -42,6 +43,7 @@ class Raid {
     this.address,
     this.club,
     this.manager,
+    required this.nbRaces,
   });
 
   /// Creates Raid from database JSON
@@ -101,6 +103,7 @@ class Raid {
       registrationEnd: DateTime.parse(json['RAI_REGISTRATION_END']),
       address: address,
       manager: manager,
+      nbRaces: json['RAI_RACE_COUNT'],
     );
   }
 

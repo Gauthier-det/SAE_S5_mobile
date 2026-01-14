@@ -26,7 +26,7 @@ class MemberCard extends StatelessWidget {
     final fullName = '${member['USE_NAME']} ${member['USE_LAST_NAME']}';
     final email = member['USE_MAIL'] as String;
     final licenceNumber = member['USE_LICENCE_NUMBER'] as int?;
-    final ppsForm = member['USE_PPS_FORM'] as String?;
+    final ppsForm = member['USR_PPS_FORM'] as String?;
     final chipNumber = member['USR_CHIP_NUMBER'] as int?;
     
     final hasLicence = licenceNumber != null;
