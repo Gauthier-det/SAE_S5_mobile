@@ -132,6 +132,18 @@ class SeedData {
         'RAI_REGISTRATION_START': '2025-12-01 00:00:00',
         'RAI_REGISTRATION_END': '2026-04-15 23:59:59',
       },
+      {
+        'RAI_ID': 3, 'CLU_ID': 2, 'ADD_ID': 4, 'USE_ID': 5,
+        'RAI_NAME': 'Raid de Vanves 2027',
+        'RAI_MAIL': 'contact@trailvanves.fr',
+        'RAI_PHONE_NUMBER': null,
+        'RAI_WEB_SITE': 'https://trailfalaises.fr',
+        'RAI_IMAGE': 'https://www.cursan.fr/wp-content/uploads/2022/12/Course-dorientation.jpg',
+        'RAI_TIME_START': '2026-04-20 07:30:00',
+        'RAI_TIME_END': '2026-04-20 19:00:00',
+        'RAI_REGISTRATION_START': '2025-12-01 00:00:00',
+        'RAI_REGISTRATION_END': '2026-04-15 23:59:59',
+      },
     ];
     for (var raid in raids) {
       await db.insert('SAN_RAIDS', raid);

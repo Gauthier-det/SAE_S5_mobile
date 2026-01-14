@@ -3,12 +3,18 @@ import '../../domain/raid.dart';
 import '../../domain/raid_repository.dart';
 import '../datasources/raid_api_sources.dart';
 import '../datasources/raid_local_sources.dart';
+import '../../../auth/data/datasources/auth_local_sources.dart';
 
 class RaidRepositoryImpl implements RaidRepository {
   final RaidApiSources apiSources;
   final RaidLocalSources localSources;
+  final AuthLocalSources authLocalSources;
 
-  RaidRepositoryImpl({required this.apiSources, required this.localSources});
+  RaidRepositoryImpl({
+    required this.apiSources,
+    required this.localSources,
+    required this.authLocalSources,
+  });
 
   @override
   Future<Raid?> getRaidById(int id) async {
@@ -61,8 +67,11 @@ class RaidRepositoryImpl implements RaidRepository {
   @override
   Future<void> createRaid(Raid raid) async {
     try {
+      // Récupérer le token d'authentification
+      final token = authLocalSources.getToken();
+      
       // Envoyer à l'API en priorité
-      final createdRaid = await apiSources.createRaid(raid);
+      final createdRaid = await apiSources.createRaid(raid, token: token);
       // Sauvegarder en local avec l'ID retourné par l'API
       await localSources.insertRaid(createdRaid);
     } catch (e) {

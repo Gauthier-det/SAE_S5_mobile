@@ -7,27 +7,31 @@ class RaidApiSources {
   final String baseUrl;
   final http.Client client;
 
-  RaidApiSources({required this.baseUrl, http.Client? client})
-    : client = client ?? http.Client();
+  RaidApiSources({
+    required this.baseUrl,
+    http.Client? client,
+  }) : client = client ?? http.Client();
 
   Future<Raid?> getRaidById(int id) async {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/raids/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseBody = json.decode(response.body);
-        final data = responseBody['data'];
-        return Raid.fromJson(data);
+        final responseData = json.decode(response.body);
+        return Raid.fromJson(responseData['data'] ?? responseData);
       } else if (response.statusCode == 404) {
         return null;
       } else {
-        throw Exception('API Error: ${response.statusCode}');
+        throw Exception('Erreur API: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Erreur réseau: $e');
     }
   }
 
@@ -36,92 +40,149 @@ class RaidApiSources {
       print('🔍 Fetching raids from: $baseUrl/raids');
       final response = await client.get(
         Uri.parse('$baseUrl/raids'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       print('📡 Response status: ${response.statusCode}');
       print('📄 Response body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseBody = json.decode(response.body);
-        final List<dynamic> data = responseBody['data'] ?? [];
+        final responseData = json.decode(response.body);
+        final List<dynamic> data = responseData['data'] ?? [];
         print('✅ Parsed ${data.length} raids');
         return data.map((json) => Raid.fromJson(json)).toList();
       } else {
-        throw Exception('API Error: ${response.statusCode}');
+        throw Exception('Erreur API: ${response.statusCode}');
       }
     } catch (e, stackTrace) {
       print('❌ Error fetching raids: $e');
       print('📚 Stack trace: $stackTrace');
-      throw Exception('Network error: $e');
+      throw Exception('Erreur réseau: $e');
     }
   }
 
-  Future<Raid> createRaid(Raid raid) async {
+  /// POST /raids - Créer un nouveau raid
+  Future<Raid> createRaid(Raid raid, {String? token}) async {
     try {
-      // 1. Préparer les données en JSON
-      final body = json.encode(raid.toJson());
+      // Préparer les données sans RAI_ID (auto-généré)
+      final Map<String, dynamic> data = {
+        'CLU_ID': raid.clubId,
+        'ADD_ID': raid.addressId,
+        'USE_ID': raid.userId,
+        'RAI_NAME': raid.name,
+        'RAI_MAIL': raid.email,
+        'RAI_PHONE_NUMBER': raid.phoneNumber,
+        'RAI_WEB_SITE': raid.website,
+        'RAI_IMAGE': raid.image,
+        'RAI_TIME_START': raid.timeStart.toIso8601String(),
+        'RAI_TIME_END': raid.timeEnd.toIso8601String(),
+        'RAI_REGISTRATION_START': raid.registrationStart.toIso8601String(),
+        'RAI_REGISTRATION_END': raid.registrationEnd.toIso8601String(),
+      };
 
-      // 2. Envoyer une requête POST
+      print('🔍 Creating raid with data: ${json.encode(data)}');
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await client.post(
-        Uri.parse('$baseUrl/raids'), // Endpoint API
-        headers: {
-          'Content-Type':
-              'application/json', // Important : spécifie que c'est du JSON
-        },
-        body: body, // Les données du raid en JSON
+        Uri.parse('$baseUrl/raids'),
+        headers: headers,
+        body: json.encode(data),
       );
 
-      // 3. Vérifier le code de statut HTTP
+      print('📡 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // 201 Created ou 200 OK = succès
-        final data = json.decode(response.body);
-        return Raid.fromJson(
-          data,
-        ); // Retourne le raid créé (avec l'ID généré par le serveur)
-      } else if (response.statusCode == 400) {
-        // 400 Bad Request = données invalides
-        throw Exception('Données invalides : ${response.body}');
+        final responseData = json.decode(response.body);
+        return Raid.fromJson(responseData['data'] ?? responseData);
+      } else if (response.statusCode == 422) {
+        final errors = json.decode(response.body);
+        print('❌ Validation errors: ${errors}');
+        throw Exception('Validation: ${json.encode(errors['errors'] ?? errors['message'] ?? errors)}');
       } else if (response.statusCode == 401) {
-        // 401 Unauthorized = pas authentifié
         throw Exception('Non authentifié');
+      } else if (response.statusCode == 403) {
+        throw Exception('Non autorisé');
       } else {
-        // Autre erreur
-        throw Exception('Erreur serveur : ${response.statusCode}');
+        throw Exception('Erreur création: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      print('❌ Error creating raid: $e');
+      throw Exception('Erreur réseau: $e');
     }
   }
 
-  /// Updates an existing raid via PUT request
-  Future<Raid> updateRaid(int id, Raid raid) async {
+  /// PUT /raids/{id} - Mettre à jour un raid
+  Future<Raid> updateRaid(int id, Raid raid, {String? token}) async {
     try {
-      final body = json.encode(raid.toJson());
+      // Préparer les données sans RAI_ID
+      final Map<String, dynamic> data = {
+        'CLU_ID': raid.clubId,
+        'ADD_ID': raid.addressId,
+        'USE_ID': raid.userId,
+        'RAI_NAME': raid.name,
+        'RAI_MAIL': raid.email,
+        'RAI_PHONE_NUMBER': raid.phoneNumber,
+        'RAI_WEB_SITE': raid.website,
+        'RAI_IMAGE': raid.image,
+        'RAI_TIME_START': raid.timeStart.toIso8601String(),
+        'RAI_TIME_END': raid.timeEnd.toIso8601String(),
+        'RAI_REGISTRATION_START': raid.registrationStart.toIso8601String(),
+        'RAI_REGISTRATION_END': raid.registrationEnd.toIso8601String(),
+      };
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
 
       final response = await client.put(
         Uri.parse('$baseUrl/raids/$id'),
-        headers: {'Content-Type': 'application/json'},
-        body: body,
+        headers: headers,
+        body: json.encode(data),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return Raid.fromJson(data);
+        final responseData = json.decode(response.body);
+        return Raid.fromJson(responseData['data'] ?? responseData);
       } else {
-        throw Exception('Failed to update raid: ${response.statusCode}');
+        throw Exception('Erreur mise à jour: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Erreur réseau: $e');
     }
   }
 
   /// Deletes a raid via DELETE request
-  Future<void> deleteRaid(int id) async {
+  Future<void> deleteRaid(int id, {String? token}) async {
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await client.delete(
         Uri.parse('$baseUrl/raids/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {

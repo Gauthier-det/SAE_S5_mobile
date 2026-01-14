@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
+import '../../club/domain/club.dart';
+import '../../club/data/datasources/club_api_sources.dart';
+import '../../club/data/datasources/club_local_sources.dart';
+import '../../../core/config/app_config.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -14,18 +18,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneNumberController = TextEditingController();
-  final _clubController = TextEditingController();
   final _licenceNumberController = TextEditingController();
   final _ppsNumberController = TextEditingController();
   final _chipNumberController = TextEditingController();
   
+  // Address controllers
+  final _streetNumberController = TextEditingController();
+  final _streetNameController = TextEditingController();
+  final _postalCodeController = TextEditingController();
+  final _cityController = TextEditingController();
+  
   DateTime? _birthDate;
   bool _isLoading = false;
+  
+  // Clubs
+  List<Club> _clubs = [];
+  Club? _selectedClub;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadClubs();
+  }
+
+  Future<void> _loadClubs() async {
+    try {
+      // Essayer de charger depuis l'API
+      final clubApi = ClubApiSources(baseUrl: AppConfig.apiBaseUrl);
+      final clubs = await clubApi.getAllClubs();
+      _setClubs(clubs);
+    } catch (e) {
+      print('API non disponible pour les clubs, chargement local: $e');
+      try {
+        // Fallback sur les données locales
+        final clubLocal = ClubLocalSources();
+        final clubs = await clubLocal.getAllClubs();
+        _setClubs(clubs);
+      } catch (localError) {
+        print('Erreur chargement clubs local: $localError');
+      }
+    }
+  }
+
+  void _setClubs(List<Club> clubs) {
+    setState(() {
+      _clubs = clubs;
+      // Trouver le club de l'utilisateur s'il existe
+      final user = context.read<AuthProvider>().currentUser;
+      if (user?.club != null && user!.club!.isNotEmpty) {
+        _selectedClub = _clubs.cast<Club?>().firstWhere(
+          (c) => c?.name == user.club,
+          orElse: () => null,
+        );
+      }
+    });
   }
 
   void _loadUserData() {
@@ -34,10 +81,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _firstNameController.text = user.firstName;
       _lastNameController.text = user.lastName;
       _phoneNumberController.text = user.phoneNumber ?? '';
-      _clubController.text = user.club ?? '';
       _licenceNumberController.text = user.licenceNumber ?? '';
       _ppsNumberController.text = user.ppsNumber ?? '';
       _chipNumberController.text = user.chipNumber ?? '';
+      
+      // Address
+      _streetNumberController.text = user.streetNumber ?? '';
+      _streetNameController.text = user.streetName ?? '';
+      _postalCodeController.text = user.postalCode ?? '';
+      _cityController.text = user.city ?? '';
       
       if (user.birthDate != null && user.birthDate!.isNotEmpty) {
         try {
@@ -54,10 +106,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneNumberController.dispose();
-    _clubController.dispose();
     _licenceNumberController.dispose();
     _ppsNumberController.dispose();
     _chipNumberController.dispose();
+    _streetNumberController.dispose();
+    _streetNameController.dispose();
+    _postalCodeController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -92,9 +147,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ? null 
             : _phoneNumberController.text.trim(),
         birthDate: _birthDate?.toIso8601String(),
-        club: _clubController.text.trim().isEmpty 
-            ? null 
-            : _clubController.text.trim(),
+        club: _selectedClub?.name,
+        clubId: _selectedClub?.id,
         licenceNumber: _licenceNumberController.text.trim().isEmpty 
             ? null 
             : _licenceNumberController.text.trim(),
@@ -104,6 +158,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         chipNumber: _chipNumberController.text.trim().isEmpty 
             ? null 
             : _chipNumberController.text.trim(),
+        streetNumber: _streetNumberController.text.trim().isEmpty 
+            ? null 
+            : _streetNumberController.text.trim(),
+        streetName: _streetNameController.text.trim().isEmpty 
+            ? null 
+            : _streetNameController.text.trim(),
+        postalCode: _postalCodeController.text.trim().isEmpty 
+            ? null 
+            : _postalCodeController.text.trim(),
+        city: _cityController.text.trim().isEmpty 
+            ? null 
+            : _cityController.text.trim(),
       );
 
       if (mounted) {
@@ -268,17 +334,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               _buildSectionTitle('Informations sportives'),
               const SizedBox(height: 8),
               
-              // Club
-              TextFormField(
-                controller: _clubController,
-                decoration: const InputDecoration(
-                  labelText: 'Club',
-                  prefixIcon: Icon(Icons.groups),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
               
               // Numéro de licence
               TextFormField(
@@ -286,18 +341,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Numéro de licence',
                   prefixIcon: Icon(Icons.badge),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Numéro PPS
-              TextFormField(
-                controller: _ppsNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro PPS',
-                  prefixIcon: Icon(Icons.numbers),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -312,6 +355,75 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   prefixIcon: Icon(Icons.memory),
                   border: OutlineInputBorder(),
                 ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Section Adresse
+              _buildSectionTitle('Adresse'),
+              const SizedBox(height: 8),
+              
+              // Numéro et rue sur la même ligne
+              Row(
+                children: [
+                  // Numéro
+                  SizedBox(
+                    width: 100,
+                    child: TextFormField(
+                      controller: _streetNumberController,
+                      decoration: const InputDecoration(
+                        labelText: 'N°',
+                        prefixIcon: Icon(Icons.tag),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Rue
+                  Expanded(
+                    child: TextFormField(
+                      controller: _streetNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Rue',
+                        prefixIcon: Icon(Icons.signpost),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Code postal et ville sur la même ligne
+              Row(
+                children: [
+                  // Code postal
+                  SizedBox(
+                    width: 130,
+                    child: TextFormField(
+                      controller: _postalCodeController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Code postal',
+                        prefixIcon: Icon(Icons.local_post_office),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Ville
+                  Expanded(
+                    child: TextFormField(
+                      controller: _cityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Ville',
+                        prefixIcon: Icon(Icons.location_city),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               
               const SizedBox(height: 32),

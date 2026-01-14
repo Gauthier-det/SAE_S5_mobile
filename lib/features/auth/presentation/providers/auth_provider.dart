@@ -11,18 +11,27 @@ import '../../../../core/config/app_config.dart';
 /// Provider for managing authentication state
 class AuthProvider extends ChangeNotifier {
   final AuthRepositoryImpl _repository;
+  final AuthLocalSources _localDataSource;
 
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
 
-  AuthProvider(this._repository);
+  AuthProvider(this._repository, this._localDataSource);
 
   // Getters
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
+  
+  /// Expose AuthLocalSources for accessing tokens
+  AuthLocalSources getAuthLocalSources() => _localDataSource;
+  
+  /// Expose SharedPreferences (for compatibility)
+  Future<SharedPreferences> getSharedPreferences() async {
+    return SharedPreferences.getInstance();
+  }
 
   /// Factory constructor to initialize with SharedPreferences
   static Future<AuthProvider> create() async {
@@ -31,7 +40,7 @@ class AuthProvider extends ChangeNotifier {
     final apiDataSource = AuthApiSources(baseUrl: AppConfig.apiBaseUrl);
     final repository = AuthRepositoryImpl(localDataSource, apiDataSource);
 
-    return AuthProvider(repository)..checkAuth();
+    return AuthProvider(repository, localDataSource)..checkAuth();
   }
 
   /// Check if user is already authenticated
@@ -134,10 +143,15 @@ class AuthProvider extends ChangeNotifier {
     String? phoneNumber,
     String? birthDate,
     String? club,
+    int? clubId,
     String? licenceNumber,
     String? ppsNumber,
     String? chipNumber,
     String? profileImageUrl,
+    String? streetNumber,
+    String? streetName,
+    String? postalCode,
+    String? city,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -150,10 +164,15 @@ class AuthProvider extends ChangeNotifier {
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         club: club,
+        clubId: clubId,
         licenceNumber: licenceNumber,
         ppsNumber: ppsNumber,
         chipNumber: chipNumber,
         profileImageUrl: profileImageUrl,
+        streetNumber: streetNumber,
+        streetName: streetName,
+        postalCode: postalCode,
+        city: city,
       );
       _currentUser = updatedUser;
     } catch (e) {

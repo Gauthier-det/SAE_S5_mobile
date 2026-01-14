@@ -134,24 +134,49 @@ class AuthRepositoryImpl implements AuthRepository {
         password: password,
       );
 
+      print('✅ API Response for login: $apiResponse');
+
+      // Extraire les données de la réponse (format: {data: {...}})
+      final data = apiResponse['data'] ?? apiResponse;
+      
+      print('📦 Data extracted: $data');
+      print('🏢 user_club value: ${data['user_club']}');
+      print('🏢 user_club_id value: ${data['user_club_id']}');
+      
+      // Extraire le clubId depuis user_club si présent, sinon user_club_id
+      int? clubId;
+      String? clubName;
+      if (data['user_club'] != null && data['user_club'] is Map) {
+        print('🏢 user_club content: ${data['user_club']}');
+        clubId = data['user_club']['CLU_ID'];
+        clubName = data['user_club']['CLU_NAME'];
+        print('🏢 Extracted clubId from user_club: $clubId, clubName: $clubName');
+      } else if (data['user_club_id'] != null) {
+        clubId = data['user_club_id'];
+        print('🏢 Extracted clubId from user_club_id: $clubId');
+      } else {
+        print('⚠️ user_club and user_club_id are both null in response');
+      }
+
       // Créer l'objet User depuis la réponse API
       final user = User(
-        id:
-            apiResponse['user']['id']?.toString() ??
-            DateTime.now().millisecondsSinceEpoch.toString(),
-        email: apiResponse['user']['email'] ?? email,
-        firstName: apiResponse['user']['first_name'] ?? '',
-        lastName: apiResponse['user']['last_name'] ?? '',
+        id: data['user_id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        email: data['user_mail'] ?? email,
+        firstName: data['user_name'] ?? '',
+        lastName: data['user_last_name'] ?? '',
         createdAt: DateTime.now(),
-        birthDate: apiResponse['user']['birth_date'],
-        phoneNumber: apiResponse['user']['phone_number'],
-        licenceNumber: apiResponse['user']['licence_number'],
+        birthDate: data['user_birthdate'],
+        phoneNumber: data['user_phone']?.toString(),
+        licenceNumber: data['user_licence']?.toString(),
+        clubId: clubId,
+        club: clubName,
+        ppsNumber: data['user_pps'],
       );
 
       // Sauvegarder en local
       await _localDataSource.saveUser(user);
       await _localDataSource.saveToken(
-        apiResponse['token'] ?? 'token_${user.id}',
+        data['access_token'] ?? 'token_${user.id}',
       );
 
       return user;
@@ -210,10 +235,15 @@ class AuthRepositoryImpl implements AuthRepository {
     String? phoneNumber,
     String? birthDate,
     String? club,
+    int? clubId,
     String? licenceNumber,
     String? ppsNumber,
     String? chipNumber,
     String? profileImageUrl,
+    String? streetNumber,
+    String? streetName,
+    String? postalCode,
+    String? city,
   }) async {
     final currentUser = _localDataSource.getUser();
     if (currentUser == null) {
@@ -226,10 +256,15 @@ class AuthRepositoryImpl implements AuthRepository {
       phoneNumber: phoneNumber ?? currentUser.phoneNumber,
       birthDate: birthDate ?? currentUser.birthDate,
       club: club ?? currentUser.club,
+      clubId: clubId ?? currentUser.clubId,
       licenceNumber: licenceNumber ?? currentUser.licenceNumber,
       ppsNumber: ppsNumber ?? currentUser.ppsNumber,
       chipNumber: chipNumber ?? currentUser.chipNumber,
       profileImageUrl: profileImageUrl ?? currentUser.profileImageUrl,
+      streetNumber: streetNumber ?? currentUser.streetNumber,
+      streetName: streetName ?? currentUser.streetName,
+      postalCode: postalCode ?? currentUser.postalCode,
+      city: city ?? currentUser.city,
     );
 
     await _localDataSource.saveUser(updatedUser);

@@ -1,10 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
+import '../../club/data/datasources/club_api_sources.dart';
+import '../../club/data/datasources/club_local_sources.dart';
+import '../../../core/config/app_config.dart';
 import 'edit_profile_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String? _clubName;
+  bool _isLoadingClub = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClub();
+  }
+
+  Future<void> _loadClub() async {
+    final user = context.read<AuthProvider>().currentUser;
+    
+    // Si le user a déjà un nom de club, l'utiliser directement
+    if (user?.club != null && user!.club!.isNotEmpty) {
+      setState(() {
+        _clubName = user.club;
+        _isLoadingClub = false;
+      });
+      return;
+    }
+    
+    // Si le user a un clubId, charger le club depuis l'API ou le local
+    if (user?.clubId != null) {
+      try {
+        // Essayer depuis l'API
+        final clubApi = ClubApiSources(baseUrl: AppConfig.apiBaseUrl);
+        final club = await clubApi.getClubById(user!.clubId!);
+        if (club != null) {
+          setState(() {
+            _clubName = club.name;
+            _isLoadingClub = false;
+          });
+          return;
+        }
+      } catch (e) {
+        print('API non disponible pour le club, chargement local: $e');
+      }
+      
+      try {
+        // Fallback sur le local
+        final clubLocal = ClubLocalSources();
+        final club = await clubLocal.getClubById(user!.clubId!);
+        if (club != null) {
+          setState(() {
+            _clubName = club.name;
+            _isLoadingClub = false;
+          });
+          return;
+        }
+      } catch (e) {
+        print('Erreur chargement club local: $e');
+      }
+    }
+    
+    setState(() {
+      _clubName = null;
+      _isLoadingClub = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,11 +181,6 @@ class ProfileScreen extends StatelessWidget {
                           leading: Icon(Icons.email, color: theme.colorScheme.primary),
                           title: const Text('Email'),
                           subtitle: Text(user.email),
-                          trailing: Icon(
-                            Icons.lock,
-                            size: 16,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                          ),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -135,7 +198,19 @@ class ProfileScreen extends StatelessWidget {
                         ListTile(
                           leading: Icon(Icons.groups, color: theme.colorScheme.primary),
                           title: const Text('Club'),
-                          subtitle: Text(user.club ?? 'Non renseigné'),
+                          subtitle: _isLoadingClub
+                              ? const Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text('Chargement...'),
+                                  ],
+                                )
+                              : Text(_clubName ?? 'Non renseigné'),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -145,15 +220,15 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.numbers, color: theme.colorScheme.primary),
-                          title: const Text('Numéro PPS'),
-                          subtitle: Text(user.ppsNumber ?? 'Non renseigné'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
                           leading: Icon(Icons.memory, color: theme.colorScheme.primary),
                           title: const Text('Numéro de puce'),
                           subtitle: Text(user.chipNumber ?? 'Non renseigné'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.location_on, color: theme.colorScheme.primary),
+                          title: const Text('Adresse'),
+                          subtitle: Text(user.fullAddress ?? 'Non renseignée'),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -174,12 +249,14 @@ class ProfileScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
+                    onPressed: () async {
+                      await Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => const EditProfileScreen(),
                         ),
                       );
+                      // Recharger le club après modification
+                      _loadClub();
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('MODIFIER LE PROFIL'),

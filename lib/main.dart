@@ -111,10 +111,13 @@ class SanglierExplorerApp extends StatelessWidget {
 
   Future<Map<String, dynamic>> _createRepositories() async {
     final db = await DatabaseHelper.database;
+    final authLocalSources = authProvider.getAuthLocalSources();
+    
     return {
       'raidRepository': RaidRepositoryImpl(
         apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
         localSources: RaidLocalSources(),
+        authLocalSources: authLocalSources,
       ),
       'raceRepository': RacesRepositoryImpl(
         apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),

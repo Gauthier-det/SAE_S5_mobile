@@ -13,6 +13,7 @@ class ClubApiSources {
   /// GET /clubs - Récupérer tous les clubs
   Future<List<Club>> getAllClubs() async {
     try {
+      print('📡 Fetching clubs from: $baseUrl/clubs');
       final response = await client.get(
         Uri.parse('$baseUrl/clubs'),
         headers: {
@@ -21,13 +22,19 @@ class ClubApiSources {
         },
       );
 
+      print('📡 Clubs response status: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final responseBody = json.decode(response.body);
+        // L'API renvoie {data: [...]}
+        final List<dynamic> data = responseBody['data'] ?? responseBody;
+        print('✅ Parsed ${data.length} clubs');
         return data.map((json) => Club.fromJson(json)).toList();
       } else {
         throw Exception('Erreur API: ${response.statusCode}');
       }
     } catch (e) {
+      print('❌ Clubs error: $e');
       throw Exception('Erreur réseau: $e');
     }
   }

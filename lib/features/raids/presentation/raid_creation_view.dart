@@ -1,10 +1,8 @@
 // lib/features/raids/presentation/raid_create_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sae5_g13_mobile/core/database/database_helper.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
-import '../../user/domain/user_repository.dart';
 import '../../user/domain/user.dart';
 import '../../club/domain/club_repository.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
@@ -66,7 +64,6 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   Future<void> _loadClubData() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userRepository = Provider.of<UserRepository>(context, listen: false);
       final clubRepository = Provider.of<ClubRepository>(context, listen: false);
       final addressRepository = Provider.of<AddressRepository>(context, listen: false);
       
@@ -76,24 +73,15 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         throw Exception('Utilisateur non connecté');
       }
       
-      final db = await DatabaseHelper.database;
-      final List<Map<String, dynamic>> users = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [currentUser.email],
-        limit: 1,
-      );
-      
-      if (users.isEmpty) {
-        throw Exception('Utilisateur non trouvé dans la base de données');
-      }
-      
-      final sqliteUserId = users.first['USE_ID'] as int;
-      final clubId = await userRepository.getUserClubId(sqliteUserId);
+      // Utiliser directement le clubId de l'utilisateur connecté (vient du serveur)
+      final clubId = currentUser.clubId;
       
       if (clubId == null) {
         throw Exception('Vous devez être responsable de club pour créer un raid');
       }
+      
+      // Récupérer l'ID utilisateur du serveur
+      final serverUserId = int.tryParse(currentUser.id) ?? 0;
       
       // Charger membres ET adresses en parallèle
       final results = await Future.wait([
@@ -110,7 +98,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
           _clubMembers = members;
           _addresses = addresses;
           _selectedRaidManager = members.firstWhere(
-            (m) => m.id == sqliteUserId,
+            (m) => m.id == serverUserId,
             orElse: () => members.first,
           );
           _isLoadingMembers = false;

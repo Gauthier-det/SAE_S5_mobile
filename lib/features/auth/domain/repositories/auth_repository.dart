@@ -41,9 +41,14 @@ abstract class AuthRepository {
     String? phoneNumber,
     String? birthDate,
     String? club,
+    int? clubId,
     String? licenceNumber,
     String? ppsNumber,
     String? chipNumber,
     String? profileImageUrl,
+    String? streetNumber,
+    String? streetName,
+    String? postalCode,
+    String? city,
   });
 }

@@ -6,9 +6,7 @@ import '../../../core/presentation/widgets/common_loading_view.dart';
 import '../../../core/presentation/widgets/common_error_view.dart';
 import '../../../core/presentation/widgets/common_empty_view.dart';
 import '../../../core/presentation/widgets/common_list_header.dart';
-import '../../../core/database/database_helper.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
-import '../../user/domain/user_repository.dart';
 import '../domain/raid.dart';
 import '../domain/raid_repository.dart';
 import 'raid_detail_view.dart';
@@ -263,25 +261,17 @@ class _RaidListViewState extends State<RaidListView> {
   Future<bool> _canCreateRaid() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userRepository = Provider.of<UserRepository>(context, listen: false);
       final currentUser = authProvider.currentUser;
 
-      if (currentUser == null) return false;
+      if (currentUser == null) {
+        print('🔍 _canCreateRaid: currentUser is null');
+        return false;
+      }
 
-      final db = await DatabaseHelper.database;
-      final users = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [currentUser.email],
-        limit: 1,
-      );
-
-      if (users.isEmpty) return false;
-
-      final sqliteUserId = users.first['USE_ID'] as int;
-      final clubId = await userRepository.getUserClubId(sqliteUserId);
-
-      return clubId != null;
+      print('🔍 _canCreateRaid: userId=${currentUser.id}, clubId=${currentUser.clubId}');
+      
+      // Utiliser directement le clubId de l'utilisateur connecté (vient du serveur)
+      return currentUser.clubId != null;
     } catch (e) {
       return false;
     }
