@@ -108,20 +108,6 @@ class RaceCard extends StatelessWidget {
                           color: Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.timer, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${race.duration}min',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),

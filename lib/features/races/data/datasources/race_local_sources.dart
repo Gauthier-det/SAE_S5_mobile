@@ -65,36 +65,38 @@ class RaceLocalSources {
       throw Exception('Database error: $e');
     }
   }
+// lib/features/races/data/datasources/race_local_sources.dart
 
-  /// Insère une course
-  Future<void> insertRace(Race race) async {
-    await database.insert(
-      'SAN_RACES',
-      race.toJson(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+  Future<List<Map<String, dynamic>>> getRaceCategoryPrices(int raceId) async {
+    final db = await DatabaseHelper.database;
+    return await db.rawQuery('''
+      SELECT rc.CAT_ID, c.CAT_LABEL, rc.CAR_PRICE as price
+      FROM SAN_CATEGORIES_RACES rc
+      INNER JOIN SAN_CATEGORIES c ON rc.CAT_ID = c.CAT_ID
+      WHERE rc.RAC_ID = ?
+      ORDER BY c.CAT_LABEL
+    ''', [raceId]);
+  }
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    final db = await DatabaseHelper.database;
+    return await db.query(
+      'SAN_CATEGORIES',
+      orderBy: 'CAT_LABEL ASC',
     );
   }
 
-  /// Insère plusieurs courses
-  Future<void> insertRaces(List<Race> races) async {
-    final batch = database.batch();
-    for (var race in races) {
-      batch.insert(
-        'SAN_RACES',
-        race.toJson(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
+  Future<int> createRace(Map<String, dynamic> raceData) async {
+    final db = await DatabaseHelper.database;
+    return await db.insert('SAN_RACES', raceData);
   }
 
-  /// Supprime une course
-  Future<void> deleteRace(int id) async {
-    await database.delete('SAN_RACES', where: 'RAC_ID = ?', whereArgs: [id]);
+  Future<void> createRaceCategoryPrice(int raceId, int categoryId, double price) async {
+    final db = await DatabaseHelper.database;
+    await db.insert('SAN_CATEGORIES_RACES', {
+      'RAC_ID': raceId,
+      'CAT_ID': categoryId,
+      'CAR_PRICE': price,
+    });
   }
 
-  /// Supprime toutes les courses
-  Future<void> deleteAllRaces() async {
-    await database.delete('SAN_RACES');
-  }
 }
