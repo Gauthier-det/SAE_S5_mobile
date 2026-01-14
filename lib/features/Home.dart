@@ -390,7 +390,7 @@ class Home extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Orient'\Action',
+            'Orient Action',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

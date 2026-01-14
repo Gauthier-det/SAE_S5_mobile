@@ -1,4 +1,4 @@
-import 'models/race.dart';
+import 'race.dart';
 
 abstract class RacesRepository {
   /// Récupère toutes les courses
@@ -9,4 +9,5 @@ abstract class RacesRepository {
   
   /// Récupère une course par son ID
   Future<Race?> getRaceById(int id);
+  Future<int> getRegisteredTeamsCount(int raceId);
 }

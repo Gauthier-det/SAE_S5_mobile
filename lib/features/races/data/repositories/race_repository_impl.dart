@@ -1,5 +1,5 @@
 import '../../domain/race_repository.dart';
-import '../../domain/models/race.dart';
+import '../../domain/race.dart';
 import '../datasources/race_api_sources.dart';
 import '../datasources/race_local_sources.dart';
 
@@ -12,6 +12,11 @@ class RacesRepositoryImpl implements RacesRepository {
   @override
   Future<List<Race>> getRaces() async {
     return await localSources.getAllRaces();
+  }
+
+  @override
+  Future<int> getRegisteredTeamsCount(int raceId) async {
+    return await localSources.getRegisteredTeamsCount(raceId);
   }
 
   @override
