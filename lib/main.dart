@@ -34,7 +34,7 @@ import 'features/auth/presentation/register_screen.dart';
 import 'features/user/presentation/user_detail_view.dart';
 import 'features/club/presentation/providers/club_provider.dart';
 import 'features/club/presentation/screens/club_list_screen.dart';
-import 'features/Home.dart';
+import 'features/home.dart';
 
 /// Entry point of the Orient'\Action application
 void main() async {
@@ -196,37 +196,6 @@ class MainScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/raids');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.group_add,
-                    color: Color(0xFF52B788),
-                  ),
-                  title: const Text(
-                    'Créer une équipe',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    // Vérifier si l'utilisateur est connecté
-                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                    
-                    if (authProvider.currentUser == null) {
-                      Navigator.pop(context); // Fermer le drawer
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Vous devez être connecté pour créer une équipe'),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
-                      // Rediriger vers la page de connexion
-                      Navigator.pushNamed(context, '/login');
-                      return;
-                    }
-                    
-                    Navigator.pop(context); // Fermer le drawer
                   },
                 ),
                 

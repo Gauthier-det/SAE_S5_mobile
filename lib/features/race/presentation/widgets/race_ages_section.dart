@@ -9,10 +9,6 @@ class RaceAgesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si aucun âge n'est défini, ne rien afficher
-    if (race.ageMin == null && race.ageMiddle == null && race.ageMax == null) {
-      return const SizedBox.shrink();
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,7 +23,7 @@ class RaceAgesSection extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            if (race.ageMin != null)
+            if (race.ageMin != 0)
               Expanded(
                 child: _buildAgeChip(
                   label: 'Min',
@@ -35,9 +31,9 @@ class RaceAgesSection extends StatelessWidget {
                   color: Colors.blue,
                 ),
               ),
-            if (race.ageMin != null && race.ageMiddle != null)
+            if (race.ageMin != 0 && race.ageMiddle != 0)
               const SizedBox(width: 8),
-            if (race.ageMiddle != null)
+            if (race.ageMiddle != 0)
               Expanded(
                 child: _buildAgeChip(
                   label: 'Moyen',
@@ -45,9 +41,9 @@ class RaceAgesSection extends StatelessWidget {
                   color: Colors.orange,
                 ),
               ),
-            if (race.ageMiddle != null && race.ageMax != null)
+            if (race.ageMiddle != 0 && race.ageMax != 0)
               const SizedBox(width: 8),
-            if (race.ageMax != null)
+            if (race.ageMax != 0)
               Expanded(
                 child: _buildAgeChip(
                   label: 'Max',

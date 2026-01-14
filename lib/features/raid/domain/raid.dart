@@ -81,7 +81,6 @@ class Raid {
       try {
         manager = User.fromJson(userMap);
       } catch (e) {
-        print('❌ Error parsing manager: $e');
         manager = null;
       }
     }

@@ -35,11 +35,11 @@ class RacesRepositoryImpl implements RacesRepository {
 
   @override
   Future<int> createRace(Race race, Map<int, double> categoryPrices) async {
-    int rac_required;
+    int racRequired;
     if (race.type == 'Compétitif') {
-      rac_required = 1;
+      racRequired = 1;
     } else {
-      rac_required = 0;
+      racRequired = 0;
     }
 
     final raceId = await localSources.createRace({
@@ -58,7 +58,7 @@ class RacesRepositoryImpl implements RacesRepository {
       'RAC_AGE_MIDDLE': race.ageMiddle,
       'RAC_AGE_MAX': race.ageMax,
       'RAC_SEX': race.sex,
-      'RAC_CHIP_REQUIRED': rac_required,
+      'RAC_CHIP_REQUIRED': racRequired,
     });
 
     // Créer les prix par catégorie

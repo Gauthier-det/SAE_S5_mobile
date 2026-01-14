@@ -13,7 +13,6 @@ class RaceParticipantsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repository = Provider.of<RacesRepository>(context, listen: false);
-    final theme = Theme.of(context);
 
     return FutureBuilder<int>(
       future: repository.getRegisteredTeamsCount(race.id),

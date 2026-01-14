@@ -379,15 +379,9 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         minTeams: int.parse(_minTeamsController.text),
         maxTeams: int.parse(_maxTeamsController.text),
         teamMembers: int.parse(_teamMembersController.text),
-        ageMin: _ageMinController.text.isNotEmpty 
-            ? int.parse(_ageMinController.text) 
-            : null,
-        ageMiddle: _ageMiddleController.text.isNotEmpty 
-            ? int.parse(_ageMiddleController.text) 
-            : null,
-        ageMax: _ageMaxController.text.isNotEmpty 
-            ? int.parse(_ageMaxController.text) 
-            : null,
+        ageMin: int.parse(_ageMinController.text),
+        ageMiddle: int.parse(_ageMiddleController.text),
+        ageMax: int.parse(_ageMaxController.text),
       );
 
       await widget.repository.createRace(race, _categoryPrices);

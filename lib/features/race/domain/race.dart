@@ -15,9 +15,9 @@ class Race {
   final int minTeams; // RAC_MIN_TEAMS
   final int maxTeams; // RAC_MAX_TEAMS
   final int teamMembers; // RAC_TEAM_MEMBERS
-  final int? ageMin; // RAC_AGE_MIN (nullable)
-  final int? ageMiddle; // RAC_AGE_MIDDLE (nullable)
-  final int? ageMax; // RAC_AGE_MAX (nullable)
+  final int ageMin; // RAC_AGE_MIN (nullable)
+  final int ageMiddle; // RAC_AGE_MIDDLE (nullable)
+  final int ageMax; // RAC_AGE_MAX (nullable)
 
   Race({
     required this.id,
@@ -33,9 +33,9 @@ class Race {
     required this.minTeams,
     required this.maxTeams,
     required this.teamMembers,
-    this.ageMin,
-    this.ageMiddle,
-    this.ageMax,
+    required this.ageMin,
+    required this.ageMiddle,
+    required this.ageMax,
   });
 
   /// Retourne le label de difficulté
@@ -61,9 +61,9 @@ class Race {
       minTeams: json['RAC_MIN_TEAMS'] as int? ?? 0,
       maxTeams: json['RAC_MAX_TEAMS'] as int? ?? 0,
       teamMembers: json['RAC_TEAM_MEMBERS'] as int? ?? 0,
-      ageMin: json['RAC_AGE_MIN'] as int?,
-      ageMiddle: json['RAC_AGE_MIDDLE'] as int?,
-      ageMax: json['RAC_AGE_MAX'] as int?,
+      ageMin: json['RAC_AGE_MIN'] as int,
+      ageMiddle: json['RAC_AGE_MIDDLE'] as int,
+      ageMax: json['RAC_AGE_MAX'] as int,
     );
   }
 
