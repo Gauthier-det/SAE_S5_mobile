@@ -114,7 +114,7 @@ class SeedData {
         'RAI_TIME_END': '2025-10-10 20:00:00',
         'RAI_REGISTRATION_START': '2025-09-01 00:00:00',
         'RAI_REGISTRATION_END': '2025-09-30 23:59:59',
-        'RAI_RACE_COUNT': 5, // Maximum 5 courses
+        'RAI_RACE_COUNT': 5, 
       },
       {
         'RAI_ID': 2, 'CLU_ID': 2, 'ADD_ID': 4, 'USE_ID': 5,
@@ -127,7 +127,7 @@ class SeedData {
         'RAI_TIME_END': '2026-04-20 19:00:00',
         'RAI_REGISTRATION_START': '2025-12-01 00:00:00',
         'RAI_REGISTRATION_END': '2026-04-15 23:59:59',
-        'RAI_RACE_COUNT': 3, // Maximum 3 courses
+        'RAI_RACE_COUNT': 3, 
       },
     ];
     for (var raid in raids) {

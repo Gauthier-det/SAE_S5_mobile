@@ -16,4 +16,7 @@ abstract class RacesRepository {
   Future<int> createRace(Race race, Map<int, double> categoryPrices);
   Future<List<Category>> getCategories();
   Future<Map<int, double>> getRaceCategoryPrices(int raceId);
+  Future<bool> canAddRaceToRaid(int raidId);
+  Future<int> getRaceCount(int raidId);
+  Future<int?> getMaxRaceCount(int raidId);
 }

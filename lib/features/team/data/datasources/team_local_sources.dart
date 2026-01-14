@@ -238,14 +238,14 @@ class TeamLocalSources {
     );
   }
 
-  Future<void> updateUserPPS(int userId, String? ppsForm) async {
+  Future<void> updateUserPPS(int userId, String? ppsForm, int raceId) async {
     final db = await DatabaseHelper.database;
     
     await db.update(
       'SAN_USERS_RACES',
       {'USR_PPS_FORM': ppsForm},
-      where: 'USE_ID = ?',
-      whereArgs: [userId],
+      where: 'USE_ID = ? AND RAC_ID = ?',
+      whereArgs: [userId, raceId],
     );
   }
 
@@ -335,5 +335,34 @@ class TeamLocalSources {
     }
   }
 
+  // ✅ NOUVELLE MÉTHODE : Récupère l'équipe avec son statut pour une course
+  Future<Team?> getTeamByIdWithRaceStatus(int teamId, int raceId) async {
+    final db = await DatabaseHelper.database;
+    
+    final result = await db.rawQuery('''
+      SELECT 
+        t.*,
+        ter.TER_IS_VALID as isValid,
+        ter.TER_RACE_NUMBER as dossardNumber
+      FROM SAN_TEAMS t
+      LEFT JOIN SAN_TEAMS_RACES ter ON t.TEA_ID = ter.TEA_ID AND ter.RAC_ID = ?
+      WHERE t.TEA_ID = ?
+      LIMIT 1
+    ''', [raceId, teamId]);
+    
+    if (result.isEmpty) return null;
+    
+    final teamData = result.first;
+    
+    print('📊 Team data from DB: $teamData');
+    
+    // ✅ Créer l'équipe avec le statut de validation
+    return Team(
+      id: teamData['TEA_ID'] as int,
+      name: teamData['TEA_NAME'] as String,
+      managerId: teamData['USE_ID'] as int,
+      isValid: teamData['isValid'] == 1, // ✅ Récupéré depuis SAN_TEAMS_RACES
+    );
+  }
 
 }

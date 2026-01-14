@@ -83,4 +83,20 @@ class RacesRepositoryImpl implements RacesRepository {
     );
   }
 
+  @override
+  Future<bool> canAddRaceToRaid(int raidId) async {
+    return await localSources.canAddRaceToRaid(raidId);
+  }
+
+  @override
+  Future<int> getRaceCount(int raidId) async {
+    final races = await localSources.getRacesByRaidId(raidId);
+    return races.length;
+  }
+
+  @override
+  Future<int?> getMaxRaceCount(int raidId) async {
+    return await localSources.getMaxRaceCount(raidId);
+  }
+
 }

@@ -1,4 +1,4 @@
-// lib/features/raids/presentation/raid_list_view.dart
+// lib/features/raid/presentation/raid_list_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/presentation/widgets/common_loading_view.dart';
@@ -33,6 +33,9 @@ class _RaidListViewState extends State<RaidListView> {
   // Filtres
   String? _selectedStatus;
   String? _selectedRegistrationStatus;
+  DateTime? _filterStartDate;
+  DateTime? _filterEndDate;
+  final _searchController = TextEditingController(); // ← NOUVEAU: Recherche par nom
 
   // Tri
   bool _sortAscending = true;
@@ -41,11 +44,26 @@ class _RaidListViewState extends State<RaidListView> {
   void initState() {
     super.initState();
     _raidsFuture = widget.repository.getAllRaids();
+    _searchController.addListener(_applyFiltersAndSort); // ← NOUVEAU
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // ← NOUVEAU
+    super.dispose();
   }
 
   void _applyFiltersAndSort() {
     setState(() {
       _filteredRaids = _allRaids.where((raid) {
+        // ← NOUVEAU: Filtre par nom
+        if (_searchController.text.isNotEmpty) {
+          final searchLower = _searchController.text.toLowerCase();
+          if (!raid.name.toLowerCase().contains(searchLower)) {
+            return false;
+          }
+        }
+        
         if (_selectedStatus != null && !_matchesStatus(raid, _selectedStatus!)) {
           return false;
         }
@@ -53,10 +71,19 @@ class _RaidListViewState extends State<RaidListView> {
             !_matchesRegistrationStatus(raid, _selectedRegistrationStatus!)) {
           return false;
         }
+        
+        // Filtres par date
+        if (_filterStartDate != null && raid.timeEnd.isBefore(_filterStartDate!)) {
+          return false;
+        }
+        if (_filterEndDate != null && raid.timeStart.isAfter(_filterEndDate!)) {
+          return false;
+        }
+        
         return true;
       }).toList();
 
-      // Tri intelligent : À venir d'abord (plus proche en premier), puis terminés (plus récent en premier)
+      // Tri intelligent
       _filteredRaids.sort((a, b) {
         final now = DateTime.now();
         final aIsUpcoming = now.isBefore(a.timeStart);
@@ -64,22 +91,16 @@ class _RaidListViewState extends State<RaidListView> {
         final aIsFinished = now.isAfter(a.timeEnd);
         final bIsFinished = now.isAfter(b.timeEnd);
 
-        // Les raids à venir avant les terminés
         if (aIsUpcoming && !bIsUpcoming) return -1;
         if (!aIsUpcoming && bIsUpcoming) return 1;
-
-        // Les raids en cours avant les terminés
         if (!aIsFinished && bIsFinished) return -1;
         if (aIsFinished && !bIsFinished) return 1;
 
-        // Si même statut, trier par date
         if (aIsUpcoming && bIsUpcoming) {
-          // À venir : le plus proche en premier (ordre croissant)
           return _sortAscending
               ? a.timeStart.compareTo(b.timeStart)
               : b.timeStart.compareTo(a.timeStart);
         } else {
-          // Terminés : le plus récent en premier (ordre décroissant)
           return _sortAscending
               ? b.timeEnd.compareTo(a.timeEnd)
               : a.timeEnd.compareTo(b.timeEnd);
@@ -134,18 +155,58 @@ class _RaidListViewState extends State<RaidListView> {
     );
   }
 
+  Future<void> _selectStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _filterStartDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      locale: const Locale('fr', 'FR'),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _filterStartDate = picked;
+        _applyFiltersAndSort();
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _filterEndDate ?? DateTime.now(),
+      firstDate: _filterStartDate ?? DateTime(2020),
+      lastDate: DateTime(2030),
+      locale: const Locale('fr', 'FR'),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _filterEndDate = picked;
+        _applyFiltersAndSort();
+      });
+    }
+  }
+
   void _resetFilters() {
     setState(() {
       _selectedStatus = null;
       _selectedRegistrationStatus = null;
+      _filterStartDate = null;
+      _filterEndDate = null;
+      _searchController.clear(); // ← NOUVEAU
       _applyFiltersAndSort();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasActiveFilters =
-        _selectedStatus != null || _selectedRegistrationStatus != null;
+    final hasActiveFilters = _selectedStatus != null || 
+        _selectedRegistrationStatus != null ||
+        _filterStartDate != null ||
+        _filterEndDate != null ||
+        _searchController.text.isNotEmpty; // ← NOUVEAU
 
     return Scaffold(
       appBar: PreferredSize(
@@ -198,6 +259,130 @@ class _RaidListViewState extends State<RaidListView> {
 
           return Column(
             children: [
+              // ← NOUVEAU: Barre de recherche par nom
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher un raid par nom...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                ),
+              ),
+              
+              // Filtres par date
+              if (_filterStartDate != null || _filterEndDate != null)
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.date_range, size: 20, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _filterStartDate != null && _filterEndDate != null
+                              ? 'Du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year} au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}'
+                              : _filterStartDate != null
+                                  ? 'À partir du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year}'
+                                  : 'Jusqu\'au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}',
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        color: Colors.blue,
+                        onPressed: () {
+                          setState(() {
+                            _filterStartDate = null;
+                            _filterEndDate = null;
+                            _applyFiltersAndSort();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              
+              // Boutons de sélection de dates
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _selectStartDate,
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: Text(
+                          _filterStartDate != null
+                              ? '${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year}'
+                              : 'Date début',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: _filterStartDate != null 
+                              ? const Color(0xFFFF6B00) 
+                              : Colors.grey,
+                          side: BorderSide(
+                            color: _filterStartDate != null
+                                ? const Color(0xFFFF6B00)
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _selectEndDate,
+                        icon: const Icon(Icons.event, size: 18),
+                        label: Text(
+                          _filterEndDate != null
+                              ? '${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}'
+                              : 'Date fin',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: _filterEndDate != null 
+                              ? const Color(0xFFFF6B00) 
+                              : Colors.grey,
+                          side: BorderSide(
+                            color: _filterEndDate != null
+                                ? const Color(0xFFFF6B00)
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
               CommonResultsHeader(
                 count: _filteredRaids.length,
                 itemName: 'raid',

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sae5_g13_mobile/core/database/database_helper.dart';
+import 'package:sae5_g13_mobile/features/race/domain/race_repository.dart';
 import '../../raid/domain/raid.dart';
 import '../domain/raid_repository.dart';
 import '../../user/domain/user_repository.dart';
@@ -33,6 +34,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _websiteController = TextEditingController();
+  final _raceCountController = TextEditingController();
   Address? _selectedAddress;
   List<Address> _addresses = [];
   
@@ -61,8 +63,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
     });
   }
 
-    /// Load club ID and members
-    /// Load club ID and members
+  
   Future<void> _loadClubData() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -339,6 +340,28 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                     ),
                     
                     const SizedBox(height: 32),
+
+                    TextFormField(
+                    controller: _raceCountController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre maximum de courses *',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.format_list_numbered),
+                      hintText: 'Ex: 5',
+                      helperText: 'Nombre de courses autorisées dans ce raid',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Ce champ est obligatoire';
+                      }
+                      final number = int.tryParse(value);
+                      if (number == null || number < 1) {
+                        return 'Doit être un nombre >= 1';
+                      }
+                      return null;
+                    },
+                  ),
                     
                     // Submit button
                     ElevatedButton(
@@ -654,6 +677,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         timeEnd: _endDate!,
         registrationStart: _registrationStart!,
         registrationEnd: _registrationEnd!,
+        nbRaces: int.parse(_raceCountController.text), // Initial number
       );
       
       // 9. Save via repository
