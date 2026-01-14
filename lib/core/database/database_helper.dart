@@ -5,6 +5,7 @@ import 'seed_db.dart';
 
 class DatabaseHelper {
   static Database? _database;
+  static const _databaseVersion = 2; // ← Incrémente la version
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -17,7 +18,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 1,
+      version: _databaseVersion,
       onCreate: (db, version) async {
         print('Creating database tables...');
         await _createTables(db);
@@ -26,9 +27,32 @@ class DatabaseHelper {
         print('Starting seed...');
         await SeedData.seedDatabase(db);
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        print('Upgrading database from version $oldVersion to $newVersion');
+        // Pour simplifier, on recrée tout
+        await _dropAllTables(db);
+        await _createTables(db);
+        await SeedData.seedDatabase(db);
+      },
     );
 
     return db;
+  }
+
+  static Future<void> _dropAllTables(Database db) async {
+    await db.execute('DROP TABLE IF EXISTS SAN_USERS_RACES');
+    await db.execute('DROP TABLE IF EXISTS SAN_CATEGORIES_RACES');
+    await db.execute('DROP TABLE IF EXISTS SAN_ROLES_USERS');
+    await db.execute('DROP TABLE IF EXISTS SAN_TEAMS_RACES');
+    await db.execute('DROP TABLE IF EXISTS SAN_USERS_TEAMS');
+    await db.execute('DROP TABLE IF EXISTS SAN_TEAMS');
+    await db.execute('DROP TABLE IF EXISTS SAN_RACES');
+    await db.execute('DROP TABLE IF EXISTS SAN_RAIDS');
+    await db.execute('DROP TABLE IF EXISTS SAN_CLUBS');
+    await db.execute('DROP TABLE IF EXISTS SAN_USERS');
+    await db.execute('DROP TABLE IF EXISTS SAN_ROLES');
+    await db.execute('DROP TABLE IF EXISTS SAN_CATEGORIES');
+    await db.execute('DROP TABLE IF EXISTS SAN_ADDRESSES');
   }
 
   static Future<void> _createTables(Database db) async {
@@ -72,7 +96,7 @@ class DatabaseHelper {
         USE_BIRTHDATE TEXT,
         USE_PHONE_NUMBER INTEGER,
         USE_LICENCE_NUMBER INTEGER,
-        USE_PPS_FORM TEXT,
+        USE_SEX TEXT,
         USE_MEMBERSHIP_DATE TEXT
       )
     ''');
@@ -102,7 +126,8 @@ class DatabaseHelper {
         RAI_TIME_START TEXT NOT NULL,
         RAI_TIME_END TEXT NOT NULL,
         RAI_REGISTRATION_START TEXT NOT NULL,
-        RAI_REGISTRATION_END TEXT NOT NULL
+        RAI_REGISTRATION_END TEXT NOT NULL,
+        RAI_RACE_COUNT INTEGER NOT NULL
       )
     ''');
 
@@ -123,7 +148,9 @@ class DatabaseHelper {
         RAC_TEAM_MEMBERS INTEGER NOT NULL,
         RAC_AGE_MIN INTEGER NOT NULL,
         RAC_AGE_MIDDLE INTEGER NOT NULL,
-        RAC_AGE_MAX INTEGER NOT NULL
+        RAC_AGE_MAX INTEGER NOT NULL,
+        RAC_SEX TEXT NOT NULL,
+        RAC_CHIP_REQUIRED INTEGER NOT NULL
       )
     ''');
 
@@ -180,6 +207,7 @@ class DatabaseHelper {
         RAC_ID INTEGER NOT NULL,
         USR_CHIP_NUMBER INTEGER,
         USR_TIME REAL,
+        USR_PPS_FORM TEXT,
         PRIMARY KEY (USE_ID, RAC_ID)
       )
     ''');
