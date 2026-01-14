@@ -10,7 +10,7 @@ class User {
   final int addressId;
   final int? clubId;
   final String email;
-  final String password;
+  final String? password;
   final String name;
   final String lastName;
   final DateTime? birthdate;
@@ -29,7 +29,7 @@ class User {
     required this.addressId,
     this.clubId,
     required this.email,
-    required this.password,
+    this.password,
     required this.name,
     required this.lastName,
     this.birthdate,
@@ -73,7 +73,6 @@ class User {
       birthdate: birthdate,
       phoneNumber: json['USE_PHONE_NUMBER'],
       licenceNumber: json['USE_LICENCE_NUMBER'],
-      ppsForm: json['USE_PPS_FORM'],
       membershipDate: membershipDate,
       address: address,
     );
@@ -92,7 +91,6 @@ class User {
       'USE_BIRTHDATE': birthdate?.toIso8601String(),
       'USE_PHONE_NUMBER': phoneNumber,
       'USE_LICENCE_NUMBER': licenceNumber,
-      'USE_PPS_FORM': ppsForm,
       'USE_MEMBERSHIP_DATE': membershipDate?.toIso8601String(),
     };
   }

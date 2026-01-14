@@ -22,7 +22,7 @@ class EmailAlreadyExistsException extends AuthException {
 
 /// Exception thrown when validation fails
 class ValidationException extends AuthException {
-  ValidationException(String message) : super(message);
+  ValidationException(super.message);
 }
 
 /// Exception thrown when network error occurs
@@ -32,5 +32,5 @@ class NetworkException extends AuthException {
 
 /// Generic authentication error
 class AuthErrorException extends AuthException {
-  AuthErrorException(String message) : super(message);
+  AuthErrorException(super.message);
 }

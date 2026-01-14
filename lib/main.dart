@@ -8,6 +8,10 @@ import 'package:sae5_g13_mobile/features/club/data/datasources/club_api_sources.
 import 'package:sae5_g13_mobile/features/club/data/datasources/club_local_sources.dart';
 import 'package:sae5_g13_mobile/features/club/data/repositories/club_repository_impl.dart';
 import 'package:sae5_g13_mobile/features/club/domain/club_repository.dart';
+import 'package:sae5_g13_mobile/features/team/data/datasources/team_api_sources.dart';
+import 'package:sae5_g13_mobile/features/team/data/datasources/team_local_sources.dart';
+import 'package:sae5_g13_mobile/features/team/data/repositories/team_repository_impl.dart';
+import 'package:sae5_g13_mobile/features/team/domain/team_repository.dart';
 import 'package:sae5_g13_mobile/features/user/data/datasources/user_api_sources.dart';
 import 'package:sae5_g13_mobile/features/user/data/datasources/user_local_sources.dart';
 import 'package:sae5_g13_mobile/features/user/data/repositories/user_repository_impl.dart';
@@ -15,22 +19,22 @@ import 'package:sae5_g13_mobile/features/user/domain/user_repository.dart';
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/theme/app_theme.dart';
-import 'features/raids/presentation/raid_list_view.dart';
-import 'features/raids/domain/raid_repository.dart';
-import 'features/raids/data/repositories/raid_repository_impl.dart';
-import 'features/raids/data/datasources/raid_api_sources.dart';
-import 'features/raids/data/datasources/raid_local_sources.dart';
-import 'features/races/domain/race_repository.dart';
-import 'features/races/data/repositories/race_repository_impl.dart';
-import 'features/races/data/datasources/race_api_sources.dart';
-import 'features/races/data/datasources/race_local_sources.dart';
+import 'features/raid/presentation/raid_list_view.dart';
+import 'features/raid/domain/raid_repository.dart';
+import 'features/raid/data/repositories/raid_repository_impl.dart';
+import 'features/raid/data/datasources/raid_api_sources.dart';
+import 'features/raid/data/datasources/raid_local_sources.dart';
+import 'features/race/domain/race_repository.dart';
+import 'features/race/data/repositories/race_repository_impl.dart';
+import 'features/race/data/datasources/race_api_sources.dart';
+import 'features/race/data/datasources/race_local_sources.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/user/presentation/user_detail_view.dart';
 import 'features/club/presentation/providers/club_provider.dart';
 import 'features/club/presentation/screens/club_list_screen.dart';
-import 'features/Home.dart';
+import 'features/home.dart';
 
 /// Entry point of the Orient'\Action application
 void main() async {
@@ -83,7 +87,9 @@ class SanglierExplorerApp extends StatelessWidget {
             Provider<AddressRepository>.value(
               value: snapshot.data!['addressRepository'],
             ),
-            
+            Provider<TeamRepository>.value(
+              value: snapshot.data!['teamRepository'],
+            ),
           ],
           child: MaterialApp(
             title: '${AppConfig.appName} - Course d\'Orientation',
@@ -133,6 +139,10 @@ class SanglierExplorerApp extends StatelessWidget {
       ),
       'addressRepository': AddressRepositoryImpl(
         localSources: AddressLocalSources(),
+      ),
+      'teamRepository': TeamRepositoryImpl(
+        localSources: TeamLocalSources(),
+        apiSources: TeamApiSources(),
       ),
     };
   }
@@ -188,6 +198,8 @@ class MainScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/raids');
                   },
                 ),
+                
+                const Divider(), // Séparateur visuel
                 // Menu Clubs visible uniquement pour les administrateurs de site
                 if (isAuthenticated && user != null && user.isSiteManager)
                   ListTile(

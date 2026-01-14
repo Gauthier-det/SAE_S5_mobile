@@ -1,0 +1,420 @@
+// lib/features/teams/presentation/team_detail_view.dart
+import 'package:flutter/material.dart';
+import '../domain/team.dart';
+import '../domain/team_repository.dart';
+import '../../user/domain/user.dart';
+import 'widgets/team_header.dart';
+import 'widgets/team_validation_button.dart';
+import 'widgets/team_members_list.dart';
+import 'widgets/add_member_dialog.dart';
+
+class TeamDetailView extends StatefulWidget {
+  final TeamRepository repository;
+  final int teamId;
+  final int raceId;
+  final bool isRaceManager;
+  final int currentUserId;
+
+  const TeamDetailView({
+    super.key,
+    required this.repository,
+    required this.teamId,
+    required this.raceId,
+    required this.isRaceManager,
+    required this.currentUserId,
+  });
+
+  @override
+  State<TeamDetailView> createState() => _TeamDetailViewState();
+}
+
+class _TeamDetailViewState extends State<TeamDetailView> {
+  Team? _team;
+  List<Map<String, dynamic>> _membersWithDetails = [];
+  int? _dossardNumber;
+  bool _isLoading = true;
+  bool _isValidating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTeamDetails();
+  }
+
+  bool _canManageTeam() {
+    return _team?.managerId == widget.currentUserId || widget.isRaceManager;
+  }
+
+  bool _canValidateTeam() {
+    for (var member in _membersWithDetails) {
+      final hasLicence = member['USE_LICENCE_NUMBER'] != null;
+      final hasPPS = member['USE_PPS_FORM'] != null && 
+                     (member['USE_PPS_FORM'] as String).isNotEmpty;
+      
+      if (!hasLicence && !hasPPS) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> _loadTeamDetails() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final team = await widget.repository.getTeamById(widget.teamId);
+      final dossardNumber = await widget.repository.getTeamDossardNumber(
+        widget.teamId,
+        widget.raceId,
+      );
+      final membersWithDetails = await widget.repository.getTeamMembersWithRaceDetails(
+        widget.teamId,
+        widget.raceId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _team = team;
+          _dossardNumber = dossardNumber;
+          _membersWithDetails = membersWithDetails;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackBar('Erreur : $e');
+      }
+    }
+  }
+
+  Future<void> _toggleTeamValidation() async {
+    final isCurrentlyValid = _team?.isValid ?? false;
+    final action = isCurrentlyValid ? 'invalider' : 'valider';
+    
+    if (!isCurrentlyValid && !_canValidateTeam()) {
+      _showValidationErrorDialog();
+      return;
+    }
+
+    final confirm = await _showConfirmDialog(
+      title: '${action[0].toUpperCase()}${action.substring(1)} l\'équipe',
+      content: 'Confirmez-vous que vous souhaitez $action cette équipe pour la course ?',
+      actionLabel: action.toUpperCase(),
+      isDestructive: isCurrentlyValid,
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isValidating = true);
+
+    try {
+      if (isCurrentlyValid) {
+        await widget.repository.invalidateTeamForRace(widget.teamId, widget.raceId);
+      } else {
+        await widget.repository.validateTeamForRace(widget.teamId, widget.raceId);
+      }
+
+      if (mounted) {
+        _showSnackBar(
+          'Équipe ${isCurrentlyValid ? "invalidée" : "validée"} avec succès !',
+          isSuccess: true,
+        );
+        await _loadTeamDetails();
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isValidating = false);
+      }
+    }
+  }
+
+  Future<void> _addMember() async {
+    final availableUsers = await widget.repository.getAvailableUsersForRace(
+      widget.raceId,
+    );
+
+    if (availableUsers.isEmpty) {
+      _showSnackBar('Aucun utilisateur disponible pour cette course');
+      return;
+    }
+
+    if (!mounted) return;
+
+    final selectedUser = await showDialog<User>(
+      context: context,
+      builder: (context) => AddMemberDialog(availableUsers: availableUsers),
+    );
+
+    if (selectedUser != null) {
+      try {
+        await widget.repository.addTeamMember(_team!.id, selectedUser.id);
+        await widget.repository.registerUserToRace(selectedUser.id, widget.raceId);
+
+        if (mounted) {
+          _showSnackBar(
+            '${selectedUser.fullName} a été ajouté à l\'équipe !',
+            isSuccess: true,
+          );
+          await _loadTeamDetails();
+        }
+      } catch (e) {
+        if (mounted) {
+          _showSnackBar('Erreur : $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _removeMember(int userId, String memberName) async {
+    final confirm = await _showConfirmDialog(
+      title: 'Retirer le membre',
+      content: 'Êtes-vous sûr de vouloir retirer $memberName de l\'équipe ?',
+      actionLabel: 'RETIRER',
+      isDestructive: true,
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await widget.repository.removeMemberFromTeam(widget.teamId, userId);
+
+      if (mounted) {
+        _showSnackBar('Membre retiré avec succès !');
+        await _loadTeamDetails();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
+      }
+    }
+  }
+
+  Future<void> _deleteTeam() async {
+    final confirm = await _showConfirmDialog(
+      title: 'Supprimer l\'équipe',
+      content: 'Êtes-vous sûr de vouloir supprimer cette équipe ? Cette action est irréversible.',
+      actionLabel: 'SUPPRIMER',
+      isDestructive: true,
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await widget.repository.deleteTeam(widget.teamId, widget.raceId);
+
+      if (mounted) {
+        _showSnackBar('Équipe supprimée avec succès !', isSuccess: false);
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
+      }
+    }
+  }
+
+  Future<void> _editPPSForm(int userId, String currentPPS, String memberName) async {
+    final controller = TextEditingController(text: currentPPS);
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Formulaire PPS - $memberName'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Formulaire PPS',
+            hintText: 'URL ou référence du formulaire',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result == currentPPS) return;
+
+    try {
+      await widget.repository.updateUserPPS(userId, result.isEmpty ? null : result);
+
+      if (mounted) {
+        _showSnackBar('Formulaire PPS mis à jour !', isSuccess: true);
+        await _loadTeamDetails();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
+      }
+    }
+  }
+
+  Future<void> _editChipNumber(int userId, int? currentChip, String memberName) async {
+    final controller = TextEditingController(text: currentChip?.toString() ?? '');
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('N° de puce - $memberName'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Numéro de puce',
+            hintText: 'Entrez le numéro',
+            border: OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.number,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null) return;
+
+    try {
+      final chipNumber = result.isEmpty ? null : int.parse(result);
+      await widget.repository.updateUserChipNumber(userId, widget.raceId, chipNumber);
+
+      if (mounted) {
+        _showSnackBar('Numéro de puce mis à jour !', isSuccess: true);
+        await _loadTeamDetails();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? const Color(0xFF52B788) : null,
+      ),
+    );
+  }
+
+  void _showValidationErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Validation impossible'),
+        content: const Text(
+          'Tous les membres doivent avoir un numéro de licence ou un formulaire PPS renseigné.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showConfirmDialog({
+    required String title,
+    required String content,
+    required String actionLabel,
+    bool isDestructive = false,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDestructive ? Colors.red : const Color(0xFF52B788),
+            ),
+            child: Text(actionLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_team?.name ?? 'Équipe'),
+        backgroundColor: const Color(0xFF1B3022),
+        foregroundColor: Colors.white,
+        actions: widget.isRaceManager
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: _deleteTeam,
+                  tooltip: 'Supprimer l\'équipe',
+                ),
+              ]
+            : null,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _team == null
+              ? const Center(child: Text('Équipe introuvable'))
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TeamHeader(
+                        team: _team!,
+                        dossardNumber: _dossardNumber,
+                      ),
+                      
+                      if (widget.isRaceManager)
+                        TeamValidationButton(
+                          isValid: _team!.isValid ?? false,
+                          isValidating: _isValidating,
+                          onPressed: _toggleTeamValidation,
+                        ),
+                      
+                      TeamMembersList(
+                        members: _membersWithDetails,
+                        canManageTeam: _canManageTeam(),
+                        isRaceManager: widget.isRaceManager,
+                        raceId: widget.raceId,
+                        onAddMember: _addMember,
+                        onRemoveMember: _removeMember,
+                        onEditPPS: _editPPSForm,
+                        onEditChipNumber: _editChipNumber,
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+}
