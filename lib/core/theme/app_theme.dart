@@ -79,7 +79,7 @@ class AppTheme {
       // ========================================
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.orangeBalise,
+          backgroundColor: AppColors.vertSanglier,
           foregroundColor: AppColors.bouleau,
           textStyle: AppTypography.button,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),

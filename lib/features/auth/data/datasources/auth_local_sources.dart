@@ -44,19 +44,33 @@ class AuthLocalSources {
   /// Get registered users FROM SQLITE (not SharedPreferences)
   Future<List<Map<String, dynamic>>> getRegisteredUsers() async {
     final db = await DatabaseHelper.database;
-    
+
     final List<Map<String, dynamic>> users = await db.query('SAN_USERS');
-    
-    return users.map((user) => {
-      'id': user['USE_ID'].toString(),
-      'email': user['USE_MAIL'],
-      'password': user['USE_PASSWORD'], // Plain text in dev
-      'firstName': user['USE_NAME'],
-      'lastName': user['USE_LAST_NAME'],
-      'birthDate': user['USE_BIRTHDATE'],
-      'phoneNumber': user['USE_PHONE_NUMBER']?.toString(),
-      'licenceNumber': user['USE_LICENCE_NUMBER']?.toString(),
-      'createdAt': DateTime.now().toIso8601String(),
+
+    // Charger tous les rôles des utilisateurs
+    final List<Map<String, dynamic>> rolesUsers = await db.query(
+      'SAN_ROLES_USERS',
+    );
+
+    return users.map((user) {
+      // Récupérer les rôles de cet utilisateur
+      final userRoles = rolesUsers
+          .where((ru) => ru['USE_ID'] == user['USE_ID'])
+          .map((ru) => ru['ROL_ID'] as int)
+          .toList();
+
+      return {
+        'id': user['USE_ID'].toString(),
+        'email': user['USE_MAIL'],
+        'password': user['USE_PASSWORD'], // Plain text in dev
+        'firstName': user['USE_NAME'],
+        'lastName': user['USE_LAST_NAME'],
+        'birthDate': user['USE_BIRTHDATE'],
+        'phoneNumber': user['USE_PHONE_NUMBER']?.toString(),
+        'licenceNumber': user['USE_LICENCE_NUMBER']?.toString(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'roles': userRoles,
+      };
     }).toList();
   }
 

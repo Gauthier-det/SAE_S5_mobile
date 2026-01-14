@@ -12,6 +12,7 @@ class User {
   final String? ppsNumber;
   final String? chipNumber;
   final DateTime createdAt;
+  final List<int> roles;
 
   User({
     required this.id,
@@ -26,7 +27,18 @@ class User {
     this.chipNumber,
     this.profileImageUrl,
     required this.createdAt,
+    this.roles = const [],
   });
+
+  /// Role constants
+  static const int roleRunner = 1;
+  static const int roleSiteManager = 2;
+  static const int roleClubManager = 3;
+  static const int roleRaidManager = 4;
+  static const int roleRaceManager = 5;
+
+  /// Check if user is a site manager (admin)
+  bool get isSiteManager => roles.contains(roleSiteManager);
 
   /// Full name of the user
   String get fullName => '$firstName $lastName';
@@ -45,6 +57,7 @@ class User {
     String? chipNumber,
     String? profileImageUrl,
     DateTime? createdAt,
+    List<int>? roles,
   }) {
     return User(
       id: id ?? this.id,
@@ -59,6 +72,7 @@ class User {
       chipNumber: chipNumber ?? this.chipNumber,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       createdAt: createdAt ?? this.createdAt,
+      roles: roles ?? this.roles,
     );
   }
 
@@ -77,6 +91,7 @@ class User {
       'chipNumber': chipNumber,
       'profileImageUrl': profileImageUrl,
       'createdAt': createdAt.toIso8601String(),
+      'roles': roles,
     };
   }
 
@@ -95,6 +110,7 @@ class User {
       chipNumber: json['chipNumber'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      roles: (json['roles'] as List<dynamic>?)?.cast<int>() ?? [],
     );
   }
 }
