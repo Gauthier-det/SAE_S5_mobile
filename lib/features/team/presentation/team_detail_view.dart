@@ -80,15 +80,25 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     setState(() => _isLoading = true);
 
     try {
-      final team = await widget.repository.getTeamById(widget.teamId);
+      // ✅ Utilise la nouvelle méthode qui récupère le statut de validation
+      final team = await widget.repository.getTeamByIdWithRaceStatus(
+        widget.teamId,
+        widget.raceId,
+      );
+      
       final dossardNumber = await widget.repository.getTeamDossardNumber(
         widget.teamId,
         widget.raceId,
       );
+      
       final membersWithDetails = await widget.repository.getTeamMembersWithRaceDetails(
         widget.teamId,
         widget.raceId,
       );
+
+      print('🔍 Team loaded: ${team?.name}, isValid: ${team?.isValid}');
+      print('📊 Dossard: $dossardNumber');
+      print('👥 Members: ${membersWithDetails.length}');
 
       if (mounted) {
         setState(() {
@@ -99,12 +109,14 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         });
       }
     } catch (e) {
+      print('❌ Error loading team: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showSnackBar('Erreur : $e');
       }
     }
   }
+
 
   Future<void> _toggleTeamValidation() async {
     // ✅ Seul le responsable de course peut valider/invalider

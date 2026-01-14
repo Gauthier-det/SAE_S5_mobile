@@ -35,6 +35,11 @@ class TeamRepositoryImpl implements TeamRepository {
   }
 
   @override
+  Future<Team?> getTeamByIdWithRaceStatus(int teamId, int raceId) async {
+    return await localSources.getTeamByIdWithRaceStatus(teamId, raceId);
+  }
+
+  @override
   Future<void> registerTeamToRace(int teamId, int raceId) async {
     await localSources.registerTeamToRace(teamId, raceId);
   }
