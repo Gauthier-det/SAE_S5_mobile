@@ -1,11 +1,11 @@
-// lib/features/raids/presentation/raid_list_view.dart (VERSION SIMPLIFIÉE)
+// lib/features/raids/presentation/raid_list_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sae5_g13_mobile/core/presentation/widgets/common_results_header.dart';
 import '../../../core/presentation/widgets/common_loading_view.dart';
 import '../../../core/presentation/widgets/common_error_view.dart';
 import '../../../core/presentation/widgets/common_empty_view.dart';
 import '../../../core/presentation/widgets/common_list_header.dart';
+import '../../../core/presentation/widgets/common_results_header.dart';
 import '../../../core/database/database_helper.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../../user/domain/user_repository.dart';
@@ -56,9 +56,35 @@ class _RaidListViewState extends State<RaidListView> {
         return true;
       }).toList();
 
-      _filteredRaids.sort((a, b) => _sortAscending
-          ? a.timeStart.compareTo(b.timeStart)
-          : b.timeStart.compareTo(a.timeStart));
+      // Tri intelligent : À venir d'abord (plus proche en premier), puis terminés (plus récent en premier)
+      _filteredRaids.sort((a, b) {
+        final now = DateTime.now();
+        final aIsUpcoming = now.isBefore(a.timeStart);
+        final bIsUpcoming = now.isBefore(b.timeStart);
+        final aIsFinished = now.isAfter(a.timeEnd);
+        final bIsFinished = now.isAfter(b.timeEnd);
+
+        // Les raids à venir avant les terminés
+        if (aIsUpcoming && !bIsUpcoming) return -1;
+        if (!aIsUpcoming && bIsUpcoming) return 1;
+
+        // Les raids en cours avant les terminés
+        if (!aIsFinished && bIsFinished) return -1;
+        if (aIsFinished && !bIsFinished) return 1;
+
+        // Si même statut, trier par date
+        if (aIsUpcoming && bIsUpcoming) {
+          // À venir : le plus proche en premier (ordre croissant)
+          return _sortAscending
+              ? a.timeStart.compareTo(b.timeStart)
+              : b.timeStart.compareTo(a.timeStart);
+        } else {
+          // Terminés : le plus récent en premier (ordre décroissant)
+          return _sortAscending
+              ? b.timeEnd.compareTo(a.timeEnd)
+              : a.timeEnd.compareTo(b.timeEnd);
+        }
+      });
     });
   }
 

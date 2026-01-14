@@ -1,16 +1,18 @@
-// lib/features/races/presentation/race_detail_view.dart (VERSION SIMPLIFIÉE)
+// lib/features/races/presentation/race_detail_view.dart (VERSION SIMPLE)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/presentation/widgets/common_loading_view.dart';
 import '../../../core/presentation/widgets/common_error_view.dart';
 import '../../../core/presentation/widgets/common_empty_view.dart';
-import '../../../core/presentation/widgets/common_info_card.dart';
 import '../../../shared/utils/date_formatter.dart';
 import '../domain/race.dart';
 import '../domain/race_repository.dart';
 import 'widgets/race_header.dart';
+import 'widgets/race_quick_stats.dart';
 import 'widgets/race_participants_section.dart';
 import 'widgets/race_ages_section.dart';
+import 'widgets/race_pricing_section.dart';
+import 'widgets/race_detail_section.dart';
 
 class RaceDetailView extends StatefulWidget {
   final int raceId;
@@ -36,11 +38,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Détail de la course'),
-        backgroundColor: const Color(0xFF1B3022),
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: FutureBuilder<Race?>(
         future: _raceFuture,
         builder: (context, snapshot) {
@@ -54,80 +52,126 @@ class _RaceDetailViewState extends State<RaceDetailView> {
 
           final race = snapshot.data;
           if (race == null) {
-            return const CommonEmptyView(
-              icon: Icons.search_off,
-              title: 'Course introuvable',
+            return Scaffold(
+              appBar: AppBar(title: const Text('Course introuvable')),
+              body: const CommonEmptyView(
+                icon: Icons.search_off,
+                title: 'Course introuvable',
+              ),
             );
           }
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RaceHeader(race: race),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle('Informations', Icons.info_outline, context),
-                      const SizedBox(height: 12),
-                      CommonInfoCard(
-                        icon: Icons.calendar_today,
-                        title: 'Dates',
-                        content:
-                            '${DateFormatter.formatDateTime(race.startDate)}\n→ ${DateFormatter.formatDateTime(race.endDate)}',
-                      ),
-                      const SizedBox(height: 12),
-                      CommonInfoCard(
-                        icon: Icons.timer,
-                        title: 'Durée',
-                        content: '${race.duration} minutes',
-                      ),
-                      const SizedBox(height: 12),
-                      CommonInfoCard(
-                        icon: Icons.terrain,
-                        title: 'Difficulté',
-                        content: race.difficulty,
-                        color: _getDifficultyColor(race.difficulty),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionTitle('Participants', Icons.groups, context),
-                      const SizedBox(height: 12),
-                      RaceParticipantsSection(race: race),
-                      const SizedBox(height: 24),
-                      _buildSectionTitle('Catégories d\'âge', Icons.cake, context),
-                      const SizedBox(height: 12),
-                      RaceAgesSection(race: race),
-                      const SizedBox(height: 32),
-                      _buildRegistrationButton(context, race),
-                    ],
-                  ),
+          return CustomScrollView(
+            slivers: [
+              // AppBar simple
+              SliverAppBar(
+                expandedHeight: 140,
+                pinned: true,
+                backgroundColor: race.type == 'Compétitif' 
+                    ? const Color(0xFFFF6B00) 
+                    : const Color(0xFF52B788),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: RaceHeader(race: race),
                 ),
-              ],
-            ),
+              ),
+
+              // Contenu
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    // Stats rapides
+                    RaceQuickStats(race: race),
+
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          // Section Dates (simplifié)
+                          RaceDetailSection(
+                            title: 'Dates',
+                            icon: Icons.schedule,
+                            color: const Color(0xFFFF6B00),
+                            child: Column(
+                              children: [
+                                _buildSimpleRow(
+                                  'Début',
+                                  DateFormatter.formatDateTime(race.startDate),
+                                ),
+                                const Divider(height: 20),
+                                _buildSimpleRow(
+                                  'Fin',
+                                  DateFormatter.formatDateTime(race.endDate),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Section Participants
+                          RaceDetailSection(
+                            title: 'Participants',
+                            icon: Icons.groups,
+                            color: const Color(0xFF52B788),
+                            child: RaceParticipantsSection(race: race),
+                          ),
+
+                          // Section Âges
+                          RaceDetailSection(
+                            title: 'Catégories d\'âge',
+                            icon: Icons.cake,
+                            color: const Color(0xFF1B3022),
+                            child: RaceAgesSection(race: race),
+                          ),
+
+                          // Section Tarifs
+                          RaceDetailSection(
+                            title: 'Tarifs',
+                            icon: Icons.euro,
+                            color: Colors.blue,
+                            child: RacePricingSection(raceId: widget.raceId),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Bouton inscription
+                          _buildRegistrationButton(race),
+
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title, IconData icon, BuildContext context) {
+  Widget _buildSimpleRow(String label, String value) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(icon, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
         Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildRegistrationButton(BuildContext context, Race race) {
+  Widget _buildRegistrationButton(Race race) {
     return FutureBuilder<int>(
       future: _teamsCountFuture,
       builder: (context, snapshot) {
@@ -135,61 +179,58 @@ class _RaceDetailViewState extends State<RaceDetailView> {
         final isFullyBooked = registeredTeams >= race.maxTeams;
         final isBeforeStart = DateTime.now().isBefore(race.startDate);
 
+        String buttonText;
+        IconData buttonIcon;
+        Color? buttonColor;
+
+        if (isFullyBooked) {
+          buttonText = 'COMPLET';
+          buttonIcon = Icons.block;
+          buttonColor = Colors.grey;
+        } else if (!isBeforeStart) {
+          buttonText = 'FERMÉ';
+          buttonIcon = Icons.lock;
+          buttonColor = Colors.grey;
+        } else {
+          buttonText = 'S\'INSCRIRE';
+          buttonIcon = Icons.check_circle;
+          buttonColor = const Color(0xFFFF6B00);
+        }
+
         return SizedBox(
           width: double.infinity,
-          height: 56,
+          height: 50,
           child: ElevatedButton.icon(
             onPressed: isFullyBooked || !isBeforeStart
                 ? null
                 : () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Inscription en cours de développement'),
+                        content: Text('Inscription bientôt disponible'),
                       ),
                     );
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6B00),
+              backgroundColor: buttonColor,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey.shade300,
+              disabledForegroundColor: Colors.grey.shade600,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
+              elevation: isFullyBooked || !isBeforeStart ? 0 : 2,
             ),
-            icon: Icon(
-              isFullyBooked
-                  ? Icons.block
-                  : !isBeforeStart
-                      ? Icons.event_busy
-                      : Icons.app_registration,
-            ),
+            icon: Icon(buttonIcon),
             label: Text(
-              isFullyBooked
-                  ? 'COURSE COMPLÈTE'
-                  : !isBeforeStart
-                      ? 'INSCRIPTIONS FERMÉES'
-                      : 'S\'INSCRIRE',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              buttonText,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         );
       },
     );
-  }
-
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'facile':
-        return Colors.green;
-      case 'moyen':
-        return Colors.orange;
-      case 'difficile':
-        return Colors.red;
-      case 'expert':
-      case 'très expert':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
   }
 }

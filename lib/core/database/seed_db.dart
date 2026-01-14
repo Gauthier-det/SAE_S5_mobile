@@ -41,7 +41,7 @@ class SeedData {
     final categories = [
       {'CAT_ID': 1, 'CAT_LABEL': 'Mineur'},
       {'CAT_ID': 2, 'CAT_LABEL': 'Majeur non licencié'},
-      {'CAT_ID': 3, 'CAT_LABEL': 'Licensié'},
+      {'CAT_ID': 3, 'CAT_LABEL': 'Licencié'},
     ];
     for (var cat in categories) {
       await db.insert('SAN_CATEGORIES', cat);
@@ -83,9 +83,6 @@ class SeedData {
     final roles = [
       {'ROL_ID': 1, 'ROL_NAME': 'Coureur'},
       {'ROL_ID': 2, 'ROL_NAME': 'Gestionnaire de site'},
-      {'ROL_ID': 3, 'ROL_NAME': 'Responsable de club'},
-      {'ROL_ID': 4, 'ROL_NAME': 'Responsable de raid'},
-      {'ROL_ID': 5, 'ROL_NAME': 'Responsable de course'},
     ];
     for (var role in roles) {
       await db.insert('SAN_ROLES', role);
@@ -94,11 +91,10 @@ class SeedData {
     // 7. Roles_Users
     final rolesUsers = [
       {'USE_ID': 1, 'ROL_ID': 2}, // admin
-      {'USE_ID': 2, 'ROL_ID': 3}, {'USE_ID': 3, 'ROL_ID': 3}, // Club responsible
-      {'USE_ID': 4, 'ROL_ID': 4}, {'USE_ID': 5, 'ROL_ID': 4}, // Raid responsible
-      {'USE_ID': 4, 'ROL_ID': 5}, {'USE_ID': 6, 'ROL_ID': 5}, // Race responsible
-      {'USE_ID': 2, 'ROL_ID': 1}, {'USE_ID': 3, 'ROL_ID': 1}, {'USE_ID': 5, 'ROL_ID': 1},
-      {'USE_ID': 6, 'ROL_ID': 1}, {'USE_ID': 7, 'ROL_ID': 1}, {'USE_ID': 8, 'ROL_ID': 1},
+      {'USE_ID': 2, 'ROL_ID': 1}, {'USE_ID': 3, 'ROL_ID': 1}, // Club responsible
+      {'USE_ID': 4, 'ROL_ID': 1}, {'USE_ID': 5, 'ROL_ID': 1}, // Raid responsible
+      {'USE_ID': 6, 'ROL_ID': 1}, // Race responsible
+      {'USE_ID': 7, 'ROL_ID': 1}, {'USE_ID': 8, 'ROL_ID': 1},
       {'USE_ID': 9, 'ROL_ID': 1}, {'USE_ID': 10, 'ROL_ID': 1}, {'USE_ID': 11, 'ROL_ID': 1},
       {'USE_ID': 12, 'ROL_ID': 1}, // Runners
     ];
@@ -139,10 +135,10 @@ class SeedData {
     
     // 9. Races
     final races = [
-      {'RAC_ID': 1, 'USE_ID': 4, 'RAI_ID': 1, 'RAC_TIME_START': '2025-10-10 08:30:00', 'RAC_TIME_END': '2025-10-10 13:30:00', 'RAC_DURATION': 300, 'RAC_TYPE': 'Compétitif', 'RAC_DIFFICULTY': 'Moyen', 'RAC_MIN_PARTICIPANTS': 5, 'RAC_MAX_PARTICIPANTS': 200, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 50, 'RAC_TEAM_MEMBERS': 3, 'RAC_AGE_MIN': 12, 'RAC_AGE_MIDDLE': 15, 'RAC_AGE_MAX': 18},
-      {'RAC_ID': 2, 'USE_ID': 4, 'RAI_ID': 1, 'RAC_TIME_START': '2025-10-10 12:30:00', 'RAC_TIME_END': '2025-10-10 18:30:00', 'RAC_DURATION': 360, 'RAC_TYPE': 'Compétitif', 'RAC_DIFFICULTY': 'Difficile', 'RAC_MIN_PARTICIPANTS': 4, 'RAC_MAX_PARTICIPANTS': 150, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 40, 'RAC_TEAM_MEMBERS': 2, 'RAC_AGE_MIN': 18, 'RAC_AGE_MIDDLE': 25, 'RAC_AGE_MAX': 30},
-      {'RAC_ID': 3, 'USE_ID': 6, 'RAI_ID': 2, 'RAC_TIME_START': '2026-06-15 09:15:00', 'RAC_TIME_END': '2026-06-15 13:15:00', 'RAC_DURATION': 240, 'RAC_TYPE': 'Compétitif', 'RAC_DIFFICULTY': 'Moyen', 'RAC_MIN_PARTICIPANTS': 6, 'RAC_MAX_PARTICIPANTS': 120, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 30, 'RAC_TEAM_MEMBERS': 3, 'RAC_AGE_MIN': 10, 'RAC_AGE_MIDDLE': 18, 'RAC_AGE_MAX': 20},
-      {'RAC_ID': 4, 'USE_ID': 6, 'RAI_ID': 2, 'RAC_TIME_START': '2026-04-20 08:00:00', 'RAC_TIME_END': '2026-04-20 11:30:00', 'RAC_DURATION': 210, 'RAC_TYPE': 'Loisir', 'RAC_DIFFICULTY': 'Facile', 'RAC_MIN_PARTICIPANTS': 4, 'RAC_MAX_PARTICIPANTS': 300, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 60, 'RAC_TEAM_MEMBERS': 2, 'RAC_AGE_MIN': 14, 'RAC_AGE_MIDDLE': 17, 'RAC_AGE_MAX': 19},
+      {'RAC_ID': 1, 'USE_ID': 4, 'RAI_ID': 1, 'RAC_TIME_START': '2025-10-10 08:30:00', 'RAC_TIME_END': '2025-10-10 13:30:00', 'RAC_TYPE': 'Compétitif', 'RAC_DIFFICULTY': 'Moyen', 'RAC_MIN_PARTICIPANTS': 5, 'RAC_MAX_PARTICIPANTS': 200, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 50, 'RAC_TEAM_MEMBERS': 3, 'RAC_AGE_MIN': 12, 'RAC_AGE_MIDDLE': 15, 'RAC_AGE_MAX': 18},
+      {'RAC_ID': 2, 'USE_ID': 4, 'RAI_ID': 1, 'RAC_TIME_START': '2025-10-10 12:30:00', 'RAC_TIME_END': '2025-10-10 18:30:00', 'RAC_TYPE': 'Compétitif', 'RAC_DIFFICULTY': 'Difficile', 'RAC_MIN_PARTICIPANTS': 4, 'RAC_MAX_PARTICIPANTS': 150, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 40, 'RAC_TEAM_MEMBERS': 2, 'RAC_AGE_MIN': 18, 'RAC_AGE_MIDDLE': 25, 'RAC_AGE_MAX': 30},
+      {'RAC_ID': 3, 'USE_ID': 6, 'RAI_ID': 2, 'RAC_TIME_START': '2026-06-15 09:15:00', 'RAC_TIME_END': '2026-06-15 13:15:00', 'RAC_TYPE': 'Compétitif', 'RAC_DIFFICULTY': 'Moyen', 'RAC_MIN_PARTICIPANTS': 6, 'RAC_MAX_PARTICIPANTS': 120, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 30, 'RAC_TEAM_MEMBERS': 3, 'RAC_AGE_MIN': 10, 'RAC_AGE_MIDDLE': 18, 'RAC_AGE_MAX': 20},
+      {'RAC_ID': 4, 'USE_ID': 6, 'RAI_ID': 2, 'RAC_TIME_START': '2026-04-20 08:00:00', 'RAC_TIME_END': '2026-04-20 11:30:00', 'RAC_TYPE': 'Loisir', 'RAC_DIFFICULTY': 'Facile', 'RAC_MIN_PARTICIPANTS': 4, 'RAC_MAX_PARTICIPANTS': 300, 'RAC_MIN_TEAMS': 2, 'RAC_MAX_TEAMS': 60, 'RAC_TEAM_MEMBERS': 2, 'RAC_AGE_MIN': 14, 'RAC_AGE_MIDDLE': 17, 'RAC_AGE_MAX': 19},
     ];
     for (var race in races) {
       await db.insert('SAN_RACES', race);

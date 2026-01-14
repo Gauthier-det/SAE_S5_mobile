@@ -1,3 +1,5 @@
+import 'package:sae5_g13_mobile/features/races/domain/category.dart';
+
 import '../../domain/race_repository.dart';
 import '../../domain/race.dart';
 import '../datasources/race_api_sources.dart';
@@ -28,4 +30,48 @@ class RacesRepositoryImpl implements RacesRepository {
   Future<Race?> getRaceById(int id) async {
     return await localSources.getRaceById(id);
   }
+
+  // lib/features/races/data/repositories/race_repository_impl.dart
+
+  @override
+  Future<int> createRace(Race race, Map<int, double> categoryPrices) async {
+    final raceId = await localSources.createRace({
+      'RAI_ID': race.raidId,
+      'USE_ID': race.userId,
+      'RAC_TYPE': race.type,
+      'RAC_DIFFICULTY': race.difficulty,
+      'RAC_TIME_START': race.startDate.toIso8601String(), 
+      'RAC_TIME_END': race.endDate.toIso8601String(),  
+      'RAC_MIN_PARTICIPANTS': race.minParticipants,
+      'RAC_MAX_PARTICIPANTS': race.maxParticipants,
+      'RAC_MIN_TEAMS': race.minTeams,
+      'RAC_MAX_TEAMS': race.maxTeams,
+      'RAC_TEAM_MEMBERS': race.teamMembers,
+      'RAC_AGE_MIN': race.ageMin,
+      'RAC_AGE_MIDDLE': race.ageMiddle,
+      'RAC_AGE_MAX': race.ageMax,
+    });
+
+    // Créer les prix par catégorie
+    for (var entry in categoryPrices.entries) {
+      await localSources.createRaceCategoryPrice(raceId, entry.key, entry.value);
+    }
+
+    return raceId;
+  }
+
+  @override
+  Future<List<Category>> getCategories() async {
+    final data = await localSources.getCategories();
+    return data.map((json) => Category.fromJson(json)).toList();
+  }
+
+  @override
+  Future<Map<int, double>> getRaceCategoryPrices(int raceId) async {
+    final data = await localSources.getRaceCategoryPrices(raceId);
+    return Map.fromEntries(
+      data.map((e) => MapEntry(e['CAT_ID'] as int, (e['price'] as num).toDouble())),
+    );
+  }
+
 }
