@@ -188,19 +188,21 @@ class MainScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/raids');
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.groups),
-                  title: const Text('Clubs'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ClubListScreen(),
-                      ),
-                    );
-                  },
-                ),
+                // Menu Clubs visible uniquement pour les administrateurs de site
+                if (isAuthenticated && user != null && user.isSiteManager)
+                  ListTile(
+                    leading: const Icon(Icons.groups),
+                    title: const Text('Clubs'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ClubListScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 const Divider(),
                 if (!isAuthenticated) ...[
                   ListTile(

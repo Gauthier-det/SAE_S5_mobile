@@ -1,9 +1,20 @@
 // lib/features/users/data/datasources/user_local_sources.dart
-import 'package:sqflite/sqflite.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../domain/user.dart';
 
 class UserLocalSources {
+  /// Gets all users
+  Future<List<User>> getAllUsers() async {
+    final db = await DatabaseHelper.database;
+    
+    final List<Map<String, dynamic>> maps = await db.query(
+      'SAN_USERS',
+      orderBy: 'USE_NAME, USE_LAST_NAME',
+    );
+    
+    return maps.map((map) => User.fromJson(map)).toList();
+  }
+
   /// Gets the club ID if user is a club manager
   /// Returns null if user is not a club manager
   Future<int?> getUserClubId(int userId) async {
