@@ -7,7 +7,7 @@ class AuthApiSources {
   final http.Client client;
 
   AuthApiSources({required this.baseUrl, http.Client? client})
-      : client = client ?? http.Client();
+    : client = client ?? http.Client();
 
   /// Login user via POST /login
   Future<Map<String, dynamic>> login({
@@ -17,11 +17,11 @@ class AuthApiSources {
     try {
       final response = await client.post(
         Uri.parse('$baseUrl/login'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-        body: json.encode({
-          'email': email,
-          'password': password,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
@@ -47,20 +47,27 @@ class AuthApiSources {
     String? licenceNumber,
   }) async {
     try {
+      final requestBody = {
+        'mail': email, // Laravel attend 'mail' pas 'email'
+        'password': password,
+        'name': firstName, // Laravel attend 'name' pas 'first_name'
+        'last_name': lastName,
+      };
+      
+      print('📤 Register request to: $baseUrl/register');
+      print('📤 Request body: $requestBody');
+      
       final response = await client.post(
         Uri.parse('$baseUrl/register'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-        body: json.encode({
-          'email': email,
-          'password': password,
-          'password_confirmation': password,
-          'first_name': firstName,
-          'last_name': lastName,
-          if (birthDate != null) 'birth_date': birthDate,
-          if (phoneNumber != null) 'phone_number': phoneNumber,
-          if (licenceNumber != null) 'licence_number': licenceNumber,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(requestBody),
       );
+
+      print('📥 Register response status: ${response.statusCode}');
+      print('📥 Register response body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         return json.decode(response.body);
@@ -71,6 +78,7 @@ class AuthApiSources {
         throw Exception('Erreur d\'inscription: ${response.statusCode}');
       }
     } catch (e) {
+      print('❌ Register error: $e');
       throw Exception('Erreur réseau: $e');
     }
   }

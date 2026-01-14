@@ -51,10 +51,28 @@ class Raid {
   // lib/features/raids/domain/raid.dart
 
   factory Raid.fromJson(Map<String, dynamic> json) {
-    // Parse address if present in JOIN
+    // Parse address - handle both nested object and flat format
     Address? address;
-    if (json.containsKey('ADD_POSTAL_CODE')) {
+    if (json.containsKey('address') && json['address'] != null) {
+      // API format: nested object
+      address = Address.fromJson(json['address']);
+    } else if (json.containsKey('ADD_POSTAL_CODE')) {
+      // SQLite JOIN format: flat
       address = Address.fromJson(json);
+    }
+
+    // Parse club if present as nested object
+    Club? club;
+    if (json.containsKey('club') && json['club'] != null) {
+      final clubJson = json['club'] as Map<String, dynamic>;
+      club = Club(
+        id: clubJson['CLU_ID'] as int,
+        name: clubJson['CLU_NAME'] as String,
+        responsibleName: 'Non assigné',
+        responsibleId: clubJson['USE_ID'] as int?,
+        addressId: clubJson['ADD_ID'] as int?,
+        createdAt: DateTime.now(),
+      );
     }
 
     // Parse manager using ALIASED column names
@@ -102,6 +120,7 @@ class Raid {
       registrationStart: DateTime.parse(json['RAI_REGISTRATION_START']),
       registrationEnd: DateTime.parse(json['RAI_REGISTRATION_END']),
       address: address,
+      club: club,
       manager: manager,
     );
   }

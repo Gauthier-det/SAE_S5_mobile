@@ -8,28 +8,24 @@ class RaidRepositoryImpl implements RaidRepository {
   final RaidApiSources apiSources;
   final RaidLocalSources localSources;
 
-  RaidRepositoryImpl({
-    required this.apiSources,
-    required this.localSources,
-  });
+  RaidRepositoryImpl({required this.apiSources, required this.localSources});
 
   @override
   Future<Raid?> getRaidById(int id) async {
     try {
       // Tentative de récupération depuis l'API
-      /*final remoteRaid = await apiSources.getRaidById(id);
-      
+      final remoteRaid = await apiSources.getRaidById(id);
+
       if (remoteRaid != null) {
         // Sauvegarde en cache local
         await localSources.insertRaid(remoteRaid);
         return remoteRaid;
       }
-      
-      return null;*/
-      return await localSources.getRaidById(id);
+
+      return null;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-      
+      print('API non disponible, utilisation du cache local: $e');
+
       // Fallback sur le cache local
       try {
         return await localSources.getRaidById(id);
@@ -43,16 +39,16 @@ class RaidRepositoryImpl implements RaidRepository {
   Future<List<Raid>> getAllRaids() async {
     try {
       // Récupération depuis l'API
-      /*final remoteRaids = await apiSources.getAllRaids();
-      
+      final remoteRaids = await apiSources.getAllRaids();
+
       // Mise à jour du cache local
       await localSources.clearAllRaids();
       await localSources.insertRaids(remoteRaids);
-      
-      return remoteRaids;*/
-      return await localSources.getAllRaids();
+
+      return remoteRaids;
     } catch (e) {
-      
+      print('API non disponible, utilisation du cache local: $e');
+
       // Fallback sur le cache local
       try {
         return await localSources.getAllRaids();
@@ -64,14 +60,15 @@ class RaidRepositoryImpl implements RaidRepository {
 
   @override
   Future<void> createRaid(Raid raid) async {
-    // Sauvegarder en local
-    await localSources.insertRaid(raid);
-    
-    // Envoyer à l'API (si disponible)
-    /*try {
-      await apiSources.createRaid(raid);
+    try {
+      // Envoyer à l'API en priorité
+      final createdRaid = await apiSources.createRaid(raid);
+      // Sauvegarder en local avec l'ID retourné par l'API
+      await localSources.insertRaid(createdRaid);
     } catch (e) {
-      print('API sync failed, saved locally: $e');
-    }*/
+      print('API non disponible, sauvegarde locale uniquement: $e');
+      // Sauvegarder en local seulement
+      await localSources.insertRaid(raid);
+    }
   }
 }

@@ -8,14 +8,17 @@ class ClubApiSources {
   final http.Client client;
 
   ClubApiSources({required this.baseUrl, http.Client? client})
-      : client = client ?? http.Client();
+    : client = client ?? http.Client();
 
   /// GET /clubs - Récupérer tous les clubs
   Future<List<Club>> getAllClubs() async {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/clubs'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -34,7 +37,10 @@ class ClubApiSources {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/clubs/$id'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -54,7 +60,10 @@ class ClubApiSources {
     try {
       final response = await client.post(
         Uri.parse('$baseUrl/clubs'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode(club.toJson()),
       );
 
@@ -76,7 +85,10 @@ class ClubApiSources {
     try {
       final response = await client.put(
         Uri.parse('$baseUrl/clubs/$id'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode(club.toJson()),
       );
 
@@ -95,11 +107,36 @@ class ClubApiSources {
     try {
       final response = await client.delete(
         Uri.parse('$baseUrl/clubs/$id'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Erreur suppression: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur réseau: $e');
+    }
+  }
+
+  /// GET /clubs/{clubId}/members - Récupérer les membres d'un club
+  Future<List<dynamic>> getClubMembers(int clubId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/clubs/$clubId/members'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('Erreur API: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Erreur réseau: $e');

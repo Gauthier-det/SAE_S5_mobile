@@ -1,20 +1,20 @@
-// lib/features/users/data/datasources/user_api_sources.dart
+// lib/features/address/data/datasources/address_api_sources.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../domain/user.dart';
+import '../../domain/address.dart';
 
-class UserApiSources {
+class AddressApiSources {
   final String baseUrl;
   final http.Client client;
 
-  UserApiSources({required this.baseUrl, http.Client? client})
+  AddressApiSources({required this.baseUrl, http.Client? client})
     : client = client ?? http.Client();
 
-  /// GET /users - Récupérer tous les utilisateurs
-  Future<List<User>> getAllUsers() async {
+  /// GET /addresses - Récupérer toutes les adresses
+  Future<List<Address>> getAllAddresses() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/users'),
+        Uri.parse('$baseUrl/addresses'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -23,7 +23,7 @@ class UserApiSources {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => User.fromJson(json)).toList();
+        return data.map((json) => Address.fromJson(json)).toList();
       } else {
         throw Exception('Erreur API: ${response.statusCode}');
       }
@@ -32,11 +32,11 @@ class UserApiSources {
     }
   }
 
-  /// GET /users/{id} - Récupérer un utilisateur par ID
-  Future<User?> getUserById(int id) async {
+  /// GET /addresses/{id} - Récupérer une adresse par ID
+  Future<Address?> getAddressById(int id) async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/users/$id'),
+        Uri.parse('$baseUrl/addresses/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -44,7 +44,7 @@ class UserApiSources {
       );
 
       if (response.statusCode == 200) {
-        return User.fromJson(json.decode(response.body));
+        return Address.fromJson(json.decode(response.body));
       } else if (response.statusCode == 404) {
         return null;
       } else {
@@ -55,20 +55,20 @@ class UserApiSources {
     }
   }
 
-  /// POST /users - Créer un nouvel utilisateur
-  Future<User> createUser(User user) async {
+  /// POST /addresses - Créer une nouvelle adresse
+  Future<Address> createAddress(Address address) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/users'),
+        Uri.parse('$baseUrl/addresses'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: json.encode(user.toJson()),
+        body: json.encode(address.toJson()),
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return User.fromJson(json.decode(response.body));
+        return Address.fromJson(json.decode(response.body));
       } else if (response.statusCode == 422) {
         final errors = json.decode(response.body);
         throw Exception('Validation: ${errors['message'] ?? errors}');
@@ -80,20 +80,20 @@ class UserApiSources {
     }
   }
 
-  /// PUT /users/{id} - Mettre à jour un utilisateur
-  Future<User> updateUser(int id, User user) async {
+  /// PUT /addresses/{id} - Mettre à jour une adresse
+  Future<Address> updateAddress(int id, Address address) async {
     try {
       final response = await client.put(
-        Uri.parse('$baseUrl/users/$id'),
+        Uri.parse('$baseUrl/addresses/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: json.encode(user.toJson()),
+        body: json.encode(address.toJson()),
       );
 
       if (response.statusCode == 200) {
-        return User.fromJson(json.decode(response.body));
+        return Address.fromJson(json.decode(response.body));
       } else {
         throw Exception('Erreur mise à jour: ${response.statusCode}');
       }
@@ -102,11 +102,11 @@ class UserApiSources {
     }
   }
 
-  /// DELETE /users/{id} - Supprimer un utilisateur
-  Future<void> deleteUser(int id) async {
+  /// DELETE /addresses/{id} - Supprimer une adresse
+  Future<void> deleteAddress(int id) async {
     try {
       final response = await client.delete(
-        Uri.parse('$baseUrl/users/$id'),
+        Uri.parse('$baseUrl/addresses/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -116,38 +116,6 @@ class UserApiSources {
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Erreur suppression: ${response.statusCode}');
       }
-    } catch (e) {
-      throw Exception('Erreur réseau: $e');
-    }
-  }
-
-  /// GET /clubs/{clubId}/members - Récupérer les membres d'un club
-  Future<List<User>> getClubMembers(int clubId) async {
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/clubs/$clubId/members'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => User.fromJson(json)).toList();
-      } else {
-        throw Exception('Erreur API: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Erreur réseau: $e');
-    }
-  }
-
-  /// GET /users/{userId}/club - Récupérer le club d'un utilisateur
-  Future<int?> getUserClubId(int userId) async {
-    try {
-      final user = await getUserById(userId);
-      return user?.clubId;
     } catch (e) {
       throw Exception('Erreur réseau: $e');
     }

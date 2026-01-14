@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sae5_g13_mobile/features/address/data/datasources/address_local_sources.dart';
+import 'package:sae5_g13_mobile/features/address/data/datasources/address_api_sources.dart';
 import 'package:sae5_g13_mobile/features/address/data/repositories/address_repository_impl.dart';
 import 'package:sae5_g13_mobile/features/address/domain/address_repository.dart';
 import 'package:sae5_g13_mobile/features/club/data/datasources/club_api_sources.dart';
@@ -83,17 +84,13 @@ class SanglierExplorerApp extends StatelessWidget {
             Provider<AddressRepository>.value(
               value: snapshot.data!['addressRepository'],
             ),
-            
           ],
           child: MaterialApp(
             title: '${AppConfig.appName} - Course d\'Orientation',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             locale: const Locale('fr', 'FR'),
-            supportedLocales: const [
-              Locale('fr', 'FR'),
-              Locale('en', 'US'),
-            ],
+            supportedLocales: const [Locale('fr', 'FR'), Locale('en', 'US')],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
@@ -124,8 +121,8 @@ class SanglierExplorerApp extends StatelessWidget {
         localSources: RaceLocalSources(database: db),
       ),
       'userRepository': UserRepositoryImpl(
-      apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: UserLocalSources(),
+        apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: UserLocalSources(),
       ),
       'clubRepository': ClubRepositoryImpl(
         apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),
@@ -133,6 +130,7 @@ class SanglierExplorerApp extends StatelessWidget {
       ),
       'addressRepository': AddressRepositoryImpl(
         localSources: AddressLocalSources(),
+        apiSources: AddressApiSources(baseUrl: AppConfig.apiBaseUrl),
       ),
     };
   }
@@ -155,11 +153,11 @@ class MainScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1B4332),
-                  ),
+                  decoration: const BoxDecoration(color: Color(0xFF1B4332)),
                   accountName: Text(
-                    isAuthenticated ? user?.fullName ?? 'Utilisateur' : 'Visiteur',
+                    isAuthenticated
+                        ? user?.fullName ?? 'Utilisateur'
+                        : 'Visiteur',
                   ),
                   accountEmail: Text(
                     isAuthenticated ? user?.email ?? '' : 'Non connecté',

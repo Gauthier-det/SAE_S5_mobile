@@ -8,14 +8,17 @@ class RaceApiSources {
   final http.Client client;
 
   RaceApiSources({required this.baseUrl, http.Client? client})
-      : client = client ?? http.Client();
+    : client = client ?? http.Client();
 
   /// GET /races - Récupérer toutes les courses
   Future<List<Race>> getAllRaces() async {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/races'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -34,7 +37,10 @@ class RaceApiSources {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/races/$id'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -54,7 +60,10 @@ class RaceApiSources {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/raids/$raidId/races'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -73,7 +82,10 @@ class RaceApiSources {
     try {
       final response = await client.post(
         Uri.parse('$baseUrl/races'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode(race.toJson()),
       );
 
@@ -95,7 +107,10 @@ class RaceApiSources {
     try {
       final response = await client.put(
         Uri.parse('$baseUrl/races/$id'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode(race.toJson()),
       );
 
@@ -114,7 +129,10 @@ class RaceApiSources {
     try {
       final response = await client.delete(
         Uri.parse('$baseUrl/races/$id'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {

@@ -8,18 +8,27 @@ class UserRepositoryImpl implements UserRepository {
   final UserLocalSources localSources;
   final UserApiSources apiSources;
 
-  UserRepositoryImpl({
-    required this.localSources,
-    required this.apiSources,
-  });
+  UserRepositoryImpl({required this.localSources, required this.apiSources});
 
   @override
   Future<int?> getUserClubId(int userId) async {
-    return await localSources.getUserClubId(userId);
+    try {
+      return await apiSources.getUserClubId(userId);
+    } catch (e) {
+      print('API non disponible, utilisation du cache local: $e');
+      return await localSources.getUserClubId(userId);
+    }
   }
 
   @override
   Future<User?> getUserById(int userId) async {
-    return await localSources.getUserById(userId);
+    try {
+      final user = await apiSources.getUserById(userId);
+      // Note: Pas de mise en cache car insertUser n'existe pas encore
+      return user;
+    } catch (e) {
+      print('API non disponible, utilisation du cache local: $e');
+      return await localSources.getUserById(userId);
+    }
   }
 }
