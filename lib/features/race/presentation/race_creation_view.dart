@@ -49,7 +49,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
 
 
-  static const _sexes = ['Masculin', 'Féminin', 'Mixte'];
+  static const _sexes = ['Homme', 'Femme', 'Mixte'];
 
   List<User> _clubMembers = [];
   List<Category> _categories = [];

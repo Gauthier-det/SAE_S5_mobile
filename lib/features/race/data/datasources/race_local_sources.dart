@@ -36,16 +36,19 @@ class RaceLocalSources {
   }
 
   Future<int> getRegisteredTeamsCount(int raceId) async {
-  final db = await DatabaseHelper.database;
-  
-  final result = await db.rawQuery('''
+    final db = await DatabaseHelper.database;
+
+    final result = await db.rawQuery(
+      '''
     SELECT COUNT(*) as count
     FROM SAN_TEAMS_RACES
     WHERE RAC_ID = ?
-  ''', [raceId]);
-  
-  return Sqflite.firstIntValue(result) ?? 0;
-}
+  ''',
+      [raceId],
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
 
   /// Récupère une course par son ID
   Future<Race?> getRaceById(int id) async {
@@ -65,24 +68,25 @@ class RaceLocalSources {
       throw Exception('Database error: $e');
     }
   }
-// lib/features/races/data/datasources/race_local_sources.dart
+  // lib/features/races/data/datasources/race_local_sources.dart
 
   Future<List<Map<String, dynamic>>> getRaceCategoryPrices(int raceId) async {
     final db = await DatabaseHelper.database;
-    return await db.rawQuery('''
+    return await db.rawQuery(
+      '''
       SELECT rc.CAT_ID, c.CAT_LABEL, rc.CAR_PRICE as price
       FROM SAN_CATEGORIES_RACES rc
       INNER JOIN SAN_CATEGORIES c ON rc.CAT_ID = c.CAT_ID
       WHERE rc.RAC_ID = ?
       ORDER BY c.CAT_LABEL
-    ''', [raceId]);
+    ''',
+      [raceId],
+    );
   }
+
   Future<List<Map<String, dynamic>>> getCategories() async {
     final db = await DatabaseHelper.database;
-    return await db.query(
-      'SAN_CATEGORIES',
-      orderBy: 'CAT_LABEL ASC',
-    );
+    return await db.query('SAN_CATEGORIES', orderBy: 'CAT_LABEL ASC');
   }
 
   Future<int> createRace(Map<String, dynamic> raceData) async {
@@ -90,7 +94,21 @@ class RaceLocalSources {
     return await db.insert('SAN_RACES', raceData);
   }
 
-  Future<void> createRaceCategoryPrice(int raceId, int categoryId, double price) async {
+  /// Insère ou met à jour une course (depuis l'API)
+  Future<void> insertRace(Race race) async {
+    final db = await DatabaseHelper.database;
+    await db.insert(
+      'SAN_RACES',
+      race.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> createRaceCategoryPrice(
+    int raceId,
+    int categoryId,
+    double price,
+  ) async {
     final db = await DatabaseHelper.database;
     await db.insert('SAN_CATEGORIES_RACES', {
       'RAC_ID': raceId,
@@ -99,10 +117,10 @@ class RaceLocalSources {
     });
   }
 
-   // Ajoute cette méthode pour vérifier le nombre de courses
+  // Ajoute cette méthode pour vérifier le nombre de courses
   Future<bool> canAddRaceToRaid(int raidId) async {
     final db = await DatabaseHelper.database;
-    
+
     // Récupérer le raid avec sa limite
     final raidResult = await db.query(
       'SAN_RAIDS',
@@ -111,29 +129,32 @@ class RaceLocalSources {
       whereArgs: [raidId],
       limit: 1,
     );
-    
+
     if (raidResult.isEmpty) return false;
-    
+
     final maxRaces = raidResult.first['RAI_RACE_COUNT'] as int?;
-    
+
     // Si pas de limite définie, autoriser
     if (maxRaces == null) return true;
-    
+
     // Compter le nombre de courses existantes
-    final countResult = await db.rawQuery('''
+    final countResult = await db.rawQuery(
+      '''
       SELECT COUNT(*) as count
       FROM SAN_RACES
       WHERE RAI_ID = ?
-    ''', [raidId]);
-    
+    ''',
+      [raidId],
+    );
+
     final currentCount = countResult.first['count'] as int;
-    
+
     return currentCount < maxRaces;
   }
 
   Future<int?> getMaxRaceCount(int raidId) async {
     final db = await DatabaseHelper.database;
-    
+
     final raidResult = await db.query(
       'SAN_RAIDS',
       columns: ['RAI_RACE_COUNT'],

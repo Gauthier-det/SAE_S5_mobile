@@ -101,10 +101,10 @@ class TeamLocalSources {
     
     // Construire la clause WHERE pour le genre
     String genderFilter = '';
-    if (raceSex == 'Masculin') {
-      genderFilter = "AND USE_SEX = 'Masculin'";
-    } else if (raceSex == 'Féminin') {
-      genderFilter = "AND USE_SEX = 'Féminin'";
+    if (raceSex == 'Homme') {
+      genderFilter = "AND USE_SEX = 'Homme'";
+    } else if (raceSex == 'Femme') {
+      genderFilter = "AND USE_SEX = 'Femme'";
     }
     // Si Mixte ou autre, pas de filtre (tous les genres acceptés)
     

@@ -55,7 +55,9 @@ class Race {
           : DateTime.now(),
       type: json['RAC_TYPE'] as String? ?? '',
       difficulty: json['RAC_DIFFICULTY'] as String? ?? '',
-      sex: json['RAC_SEX'] as String? ?? 'Mixte', // ← AJOUTE CE CHAMP
+      sex:
+          (json['RAC_SEX'] ?? json['RAC_GENDER']) as String? ??
+          'Mixte', // Support API (GENDER) et DB (SEX)
       minParticipants: json['RAC_MIN_PARTICIPANTS'] as int? ?? 0,
       maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int? ?? 0,
       minTeams: json['RAC_MIN_TEAMS'] as int? ?? 0,
