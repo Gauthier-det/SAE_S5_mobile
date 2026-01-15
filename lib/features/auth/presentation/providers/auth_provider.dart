@@ -8,16 +8,21 @@ import '../../data/datasources/auth_local_sources.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/user_auth.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
+import '../../../user/domain/user_repository.dart';
+import '../../../user/data/repositories/user_repository_impl.dart';
+import '../../../user/data/datasources/user_api_sources.dart';
+import '../../../user/data/datasources/user_local_sources.dart';
 
 /// Provider for managing authentication state
 class AuthProvider extends ChangeNotifier {
   final AuthRepositoryImpl _repository;
+  final UserRepository? _userRepository;
 
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
 
-  AuthProvider(this._repository);
+  AuthProvider(this._repository, [this._userRepository]);
 
   // Getters
   User? get currentUser => _currentUser;
@@ -37,7 +42,16 @@ class AuthProvider extends ChangeNotifier {
       apiService: apiService,
     );
 
-    return AuthProvider(repository)..checkAuth();
+    // Initialize UserRepository for profile updates
+    final userApiSources = UserApiSources(baseUrl: AppConfig.apiBaseUrl);
+    final userLocalSources = UserLocalSources();
+    final userRepository = UserRepositoryImpl(
+      apiSources: userApiSources,
+      localSources: userLocalSources,
+      authLocalSources: localDataSource, // Reuse auth local source for token
+    );
+
+    return AuthProvider(repository, userRepository)..checkAuth();
   }
 
   /// Check if user is already authenticated
@@ -150,20 +164,68 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final updatedUser = await _repository.updateProfile(
-        firstName: firstName,
-        lastName: lastName,
-        phoneNumber: phoneNumber,
-        birthDate: birthDate,
-        club: club,
-        licenceNumber: licenceNumber,
-        ppsNumber: ppsNumber,
-        chipNumber: chipNumber,
-        profileImageUrl: profileImageUrl,
-      );
-      _currentUser = updatedUser;
-    } catch (e) {
-      _errorMessage = 'Erreur lors de la mise à jour du profil';
+      if (_userRepository != null && _currentUser != null) {
+        print('📝 UpdateProfile - Using UserRepository');
+        print('📝 UpdateProfile - User ID: ${_currentUser!.id}');
+
+        // Prepare fields for API update - use API field names (USE_* format)
+        final fields = <String, dynamic>{};
+        if (firstName != null) fields['USE_NAME'] = firstName;
+        if (lastName != null) fields['USE_LAST_NAME'] = lastName;
+        if (phoneNumber != null) fields['USE_PHONE_NUMBER'] = phoneNumber;
+        if (birthDate != null) fields['USE_BIRTHDATE'] = birthDate;
+        if (licenceNumber != null) fields['USE_LICENCE_NUMBER'] = licenceNumber;
+
+        print('📝 UpdateProfile - Fields to update: $fields');
+
+        // Call UserRepository with fields map
+        await _userRepository.updateUserFields(
+          int.parse(_currentUser!.id),
+          fields,
+        );
+
+        print('📝 UpdateProfile - API call succeeded');
+
+        // Update local state manually since we don't get a full user object back that matches Auth User
+        _currentUser = _currentUser!.copyWith(
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: phoneNumber,
+          birthDate: birthDate,
+          club:
+              club, // Local only update if not sent to API (API doesn't seem to take club string)
+          licenceNumber: licenceNumber,
+          ppsNumber: ppsNumber,
+          chipNumber: chipNumber,
+          profileImageUrl: profileImageUrl,
+        );
+        print('📝 UpdateProfile - Local state updated');
+      } else {
+        print('📝 UpdateProfile - Falling back to AuthRepository');
+        print(
+          '📝 UpdateProfile - _userRepository is null: ${_userRepository == null}',
+        );
+        print(
+          '📝 UpdateProfile - _currentUser is null: ${_currentUser == null}',
+        );
+        // Fallback to legacy AuthRepository if UserRepository is not available
+        final updatedUser = await _repository.updateProfile(
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: phoneNumber,
+          birthDate: birthDate,
+          club: club,
+          licenceNumber: licenceNumber,
+          ppsNumber: ppsNumber,
+          chipNumber: chipNumber,
+          profileImageUrl: profileImageUrl,
+        );
+        _currentUser = updatedUser;
+      }
+    } catch (e, stackTrace) {
+      print('❌ UpdateProfile - Error: $e');
+      print('❌ UpdateProfile - StackTrace: $stackTrace');
+      _errorMessage = 'Erreur lors de la mise à jour du profil: $e';
     } finally {
       _isLoading = false;
       notifyListeners();

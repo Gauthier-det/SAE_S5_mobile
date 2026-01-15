@@ -136,6 +136,7 @@ class SanglierExplorerApp extends StatelessWidget {
       'userRepository': UserRepositoryImpl(
         apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
         localSources: UserLocalSources(),
+        authLocalSources: authLocalSources,
       ),
       'clubRepository': ClubRepositoryImpl(
         apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),

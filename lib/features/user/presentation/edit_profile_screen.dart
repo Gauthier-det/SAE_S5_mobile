@@ -18,7 +18,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _licenceNumberController = TextEditingController();
   final _ppsNumberController = TextEditingController();
   final _chipNumberController = TextEditingController();
-  
+
   DateTime? _birthDate;
   bool _isLoading = false;
 
@@ -38,7 +38,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _licenceNumberController.text = user.licenceNumber ?? '';
       _ppsNumberController.text = user.ppsNumber ?? '';
       _chipNumberController.text = user.chipNumber ?? '';
-      
+
       if (user.birthDate != null && user.birthDate!.isNotEmpty) {
         try {
           _birthDate = DateTime.parse(user.birthDate!);
@@ -88,21 +88,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await context.read<AuthProvider>().updateProfile(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneNumberController.text.trim().isEmpty 
-            ? null 
+        phoneNumber: _phoneNumberController.text.trim().isEmpty
+            ? null
             : _phoneNumberController.text.trim(),
         birthDate: _birthDate?.toIso8601String(),
-        club: _clubController.text.trim().isEmpty 
-            ? null 
+        club: _clubController.text.trim().isEmpty
+            ? null
             : _clubController.text.trim(),
-        licenceNumber: _licenceNumberController.text.trim().isEmpty 
-            ? null 
+        licenceNumber: _licenceNumberController.text.trim().isEmpty
+            ? null
             : _licenceNumberController.text.trim(),
-        ppsNumber: _ppsNumberController.text.trim().isEmpty 
-            ? null 
+        ppsNumber: _ppsNumberController.text.trim().isEmpty
+            ? null
             : _ppsNumberController.text.trim(),
-        chipNumber: _chipNumberController.text.trim().isEmpty 
-            ? null 
+        chipNumber: _chipNumberController.text.trim().isEmpty
+            ? null
             : _chipNumberController.text.trim(),
       );
 
@@ -136,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
-    
+
     if (user == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Modifier le profil')),
@@ -150,7 +150,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           IconButton(
             onPressed: _isLoading ? null : _saveProfile,
-            icon: _isLoading 
+            icon: _isLoading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
@@ -177,13 +177,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   trailing: const Icon(Icons.lock, size: 16),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Section Informations personnelles
               _buildSectionTitle('Informations personnelles'),
               const SizedBox(height: 8),
-              
+
               // Nom
               TextFormField(
                 controller: _lastNameController,
@@ -199,9 +199,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Prénom
               TextFormField(
                 controller: _firstNameController,
@@ -217,9 +217,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Téléphone
               TextFormField(
                 controller: _phoneNumberController,
@@ -231,9 +231,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   hintText: '06 12 34 56 78',
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Date de naissance
               InkWell(
                 onTap: _selectBirthDate,
@@ -251,7 +251,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ? '${_birthDate!.day.toString().padLeft(2, '0')}/${_birthDate!.month.toString().padLeft(2, '0')}/${_birthDate!.year}'
                             : 'Sélectionner une date',
                         style: TextStyle(
-                          color: _birthDate != null 
+                          color: _birthDate != null
                               ? Theme.of(context).textTheme.bodyLarge?.color
                               : Theme.of(context).hintColor,
                         ),
@@ -261,13 +261,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Section Informations sportives
               _buildSectionTitle('Informations sportives'),
               const SizedBox(height: 8),
-              
+
               // Club
               TextFormField(
                 controller: _clubController,
@@ -277,9 +277,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Numéro de licence
               TextFormField(
                 controller: _licenceNumberController,
@@ -289,39 +289,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              
-              const SizedBox(height: 16),
-              
-              // Numéro PPS
-              TextFormField(
-                controller: _ppsNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro PPS',
-                  prefixIcon: Icon(Icons.numbers),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Numéro de puce
-              TextFormField(
-                controller: _chipNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro de puce',
-                  prefixIcon: Icon(Icons.memory),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Bouton Enregistrer
               SizedBox(
                 height: 50,
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : _saveProfile,
-                  icon: _isLoading 
+                  icon: _isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -338,7 +314,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
             ],
           ),
