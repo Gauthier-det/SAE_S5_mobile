@@ -74,7 +74,10 @@ class AuthRepositoryImpl implements AuthRepository {
         ];
         await _localDataSource.saveRegisteredUsers(updatedUsers);
         await _localDataSource.saveUser(apiUser);
-        await _localDataSource.saveToken('token_${apiUser.id}');
+        // Stocker le vrai access_token de l'API
+        if (_apiDataSource.accessToken != null) {
+          await _localDataSource.saveToken(_apiDataSource.accessToken!);
+        }
 
         return apiUser;
       } catch (e) {
@@ -131,7 +134,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
         // Sauvegarder localement
         await _localDataSource.saveUser(apiUser);
-        await _localDataSource.saveToken('token_${apiUser.id}');
+        // Stocker le vrai access_token de l'API
+        if (_apiDataSource.accessToken != null) {
+          await _localDataSource.saveToken(_apiDataSource.accessToken!);
+        }
 
         return apiUser;
       } catch (e) {
