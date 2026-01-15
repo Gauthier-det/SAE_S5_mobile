@@ -52,63 +52,113 @@ class Raid {
   /// Creates Raid from database JSON
   // lib/features/raids/domain/raid.dart
 
+  /// Creates Raid from API JSON (with relations and RAI_NB_RACES)
   factory Raid.fromJson(Map<String, dynamic> json) {
-    // Parse address if present in JOIN
-    Address? address;
-    if (json.containsKey('ADD_POSTAL_CODE')) {
-      address = Address.fromJson(json);
-    }
+    // Détecte si c'est un format API (avec relations imbriquées) ou DB locale
+    final bool isFromApi =
+        json.containsKey('club') || json.containsKey('address');
 
-    // Parse manager using ALIASED column names
-    User? manager;
-    if (json.containsKey('MANAGER_NAME') && 
-        json['MANAGER_NAME'] != null &&
-        json.containsKey('MANAGER_LAST_NAME') && 
-        json['MANAGER_LAST_NAME'] != null) {
-      
-      final userMap = {
-        'USE_ID': json['MANAGER_ID'],
-        'ADD_ID': json['MANAGER_ADD_ID'] ?? 0,
-        'CLU_ID': null,
-        'USE_MAIL': json['MANAGER_MAIL'] ?? '',
-        'USE_PASSWORD': '', // Not needed for display
-        'USE_NAME': json['MANAGER_NAME'],
-        'USE_LAST_NAME': json['MANAGER_LAST_NAME'],
-        'USE_BIRTHDATE': null,
-        'USE_PHONE_NUMBER': null,
-        'USE_LICENCE_NUMBER': null,
-        'USE_MEMBERSHIP_DATE': null,
-      };
-      
-      try {
-        manager = User.fromJson(userMap);
-      } catch (e) {
-        manager = null;
+    if (isFromApi) {
+      // Format API avec relations imbriquées
+      Address? address;
+      if (json['address'] != null) {
+        try {
+          address = Address.fromJson(json['address']);
+        } catch (e) {
+          address = null;
+        }
       }
+
+      Club? club;
+      if (json['club'] != null) {
+        try {
+          club = Club.fromJson(json['club']);
+        } catch (e) {
+          club = null;
+        }
+      }
+
+      User? manager;
+      if (json['user'] != null) {
+        try {
+          manager = User.fromJson(json['user']);
+        } catch (e) {
+          manager = null;
+        }
+      }
+
+      return Raid(
+        id: json['RAI_ID'] ?? 0,
+        clubId: json['CLU_ID'] ?? 0,
+        addressId: json['ADD_ID'] ?? 0,
+        userId: json['USE_ID'] ?? 0,
+        name: json['RAI_NAME'] ?? '',
+        email: json['RAI_MAIL'],
+        phoneNumber: json['RAI_PHONE_NUMBER'],
+        website: json['RAI_WEB_SITE'],
+        image: json['RAI_IMAGE'],
+        timeStart: DateTime.parse(json['RAI_TIME_START']),
+        timeEnd: DateTime.parse(json['RAI_TIME_END']),
+        registrationStart: DateTime.parse(json['RAI_REGISTRATION_START']),
+        registrationEnd: DateTime.parse(json['RAI_REGISTRATION_END']),
+        nbRaces: json['RAI_NB_RACES'] ?? 0, // API utilise RAI_NB_RACES
+        address: address,
+        club: club,
+        manager: manager,
+      );
+    } else {
+      // Format DB locale
+      Address? address;
+      if (json.containsKey('ADD_POSTAL_CODE')) {
+        address = Address.fromJson(json);
+      }
+
+      User? manager;
+      if (json.containsKey('MANAGER_NAME') &&
+          json['MANAGER_NAME'] != null &&
+          json.containsKey('MANAGER_LAST_NAME') &&
+          json['MANAGER_LAST_NAME'] != null) {
+        final userMap = {
+          'USE_ID': json['MANAGER_ID'],
+          'ADD_ID': json['MANAGER_ADD_ID'] ?? 0,
+          'CLU_ID': null,
+          'USE_MAIL': json['MANAGER_MAIL'] ?? '',
+          'USE_PASSWORD': '',
+          'USE_NAME': json['MANAGER_NAME'],
+          'USE_LAST_NAME': json['MANAGER_LAST_NAME'],
+          'USE_BIRTHDATE': null,
+          'USE_PHONE_NUMBER': null,
+          'USE_LICENCE_NUMBER': null,
+          'USE_MEMBERSHIP_DATE': null,
+        };
+
+        try {
+          manager = User.fromJson(userMap);
+        } catch (e) {
+          manager = null;
+        }
+      }
+
+      return Raid(
+        id: json['RAI_ID'],
+        clubId: json['CLU_ID'],
+        addressId: json['ADD_ID'],
+        userId: json['USE_ID'],
+        name: json['RAI_NAME'],
+        email: json['RAI_MAIL'],
+        phoneNumber: json['RAI_PHONE_NUMBER'],
+        website: json['RAI_WEB_SITE'],
+        image: json['RAI_IMAGE'],
+        timeStart: DateTime.parse(json['RAI_TIME_START']),
+        timeEnd: DateTime.parse(json['RAI_TIME_END']),
+        registrationStart: DateTime.parse(json['RAI_REGISTRATION_START']),
+        registrationEnd: DateTime.parse(json['RAI_REGISTRATION_END']),
+        address: address,
+        manager: manager,
+        nbRaces: json['RAI_RACE_COUNT'], // DB locale utilise RAI_RACE_COUNT
+      );
     }
-
-    return Raid(
-      id: json['RAI_ID'],
-      clubId: json['CLU_ID'],
-      addressId: json['ADD_ID'],
-      userId: json['USE_ID'],
-      name: json['RAI_NAME'],
-      email: json['RAI_MAIL'],
-      phoneNumber: json['RAI_PHONE_NUMBER'],
-      website: json['RAI_WEB_SITE'],
-      image: json['RAI_IMAGE'],
-      timeStart: DateTime.parse(json['RAI_TIME_START']),
-      timeEnd: DateTime.parse(json['RAI_TIME_END']),
-      registrationStart: DateTime.parse(json['RAI_REGISTRATION_START']),
-      registrationEnd: DateTime.parse(json['RAI_REGISTRATION_END']),
-      address: address,
-      manager: manager,
-      nbRaces: json['RAI_RACE_COUNT'],
-    );
   }
-
-
-
 
   /// Converts Raid to JSON for database storage
   Map<String, dynamic> toJson() {
@@ -126,6 +176,26 @@ class Raid {
       'RAI_TIME_END': timeEnd.toIso8601String(),
       'RAI_REGISTRATION_START': registrationStart.toIso8601String(),
       'RAI_REGISTRATION_END': registrationEnd.toIso8601String(),
+      'RAI_RACE_COUNT': nbRaces, // Ajout du champ requis pour la DB locale
+    };
+  }
+
+  /// Converts Raid to JSON for API requests
+  Map<String, dynamic> toApiJson() {
+    return {
+      'CLU_ID': clubId,
+      'ADD_ID': addressId,
+      'USE_ID': userId,
+      'RAI_NAME': name,
+      'RAI_MAIL': email,
+      'RAI_PHONE_NUMBER': phoneNumber,
+      'RAI_WEB_SITE': website,
+      'RAI_IMAGE': image,
+      'RAI_TIME_START': timeStart.toIso8601String(),
+      'RAI_TIME_END': timeEnd.toIso8601String(),
+      'RAI_REGISTRATION_START': registrationStart.toIso8601String(),
+      'RAI_REGISTRATION_END': registrationEnd.toIso8601String(),
+      'RAI_NB_RACES': nbRaces, // API utilise RAI_NB_RACES
     };
   }
 

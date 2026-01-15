@@ -6,9 +6,13 @@ import '../../domain/user_auth.dart';
 class AuthApiSources {
   final String baseUrl;
   final http.Client client;
+  String? _accessToken; // Stocker le token d'accès
 
   AuthApiSources({required this.baseUrl, http.Client? client})
     : client = client ?? http.Client();
+
+  /// Getter pour accéder au token
+  String? get accessToken => _accessToken;
 
   /// Inscription via API
   Future<User> register({
@@ -47,16 +51,23 @@ class AuthApiSources {
       final responseData = json.decode(response.body);
       final data = responseData['data'];
 
+      // Stocker le token pour les futures requêtes
+      _accessToken = data['access_token'];
+
       return User.fromJson({
         'id': data['user_id'].toString(),
-        'email': data['user_mail'],
-        'firstName': data['user_name'],
-        'lastName': data['user_last_name'],
+        'email': data['user_mail'] ?? '',
+        'firstName': data['user_name'] ?? '',
+        'lastName': data['user_last_name'] ?? '',
         'birthDate': data['user_birthdate'],
-        'phoneNumber': data['user_phone'],
-        'licenceNumber': data['user_licence'],
+        'phoneNumber': data['user_phone']?.toString(),
+        'licenceNumber': data['user_licence']?.toString(),
         'club': data['user_club']?['CLU_NAME'],
+        'ppsNumber': null,
+        'chipNumber': null,
+        'profileImageUrl': null,
         'createdAt': DateTime.now().toIso8601String(),
+        'roles': [],
       });
     } else if (response.statusCode == 422) {
       final errorData = json.decode(response.body);
@@ -86,17 +97,36 @@ class AuthApiSources {
       final responseData = json.decode(response.body);
       final data = responseData['data'];
 
-      return User.fromJson({
+      // Stocker le token pour les futures requêtes
+      _accessToken = data['access_token'];
+
+      print('🔐 Mapping user data for fromJson...');
+      final userMap = {
         'id': data['user_id'].toString(),
-        'email': data['user_mail'],
+        'email': data['user_mail'] ?? '',
         'firstName': data['user_name'] ?? '',
         'lastName': data['user_last_name'] ?? '',
         'birthDate': data['user_birthdate'],
-        'phoneNumber': data['user_phone'],
-        'licenceNumber': data['user_licence'],
+        'phoneNumber': data['user_phone']?.toString(),
+        'licenceNumber': data['user_licence']?.toString(),
         'club': data['user_club']?['CLU_NAME'],
+        'ppsNumber': null,
+        'chipNumber': null,
+        'profileImageUrl': null,
         'createdAt': DateTime.now().toIso8601String(),
-      });
+        'roles': [],
+      };
+      print('🔐 User map: $userMap');
+
+      try {
+        final user = User.fromJson(userMap);
+        print('🔐 User créé avec succès: ${user.email}');
+        return user;
+      } catch (e, stackTrace) {
+        print('🔐 Erreur lors du User.fromJson: $e');
+        print('🔐 StackTrace: $stackTrace');
+        rethrow;
+      }
     } else if (response.statusCode == 401) {
       throw Exception('Email ou mot de passe incorrect');
     } else {

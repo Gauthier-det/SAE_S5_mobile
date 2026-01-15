@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sae5_g13_mobile/features/address/data/datasources/address_local_sources.dart';
 import 'package:sae5_g13_mobile/features/address/data/repositories/address_repository_impl.dart';
 import 'package:sae5_g13_mobile/features/address/domain/address_repository.dart';
@@ -19,7 +20,7 @@ import 'package:sae5_g13_mobile/features/user/domain/user_repository.dart';
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/theme/app_theme.dart';
-import 'core/services/api_service.dart';
+import 'features/auth/data/datasources/auth_local_sources.dart';
 import 'features/raid/presentation/raid_list_view.dart';
 import 'features/raid/domain/raid_repository.dart';
 import 'features/raid/data/repositories/raid_repository_impl.dart';
@@ -97,10 +98,7 @@ class SanglierExplorerApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             locale: const Locale('fr', 'FR'),
-            supportedLocales: const [
-              Locale('fr', 'FR'),
-              Locale('en', 'US'),
-            ],
+            supportedLocales: const [Locale('fr', 'FR'), Locale('en', 'US')],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
@@ -121,18 +119,22 @@ class SanglierExplorerApp extends StatelessWidget {
 
   Future<Map<String, dynamic>> _createRepositories() async {
     final db = await DatabaseHelper.database;
+    final prefs = await SharedPreferences.getInstance();
+    final authLocalSources = AuthLocalSources(prefs);
+
     return {
       'raidRepository': RaidRepositoryImpl(
         apiSources: RaidApiSources(baseUrl: AppConfig.apiBaseUrl),
         localSources: RaidLocalSources(),
+        authLocalSources: authLocalSources,
       ),
       'raceRepository': RacesRepositoryImpl(
         apiSources: RaceApiSources(baseUrl: AppConfig.apiBaseUrl),
         localSources: RaceLocalSources(database: db),
       ),
       'userRepository': UserRepositoryImpl(
-      apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
-      localSources: UserLocalSources(),
+        apiSources: UserApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: UserLocalSources(),
       ),
       'clubRepository': ClubRepositoryImpl(
         apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),
@@ -166,11 +168,11 @@ class MainScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1B4332),
-                  ),
+                  decoration: const BoxDecoration(color: Color(0xFF1B4332)),
                   accountName: Text(
-                    isAuthenticated ? user?.fullName ?? 'Utilisateur' : 'Visiteur',
+                    isAuthenticated
+                        ? user?.fullName ?? 'Utilisateur'
+                        : 'Visiteur',
                   ),
                   accountEmail: Text(
                     isAuthenticated ? user?.email ?? '' : 'Non connecté',
@@ -199,7 +201,7 @@ class MainScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/raids');
                   },
                 ),
-                
+
                 const Divider(), // Séparateur visuel
                 // Menu Clubs visible uniquement pour les administrateurs de site
                 if (isAuthenticated && user != null && user.isSiteManager)
