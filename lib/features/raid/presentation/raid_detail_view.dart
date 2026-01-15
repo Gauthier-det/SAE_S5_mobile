@@ -1,8 +1,8 @@
-// lib/features/raid/presentation/raid_detail_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sae5_g13_mobile/core/database/database_helper.dart';
+
 import 'package:sae5_g13_mobile/features/auth/presentation/providers/auth_provider.dart';
+
 import 'package:sae5_g13_mobile/features/race/domain/race_repository.dart';
 import 'package:sae5_g13_mobile/features/race/presentation/race_creation_view.dart';
 import 'package:sae5_g13_mobile/features/raid/domain/raid.dart';
@@ -12,7 +12,6 @@ import '../../../core/presentation/widgets/common_empty_view.dart';
 import '../domain/raid_repository.dart';
 import 'widgets/raid_info_section.dart';
 import '../../race/presentation/widgets/race_list_widget.dart';
-import 'raid_edit_view.dart';
 
 class RaidDetailView extends StatefulWidget {
   final int raidId;
@@ -37,56 +36,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     _raidFuture = widget.repository.getRaidById(widget.raidId);
   }
 
-  void _refreshRaid() {
-    setState(() {
-      _raidFuture = widget.repository.getRaidById(widget.raidId);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Détail du Raid'),
-        actions: [
-          FutureBuilder<Raid?>(
-            future: _raidFuture,
-            builder: (context, snapshot) {
-              final raid = snapshot.data;
-              if (raid == null) return const SizedBox.shrink();
-
-              return FutureBuilder<bool>(
-                future: _canEditRaid(context, raid),
-                builder: (context, canEditSnapshot) {
-                  if (canEditSnapshot.data != true) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return IconButton(
-                    icon: const Icon(Icons.edit),
-                    tooltip: 'Modifier le raid',
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RaidEditView(
-                            raid: raid,
-                            repository: widget.repository,
-                          ),
-                        ),
-                      );
-
-                      if (result == true) {
-                        _refreshRaid();
-                      }
-                    },
-                  );
-                },
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Détail du Raid')),
       body: FutureBuilder<Raid?>(
         future: _raidFuture,
         builder: (context, snapshot) {
@@ -133,28 +86,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
         },
       ),
     );
-  }
-
-  Future<bool> _canEditRaid(BuildContext context, Raid raid) async {
-    try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      final user = auth.currentUser;
-      if (user == null) return false;
-
-      final db = await DatabaseHelper.database;
-      final res = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [user.email],
-        limit: 1,
-      );
-
-      if (res.isEmpty) return false;
-      // Raid manager can edit their own raid
-      return raid.userId == res.first['USE_ID'];
-    } catch (_) {
-      return false;
-    }
   }
 
   Widget _buildHeader(Raid raid) {
@@ -341,16 +272,15 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-  // ✅ Méthode pour compter les courses
+  // ✅ Méthode pour compter les courses via Repository (API/Local)
   Future<int> _getRaceCount(int raidId) async {
     try {
-      final db = await DatabaseHelper.database;
-      final result = await db.query(
-        'SAN_RACES',
-        where: 'RAI_ID = ?',
-        whereArgs: [raidId],
+      final raceRepository = Provider.of<RacesRepository>(
+        context,
+        listen: false,
       );
-      return result.length;
+      final races = await raceRepository.getRacesByRaidId(raidId);
+      return races.length;
     } catch (_) {
       return 0;
     }
@@ -362,16 +292,11 @@ class _RaidDetailViewState extends State<RaidDetailView> {
       final user = auth.currentUser;
       if (user == null) return false;
 
-      final db = await DatabaseHelper.database;
-      final res = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [user.email],
-        limit: 1,
-      );
+      final currentUserId = int.tryParse(user.id);
+      if (currentUserId == null) return false;
 
-      if (res.isEmpty) return false;
-      return raid.userId == res.first['USE_ID'];
+      // Vérifier si l'utilisateur est le responsable du raid
+      return raid.userId == currentUserId;
     } catch (_) {
       return false;
     }

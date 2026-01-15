@@ -5,7 +5,7 @@ import 'seed_db.dart';
 
 class DatabaseHelper {
   static Database? _database;
-  static const _databaseVersion = 2; // ← Incrémente la version
+  static const _databaseVersion = 3; // ← Incrémente la version
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -135,6 +135,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE SAN_RACES (
         RAC_ID INTEGER PRIMARY KEY,
+        RAC_NAME TEXT NOT NULL,
         USE_ID INTEGER NOT NULL,
         RAI_ID INTEGER NOT NULL,
         RAC_TIME_START TEXT NOT NULL,

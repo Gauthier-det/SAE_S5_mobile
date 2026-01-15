@@ -90,6 +90,7 @@ class RacesRepositoryImpl implements RacesRepository {
 
       final raceId = await localSources.createRace({
         'RAI_ID': race.raidId,
+        'RAC_NAME': race.name,
         'USE_ID': race.userId,
         'RAC_TYPE': race.type,
         'RAC_DIFFICULTY': race.difficulty,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../raid/domain/raid.dart';
 import '../domain/raid_repository.dart';
-import '../../user/domain/user_repository.dart';
+
 import '../../user/domain/user.dart';
 import '../../club/domain/club_repository.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
@@ -63,10 +63,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   Future<void> _loadClubData() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userRepository = Provider.of<UserRepository>(
-        context,
-        listen: false,
-      );
+
       final clubRepository = Provider.of<ClubRepository>(
         context,
         listen: false,
@@ -87,18 +84,17 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         throw Exception('ID utilisateur invalide');
       }
 
-      final user = await userRepository.getUserById(userId);
-      if (user == null) {
-        throw Exception('Utilisateur introuvable');
-      }
+      // Use getAllClubs to find user's club (bypassing 403 on /users/{id})
+      final allClubs = await clubRepository.getAllClubs();
 
-      final clubId = user.clubId;
-
-      if (clubId == null) {
-        throw Exception(
+      final userClub = allClubs.firstWhere(
+        (c) => c.responsibleId == userId,
+        orElse: () => throw Exception(
           'Vous devez être responsable de club pour créer un raid',
-        );
-      }
+        ),
+      );
+
+      final clubId = userClub.id;
 
       // Charger membres ET adresses en parallèle
       final results = await Future.wait([

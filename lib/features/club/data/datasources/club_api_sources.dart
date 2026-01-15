@@ -101,7 +101,7 @@ class ClubApiSources {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
       };
 
-      final url = '$baseUrl/clubs/$clubId/members';
+      final url = '$baseUrl/clubs/$clubId/users';
       print('🏢 ClubApiSources.getClubMembers - URL: $url');
 
       final response = await client.get(Uri.parse(url), headers: headers);

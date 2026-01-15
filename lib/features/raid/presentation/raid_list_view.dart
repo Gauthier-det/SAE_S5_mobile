@@ -7,7 +7,8 @@ import '../../../core/presentation/widgets/common_empty_view.dart';
 import '../../../core/presentation/widgets/common_list_header.dart';
 import '../../../core/presentation/widgets/common_results_header.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
-import '../../user/domain/user_repository.dart';
+import '../../club/presentation/providers/club_provider.dart';
+
 import '../../raid/domain/raid.dart';
 import '../domain/raid_repository.dart';
 import 'raid_detail_view.dart';
@@ -482,23 +483,36 @@ class _RaidListViewState extends State<RaidListView> {
 
   Future<bool> _canCreateRaid() async {
     try {
+      if (!mounted) return false;
+
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userRepository = Provider.of<UserRepository>(
-        context,
-        listen: false,
-      );
       final currentUser = authProvider.currentUser;
 
       if (currentUser == null) return false;
 
-      // Use API/Repository to get full user details including clubId
       final userId = int.tryParse(currentUser.id);
       if (userId == null) return false;
 
-      final user = await userRepository.getUserById(userId);
+      // Check if user is responsible for any club using ClubProvider (public data)
+      // This avoids the 403 Forbidden error on /users/{id}
+      final clubProvider = Provider.of<ClubProvider>(context, listen: false);
 
-      return user?.clubId != null;
+      // Ensure data is loaded
+      if (clubProvider.clubs.isEmpty && !clubProvider.isLoading) {
+        await clubProvider.loadClubs();
+      }
+
+      final isResponsible = clubProvider.clubs.any(
+        (c) => c.responsibleId == userId,
+      );
+
+      if (isResponsible) {
+        print('✅ User $userId is responsible for a club. Can create raid.');
+      }
+
+      return isResponsible;
     } catch (e) {
+      print('Error checking permission: $e');
       return false;
     }
   }

@@ -3,13 +3,14 @@
 /// Modèle de course d'orientation
 class Race {
   final int id; // RAC_ID
+  final String name; // RAC_NAME
   final int userId; // USE_ID
   final int raidId; // RAI_ID
   final DateTime startDate; // RAC_TIME_START
   final DateTime endDate; // RAC_TIME_END
   final String type; // RAC_TYPE
   final String difficulty; // RAC_DIFFICULTY
-  final String sex; // RAC_SEX ← AJOUTE CE CHAMP
+  final String sex; // RAC_SEX
   final int minParticipants; // RAC_MIN_PARTICIPANTS
   final int maxParticipants; // RAC_MAX_PARTICIPANTS
   final int minTeams; // RAC_MIN_TEAMS
@@ -21,13 +22,14 @@ class Race {
 
   Race({
     required this.id,
+    required this.name,
     required this.userId,
     required this.raidId,
     required this.startDate,
     required this.endDate,
     required this.type,
     required this.difficulty,
-    required this.sex, // ← AJOUTE CE PARAMÈTRE
+    required this.sex,
     required this.minParticipants,
     required this.maxParticipants,
     required this.minTeams,
@@ -45,6 +47,7 @@ class Race {
   factory Race.fromJson(Map<String, dynamic> json) {
     return Race(
       id: json['RAC_ID'] as int? ?? 0,
+      name: json['RAC_NAME'] as String? ?? 'Nouvelle Course',
       userId: json['USE_ID'] as int? ?? 0,
       raidId: json['RAI_ID'] as int? ?? 0,
       startDate: json['RAC_TIME_START'] != null
@@ -73,13 +76,14 @@ class Race {
   Map<String, dynamic> toJson() {
     return {
       'RAC_ID': id,
+      'RAC_NAME': name,
       'USE_ID': userId,
       'RAI_ID': raidId,
       'RAC_TIME_START': startDate.toIso8601String(),
       'RAC_TIME_END': endDate.toIso8601String(),
       'RAC_TYPE': type,
       'RAC_DIFFICULTY': difficulty,
-      'RAC_SEX': sex, // ← AJOUTE CE CHAMP
+      'RAC_SEX': sex,
       'RAC_MIN_PARTICIPANTS': minParticipants,
       'RAC_MAX_PARTICIPANTS': maxParticipants,
       'RAC_MIN_TEAMS': minTeams,
@@ -88,19 +92,21 @@ class Race {
       'RAC_AGE_MIN': ageMin,
       'RAC_AGE_MIDDLE': ageMiddle,
       'RAC_AGE_MAX': ageMax,
+      'RAC_CHIP_REQUIRED': type == 'Compétitif' ? 1 : 0,
     };
   }
 
   /// Copie avec modifications
   Race copyWith({
     int? id,
+    String? name,
     int? userId,
     int? raidId,
     DateTime? startDate,
     DateTime? endDate,
     String? type,
     String? difficulty,
-    String? sex, // ← AJOUTE CE PARAMÈTRE
+    String? sex,
     int? minParticipants,
     int? maxParticipants,
     int? minTeams,
@@ -112,13 +118,14 @@ class Race {
   }) {
     return Race(
       id: id ?? this.id,
+      name: name ?? this.name,
       userId: userId ?? this.userId,
       raidId: raidId ?? this.raidId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       type: type ?? this.type,
       difficulty: difficulty ?? this.difficulty,
-      sex: sex ?? this.sex, // ← AJOUTE CE CHAMP
+      sex: sex ?? this.sex,
       minParticipants: minParticipants ?? this.minParticipants,
       maxParticipants: maxParticipants ?? this.maxParticipants,
       minTeams: minTeams ?? this.minTeams,
