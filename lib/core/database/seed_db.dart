@@ -127,7 +127,7 @@ class SeedData {
         'RAI_TIME_END': '2026-04-20 19:00:00',
         'RAI_REGISTRATION_START': '2025-12-01 00:00:00',
         'RAI_REGISTRATION_END': '2026-04-15 23:59:59',
-        'RAI_RACE_COUNT': 3, 
+        'RAI_RACE_COUNT': 10, 
       },
     ];
     for (var raid in raids) {

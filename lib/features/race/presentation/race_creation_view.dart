@@ -47,10 +47,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   DateTime? _endDate;
   String? _selectedSex; 
 
-  
-  
-  static const _sexes = ['Homme', 'Femme', 'Mixte'];
-  
+
+
+  static const _sexes = ['Masculin', 'Féminin', 'Mixte'];
+
   List<User> _clubMembers = [];
   List<Category> _categories = [];
   Map<int, double> _categoryPrices = {};
