@@ -73,7 +73,10 @@ class SanglierExplorerApp extends StatelessWidget {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-            ChangeNotifierProvider<ClubProvider>(create: (_) => ClubProvider()),
+            ChangeNotifierProvider<ClubProvider>(
+              create: (_) =>
+                  ClubProvider(repository: snapshot.data!['clubRepository']),
+            ),
             Provider<RaidRepository>.value(
               value: snapshot.data!['raidRepository'],
             ),
@@ -141,6 +144,7 @@ class SanglierExplorerApp extends StatelessWidget {
       'clubRepository': ClubRepositoryImpl(
         apiSources: ClubApiSources(baseUrl: AppConfig.apiBaseUrl),
         localSources: ClubLocalSources(),
+        authLocalSources: authLocalSources,
       ),
       'addressRepository': AddressRepositoryImpl(
         localSources: AddressLocalSources(),

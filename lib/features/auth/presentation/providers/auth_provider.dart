@@ -81,6 +81,7 @@ class AuthProvider extends ChangeNotifier {
     String? birthDate,
     String? phoneNumber,
     String? licenceNumber,
+    String gender = 'Autre',
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -95,6 +96,7 @@ class AuthProvider extends ChangeNotifier {
         birthDate: birthDate,
         phoneNumber: phoneNumber,
         licenceNumber: licenceNumber,
+        gender: gender,
       );
       _currentUser = user;
     } on AuthException catch (e) {

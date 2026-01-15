@@ -2,6 +2,9 @@
 import 'user.dart';
 
 abstract class UserRepository {
+  /// Gets all users
+  Future<List<User>> getAllUsers();
+
   /// Gets user's club ID if they are club manager
   /// Returns null if user is not a club manager
   Future<int?> getUserClubId(int userId);

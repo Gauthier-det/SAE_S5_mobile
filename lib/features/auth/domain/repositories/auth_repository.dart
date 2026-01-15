@@ -4,7 +4,7 @@ import '../exceptions/auth_exceptions.dart';
 /// Repository interface for authentication operations
 abstract class AuthRepository {
   /// Register a new user
-  /// 
+  ///
   /// Throws [ValidationException] if input is invalid
   /// Throws [EmailAlreadyExistsException] if email already exists
   /// Throws [AuthErrorException] for other errors
@@ -13,17 +13,18 @@ abstract class AuthRepository {
     required String password,
     required String firstName,
     required String lastName,
+    String? birthDate,
+    String? phoneNumber,
+    String? licenceNumber,
+    String gender = 'Autre',
   });
 
   /// Login with email and password
-  /// 
+  ///
   /// Throws [InvalidCredentialsException] if credentials are invalid
   /// Throws [ValidationException] if input is invalid
   /// Throws [AuthErrorException] for other errors
-  Future<User> login({
-    required String email,
-    required String password,
-  });
+  Future<User> login({required String email, required String password});
 
   /// Get current logged-in user
   Future<User?> getCurrentUser();

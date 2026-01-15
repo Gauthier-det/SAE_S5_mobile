@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../../data/datasources/club_local_sources.dart';
+import '../../domain/club_repository.dart';
 import '../../domain/club.dart';
-import '../../../../core/database/database_helper.dart';
 
 /// Provider for managing clubs
 class ClubProvider extends ChangeNotifier {
@@ -9,23 +8,25 @@ class ClubProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  final ClubLocalSources _localSources = ClubLocalSources();
+  final ClubRepository _repository;
 
   List<Club> get clubs => _clubs;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  ClubProvider() {
+  ClubProvider({required ClubRepository repository})
+    : _repository = repository {
     loadClubs();
   }
 
-  /// Load clubs from SQLite database
+  /// Load clubs from API (with local fallback)
   Future<void> loadClubs() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      _clubs = await _localSources.getAllClubs();
+      _clubs = await _repository.getAllClubs();
+      print('🏢 ClubProvider.loadClubs - Loaded ${_clubs.length} clubs');
     } catch (e) {
       _errorMessage = 'Erreur lors du chargement des clubs: $e';
       debugPrint('Error loading clubs: $e');
@@ -51,25 +52,18 @@ class ClubProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final db = await DatabaseHelper.database;
-      
-      // Récupérer le prochain ID
-      final result = await db.rawQuery('SELECT MAX(CLU_ID) as maxId FROM SAN_CLUBS');
-      final maxId = (result.first['maxId'] as int?) ?? 0;
-      final newId = maxId + 1;
-
-      await db.insert('SAN_CLUBS', {
-        'CLU_ID': newId,
-        'USE_ID': responsibleId,
-        'ADD_ID': addressId,
-        'CLU_NAME': name,
-      });
+      await _repository.createClub(
+        name: name,
+        responsibleId: responsibleId,
+        addressId: addressId,
+      );
 
       // Recharger la liste
       await loadClubs();
     } catch (e) {
       _errorMessage = 'Erreur lors de la création du club: $e';
       debugPrint('Error creating club: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -77,31 +71,17 @@ class ClubProvider extends ChangeNotifier {
   }
 
   /// Update an existing club
-  Future<void> updateClub({
-    required int id,
-    String? name,
-  }) async {
+  Future<void> updateClub({required int id, String? name}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final db = await DatabaseHelper.database;
-      
-      final updateData = <String, dynamic>{};
-      if (name != null) updateData['CLU_NAME'] = name;
-      
-      if (updateData.isNotEmpty) {
-        await db.update(
-          'SAN_CLUBS',
-          updateData,
-          where: 'CLU_ID = ?',
-          whereArgs: [id],
-        );
-        await loadClubs();
-      }
+      await _repository.updateClub(id: id, name: name);
+      await loadClubs();
     } catch (e) {
-      _errorMessage = 'Erreur lors de la mise à jour du club';
+      _errorMessage = 'Erreur lors de la mise à jour du club: $e';
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -115,15 +95,11 @@ class ClubProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final db = await DatabaseHelper.database;
-      await db.delete(
-        'SAN_CLUBS',
-        where: 'CLU_ID = ?',
-        whereArgs: [id],
-      );
+      await _repository.deleteClub(id);
       await loadClubs();
     } catch (e) {
-      _errorMessage = 'Erreur lors de la suppression du club';
+      _errorMessage = 'Erreur lors de la suppression du club: $e';
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

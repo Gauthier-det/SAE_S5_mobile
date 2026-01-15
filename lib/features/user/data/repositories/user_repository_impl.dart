@@ -17,6 +17,20 @@ class UserRepositoryImpl implements UserRepository {
   });
 
   @override
+  Future<List<User>> getAllUsers() async {
+    try {
+      final token = authLocalSources.getToken();
+      apiSources.setAuthToken(token);
+
+      final users = await apiSources.getAllUsers();
+      return users;
+    } catch (e) {
+      print('API getAllUsers failed: $e. Falling back to local...');
+      return await localSources.getAllUsers();
+    }
+  }
+
+  @override
   Future<int?> getUserClubId(int userId) async {
     return await localSources.getUserClubId(userId);
   }
