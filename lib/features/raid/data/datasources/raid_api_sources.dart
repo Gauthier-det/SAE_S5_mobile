@@ -1,124 +1,98 @@
-// lib/features/raids/data/datasources/RaidApiSources.dart
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../../raid/domain/raid.dart';
+import 'package:sae5_g13_mobile/features/auth/domain/user_auth.dart';
+
+import '../../../../core/services/api_client.dart';
+import '../../domain/raid.dart';
 
 class RaidApiSources {
-  final String baseUrl;
-  final http.Client client;
+  final ApiClient apiClient;
 
-  RaidApiSources({
-    required this.baseUrl,
-    http.Client? client,
-  }) : client = client ?? http.Client();
+  RaidApiSources({ApiClient? apiClient})
+      : apiClient = apiClient ?? ApiClient();
 
-  Future<Raid?> getRaidById(int id) async {
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/raids/$id'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return Raid.fromJson(data);
-      } else if (response.statusCode == 404) {
-        return null;
-      } else {
-        throw Exception('API Error: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-
+  /// GET /api/raids
   Future<List<Raid>> getAllRaids() async {
     try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/raids'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => Raid.fromJson(json)).toList();
-      } else {
-        throw Exception('API Error: ${response.statusCode}');
-      }
+      final response = await apiClient.get('/api/raids');
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Raid.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Failed to fetch raids: $e');
     }
   }
 
-Future<Raid> createRaid(Raid raid) async {
+  /// GET /api/raids/{id}
+  Future<Raid?> getRaidById(int id) async {
     try {
-      // 1. Préparer les données en JSON
-      final body = json.encode(raid.toJson());
-      
-      // 2. Envoyer une requête POST
-      final response = await client.post(
-        Uri.parse('$baseUrl/raids'), // Endpoint API
-        headers: {
-          'Content-Type': 'application/json', // Important : spécifie que c'est du JSON
-        },
-        body: body, // Les données du raid en JSON
-      );
-      
-      // 3. Vérifier le code de statut HTTP
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // 201 Created ou 200 OK = succès
-        final data = json.decode(response.body);
-        return Raid.fromJson(data); // Retourne le raid créé (avec l'ID généré par le serveur)
-      } else if (response.statusCode == 400) {
-        // 400 Bad Request = données invalides
-        throw Exception('Données invalides : ${response.body}');
-      } else if (response.statusCode == 401) {
-        // 401 Unauthorized = pas authentifié
-        throw Exception('Non authentifié');
-      } else {
-        // Autre erreur
-        throw Exception('Erreur serveur : ${response.statusCode}');
-      }
+      final response = await apiClient.get('/api/raids/$id');
+      final data = json.decode(response.body);
+      return Raid.fromJson(data);
     } catch (e) {
-      throw Exception('Network error: $e');
+      if (e.toString().contains('Not found')) {
+        return null;
+      }
+      throw Exception('Failed to fetch raid: $e');
     }
   }
 
-  /// Updates an existing raid via PUT request
+  /// POST /api/raids (requires auth)
+  Future<Raid> createRaid(Raid raid) async {
+    try {
+      final response = await apiClient.post(
+        '/api/raids',
+        body: raid.toJson(),
+        requiresAuth: true,
+      );
+      final data = json.decode(response.body);
+      return Raid.fromJson(data);
+    } catch (e) {
+      throw Exception('Failed to create raid: $e');
+    }
+  }
+
+  /// PUT /api/raids/{id} (requires auth)
   Future<Raid> updateRaid(int id, Raid raid) async {
     try {
-      final body = json.encode(raid.toJson());
-      
-      final response = await client.put(
-        Uri.parse('$baseUrl/raids/$id'),
-        headers: {'Content-Type': 'application/json'},
-        body: body,
+      final response = await apiClient.put(
+        '/api/raids/$id',
+        body: raid.toJson(),
+        requiresAuth: true,
       );
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return Raid.fromJson(data);
-      } else {
-        throw Exception('Failed to update raid: ${response.statusCode}');
-      }
+      final data = json.decode(response.body);
+      return Raid.fromJson(data);
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Failed to update raid: $e');
     }
   }
 
-  /// Deletes a raid via DELETE request
+  /// DELETE /api/raids/{id} (requires auth)
   Future<void> deleteRaid(int id) async {
     try {
-      final response = await client.delete(
-        Uri.parse('$baseUrl/raids/$id'),
-        headers: {'Content-Type': 'application/json'},
-      );
-      
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to delete raid: ${response.statusCode}');
-      }
+      await apiClient.delete('/api/raids/$id', requiresAuth: true);
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Failed to delete raid: $e');
     }
   }
+
+  Future<List<User>> getUsersByRole(int roleId) async {
+    try {
+      // Récupérer TOUS les utilisateurs
+      final response = await apiClient.get('/api/users', requiresAuth: true);
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final allUsers = data.map((json) => User.fromJson(json)).toList();
+        
+        // Filtrer côté client (moins performant)
+        return allUsers.where((user) {
+          return user.roles?.any((role) => role.id == roleId) ?? false;
+        }).toList();
+      } else {
+        throw Exception('Failed to fetch users: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch users by role: $e');
+    }
+  }
+
 }

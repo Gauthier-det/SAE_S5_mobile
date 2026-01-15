@@ -42,6 +42,8 @@ dependencies:
   provider: ^6.1.5+1
   shared_preferences: ^2.1.1
   http: ^1.2.0
+  connectivity_plus: ^6.1.1  # Pour détecter la connectivité réseau
+  flutter_secure_storage: ^9.2.2  # Pour stocker le token de manière sécurisée
 
 dev_dependencies:
   flutter_test:
