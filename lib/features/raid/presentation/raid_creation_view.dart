@@ -165,7 +165,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
 
                     // NEW: Raid manager dropdown
                     DropdownButtonFormField<User>(
-                      value: _selectedRaidManager,
+                      initialValue: _selectedRaidManager,
                       decoration: const InputDecoration(
                         labelText: 'Responsable du raid *',
                         border: OutlineInputBorder(),
@@ -196,7 +196,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<Address>(
-                            value: _selectedAddress,
+                            initialValue: _selectedAddress,
                             decoration: const InputDecoration(
                               labelText: 'Lieu du raid *',
                               border: OutlineInputBorder(),

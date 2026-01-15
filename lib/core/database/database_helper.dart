@@ -1,11 +1,10 @@
 // lib/core/database/database_helper.dart
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'seed_db.dart';
 
 class DatabaseHelper {
   static Database? _database;
-  static const _databaseVersion = 3; // ← Incrémente la version
+  static const _databaseVersion = 7; // ← Incrémenté: CAR_PRICE integer
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -20,19 +19,17 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: (db, version) async {
-        print('Creating database tables...');
+        print('Creating database tables for local cache...');
         await _createTables(db);
-        print('Tables created successfully');
-
-        print('Starting seed...');
-        await SeedData.seedDatabase(db);
+        print('Tables created successfully - Data will be fetched from API');
+        // NOTE: No seeder - data comes from API
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         print('Upgrading database from version $oldVersion to $newVersion');
         // Pour simplifier, on recrée tout
         await _dropAllTables(db);
         await _createTables(db);
-        await SeedData.seedDatabase(db);
+        // NOTE: No seeder - data comes from API
       },
     );
 
@@ -90,7 +87,7 @@ class DatabaseHelper {
         ADD_ID INTEGER NOT NULL,
         CLU_ID INTEGER,
         USE_MAIL TEXT NOT NULL,
-        USE_PASSWORD TEXT NOT NULL,
+        USE_PASSWORD TEXT,
         USE_NAME TEXT NOT NULL,
         USE_LAST_NAME TEXT NOT NULL,
         USE_BIRTHDATE TEXT,
@@ -146,6 +143,7 @@ class DatabaseHelper {
         RAC_MAX_PARTICIPANTS INTEGER NOT NULL,
         RAC_MIN_TEAMS INTEGER NOT NULL,
         RAC_MAX_TEAMS INTEGER NOT NULL,
+        RAC_MIN_TEAM_MEMBERS INTEGER NOT NULL,
         RAC_MAX_TEAM_MEMBERS INTEGER NOT NULL,
         RAC_AGE_MIN INTEGER NOT NULL,
         RAC_AGE_MIDDLE INTEGER NOT NULL,
@@ -197,7 +195,7 @@ class DatabaseHelper {
       CREATE TABLE SAN_CATEGORIES_RACES (
         RAC_ID INTEGER NOT NULL,
         CAT_ID INTEGER NOT NULL,
-        CAR_PRICE REAL NOT NULL,
+        CAR_PRICE INTEGER NOT NULL,
         PRIMARY KEY (RAC_ID, CAT_ID)
       )
     ''');

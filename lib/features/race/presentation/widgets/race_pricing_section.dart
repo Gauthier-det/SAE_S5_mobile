@@ -28,7 +28,7 @@ class RacePricingSection extends StatelessWidget {
           );
         }
 
-        final prices = (snapshot.data?[0] as Map<int, double>?) ?? {};
+        final prices = (snapshot.data?[0] as Map<int, int>?) ?? {};
         final categories = (snapshot.data?[1] as List<Category>?) ?? [];
 
         if (prices.isEmpty) {
@@ -46,10 +46,8 @@ class RacePricingSection extends StatelessWidget {
           children: prices.entries.map((entry) {
             final category = categories.firstWhere(
               (c) => c.id == entry.key,
-              orElse: () => Category(
-                id: entry.key,
-                label: 'Catégorie ${entry.key}',
-              ),
+              orElse: () =>
+                  Category(id: entry.key, label: 'Catégorie ${entry.key}'),
             );
 
             return _buildPriceRow(category.label, entry.value);
@@ -59,7 +57,7 @@ class RacePricingSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRow(String categoryName, double price) {
+  Widget _buildPriceRow(String categoryName, int price) {
     Color color;
 
     if (categoryName.contains('Mineur')) {
@@ -84,14 +82,11 @@ class RacePricingSection extends StatelessWidget {
           Expanded(
             child: Text(
               categoryName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
           ),
           Text(
-            '${price.toStringAsFixed(2)} €',
+            '${price} €',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

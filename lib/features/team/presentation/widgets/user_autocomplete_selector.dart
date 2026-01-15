@@ -15,7 +15,8 @@ class UserAutocompleteSelector extends StatefulWidget {
   });
 
   @override
-  State<UserAutocompleteSelector> createState() => _UserAutocompleteSelectorState();
+  State<UserAutocompleteSelector> createState() =>
+      _UserAutocompleteSelectorState();
 }
 
 class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
@@ -33,10 +34,7 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
         if (widget.selectedMembers.isNotEmpty) ...[
           Text(
             'Membres sélectionnés (${widget.selectedMembers.length}/5)',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -63,24 +61,26 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
         // Autocomplete
         Autocomplete<User>(
           optionsBuilder: (TextEditingValue textEditingValue) {
-            
-            
             // Si vide, afficher tous les users non sélectionnés
             if (textEditingValue.text.isEmpty) {
               final nonSelected = widget.availableUsers
-                  .where((user) => !widget.selectedMembers.any((m) => m.id == user.id))
+                  .where(
+                    (user) =>
+                        !widget.selectedMembers.any((m) => m.id == user.id),
+                  )
                   .toList();
-              
-              
+
               return nonSelected;
             }
-            
+
             // Sinon filtrer
             final filtered = widget.availableUsers.where((user) {
-              final isNotSelected = !widget.selectedMembers.any((m) => m.id == user.id);
-              final matchesSearch = user.fullName
-                  .toLowerCase()
-                  .contains(textEditingValue.text.toLowerCase());
+              final isNotSelected = !widget.selectedMembers.any(
+                (m) => m.id == user.id,
+              );
+              final matchesSearch = user.fullName.toLowerCase().contains(
+                textEditingValue.text.toLowerCase(),
+              );
               return isNotSelected && matchesSearch;
             }).toList();
             return filtered;
@@ -113,8 +113,10 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
             );
           },
           optionsViewBuilder: (context, onSelected, options) {
-            print('👁️ DEBUG optionsViewBuilder: ${options.length} options à afficher');
-            
+            print(
+              '👁️ DEBUG optionsViewBuilder: ${options.length} options à afficher',
+            );
+
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
@@ -135,23 +137,105 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
                           itemCount: options.length,
                           itemBuilder: (context, index) {
                             final user = options.elementAt(index);
+                            // Check availability flags
+                            final isAvailable = user.isAvailable ?? true;
+                            final hasOverlappingRace =
+                                user.hasOverlappingRace ?? false;
+                            final alreadyInTeam = user.alreadyInTeam ?? false;
+                            final isSelf = user.isSelf ?? false;
+                            final invalidAge = user.invalidAge ?? false;
+
                             return ListTile(
+                              enabled: isAvailable,
                               leading: CircleAvatar(
-                                backgroundColor: const Color(0xFF52B788).withOpacity(0.2),
+                                backgroundColor: isAvailable
+                                    ? const Color(0xFF52B788).withOpacity(0.2)
+                                    : Colors.grey.shade300,
                                 child: Text(
                                   user.name[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Color(0xFF52B788),
+                                  style: TextStyle(
+                                    color: isAvailable
+                                        ? const Color(0xFF52B788)
+                                        : Colors.grey,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
-                              title: Text(user.fullName),
-                              subtitle: Text(user.email),
-                              onTap: () {
-                                print('✅ DEBUG User sélectionné: ${user.fullName}');
-                                onSelected(user);
-                              },
+                              title: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      user.fullName,
+                                      style: TextStyle(
+                                        color: isAvailable ? null : Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelf) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        'Moi',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.email,
+                                    style: TextStyle(
+                                      color: isAvailable ? null : Colors.grey,
+                                    ),
+                                  ),
+                                  if (!isAvailable) ...[
+                                    const SizedBox(height: 4),
+                                    Wrap(
+                                      spacing: 4,
+                                      children: [
+                                        if (alreadyInTeam)
+                                          _buildChip(
+                                            'Déjà en équipe',
+                                            Colors.red,
+                                          ),
+                                        if (hasOverlappingRace &&
+                                            !alreadyInTeam)
+                                          _buildChip(
+                                            'Course en conflit',
+                                            Colors.orange,
+                                          ),
+                                        if (invalidAge)
+                                          _buildChip(
+                                            'Âge invalide',
+                                            Colors.purple,
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              onTap: isAvailable
+                                  ? () {
+                                      print(
+                                        '✅ DEBUG User sélectionné: ${user.fullName}',
+                                      );
+                                      onSelected(user);
+                                    }
+                                  : null,
                             );
                           },
                         ),
@@ -161,7 +245,18 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
           },
           onSelected: (User user) {
             print('🎯 DEBUG onSelected appelé pour: ${user.fullName}');
-            
+
+            // Block if not available
+            if (!(user.isAvailable ?? true)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cet utilisateur n\'est pas disponible'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              return;
+            }
+
             if (widget.selectedMembers.length >= 5) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -178,12 +273,28 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
         const SizedBox(height: 8),
         Text(
           'Cliquez dans le champ et tapez pour rechercher',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
       ],
+    );
+  }
+
+  Widget _buildChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }

@@ -56,10 +56,7 @@ class _RaceListViewState extends State<RaceListView> {
         }
         
         if (_filterAgeMin != null) {
-          if (race.ageMin == null) {
-            return false;
-          }
-          if (race.ageMin! > _filterAgeMin!) {
+          if (race.ageMin > _filterAgeMin!) {
             return false;
           }
         }
@@ -217,7 +214,7 @@ class _RaceListViewState extends State<RaceListView> {
                           ),
                           label: Text(
                             _filterAgeMin != null 
-                                ? 'Âge min: ${_filterAgeMin}+' 
+                                ? 'Âge min: $_filterAgeMin+' 
                                 : 'Âge min',
                             style: TextStyle(
                               fontSize: 12,

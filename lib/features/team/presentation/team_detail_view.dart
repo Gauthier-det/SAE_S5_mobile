@@ -64,11 +64,13 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   // ✅ Vérifie si l'équipe peut être validée (tous les membres ont licence OU PPS)
   bool _canValidateTeam() {
     for (var member in _membersWithDetails) {
-      final hasLicence = member['USE_LICENCE_NUMBER'] != null &&
-          (member['USE_LICENCE_NUMBER']) != null ;
-      final hasPPS = member['USR_PPS_FORM'] != null && 
-                     (member['USR_PPS_FORM'] as String).isNotEmpty;
-      
+      final hasLicence =
+          member['USE_LICENCE_NUMBER'] != null &&
+          (member['USE_LICENCE_NUMBER']) != null;
+      final hasPPS =
+          member['USR_PPS_FORM'] != null &&
+          (member['USR_PPS_FORM'] as String).isNotEmpty;
+
       if (!hasLicence && !hasPPS) {
         return false;
       }
@@ -85,16 +87,14 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         widget.teamId,
         widget.raceId,
       );
-      
+
       final dossardNumber = await widget.repository.getTeamDossardNumber(
         widget.teamId,
         widget.raceId,
       );
-      
-      final membersWithDetails = await widget.repository.getTeamMembersWithRaceDetails(
-        widget.teamId,
-        widget.raceId,
-      );
+
+      final membersWithDetails = await widget.repository
+          .getTeamMembersWithRaceDetails(widget.teamId, widget.raceId);
 
       print('🔍 Team loaded: ${team?.name}, isValid: ${team?.isValid}');
       print('📊 Dossard: $dossardNumber');
@@ -117,7 +117,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
-
   Future<void> _toggleTeamValidation() async {
     // ✅ Seul le responsable de course peut valider/invalider
     if (!widget.isRaceManager) {
@@ -132,7 +131,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     print('Toggling team validation. Currently valid: $isCurrentlyValid');
 
-    
     if (!isCurrentlyValid && !_canValidateTeam()) {
       _showValidationErrorDialog();
       return;
@@ -142,7 +140,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     final confirm = await _showConfirmDialog(
       title: '${action[0].toUpperCase()}${action.substring(1)} l\'équipe',
-      content: 'Confirmez-vous que vous souhaitez $action cette équipe pour la course ?',
+      content:
+          'Confirmez-vous que vous souhaitez $action cette équipe pour la course ?',
       actionLabel: action.toUpperCase(),
       isDestructive: isCurrentlyValid,
     );
@@ -153,9 +152,15 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     try {
       if (isCurrentlyValid) {
-        await widget.repository.invalidateTeamForRace(widget.teamId, widget.raceId);
+        await widget.repository.invalidateTeamForRace(
+          widget.teamId,
+          widget.raceId,
+        );
       } else {
-        await widget.repository.validateTeamForRace(widget.teamId, widget.raceId);
+        await widget.repository.validateTeamForRace(
+          widget.teamId,
+          widget.raceId,
+        );
       }
 
       if (mounted) {
@@ -164,7 +169,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           isSuccess: true,
         );
         await _loadTeamDetails();
-        Navigator.pop(context, true);
+        // Navigator.pop(context, true); // Keep the user on the page to see the status change
       }
     } catch (e) {
       if (mounted) {
@@ -202,8 +207,15 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     if (selectedUser != null) {
       try {
-        await widget.repository.addTeamMember(_team!.id, selectedUser.id);
-        await widget.repository.registerUserToRace(selectedUser.id, widget.raceId);
+        await widget.repository.addTeamMember(
+          _team!.id,
+          selectedUser.id,
+          raceId: widget.raceId,
+        );
+        await widget.repository.registerUserToRace(
+          selectedUser.id,
+          widget.raceId,
+        );
 
         if (mounted) {
           _showSnackBar(
@@ -237,7 +249,11 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     if (confirm != true) return;
 
     try {
-      await widget.repository.removeMemberFromTeam(widget.teamId, userId);
+      await widget.repository.removeMemberFromTeam(
+        widget.teamId,
+        userId,
+        raceId: widget.raceId,
+      );
 
       if (mounted) {
         _showSnackBar('Membre retiré avec succès !');
@@ -253,13 +269,16 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   Future<void> _deleteTeam() async {
     // ✅ Seul le responsable de course peut supprimer l'équipe
     if (!widget.isRaceManager) {
-      _showSnackBar('Seul le responsable de la course peut supprimer l\'équipe');
+      _showSnackBar(
+        'Seul le responsable de la course peut supprimer l\'équipe',
+      );
       return;
     }
 
     final confirm = await _showConfirmDialog(
       title: 'Supprimer l\'équipe',
-      content: 'Êtes-vous sûr de vouloir supprimer cette équipe ? Cette action est irréversible.',
+      content:
+          'Êtes-vous sûr de vouloir supprimer cette équipe ? Cette action est irréversible.',
       actionLabel: 'SUPPRIMER',
       isDestructive: true,
     );
@@ -280,7 +299,11 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
-  Future<void> _editPPSForm(int userId, String currentPPS, String memberName) async {
+  Future<void> _editPPSForm(
+    int userId,
+    String currentPPS,
+    String memberName,
+  ) async {
     if (!_canEditMember(userId)) {
       _showSnackBar('Vous ne pouvez modifier que vos propres informations');
       print('User $userId cannot edit member');
@@ -288,7 +311,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
 
     final member = _membersWithDetails.firstWhere((m) => m['USE_ID'] == userId);
-    final hasLicence = member['USE_LICENCE_NUMBER'] != null &&
+    final hasLicence =
+        member['USE_LICENCE_NUMBER'] != null &&
         (member['USE_LICENCE_NUMBER'] as String).isNotEmpty;
 
     if (hasLicence) {
@@ -298,7 +322,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
 
     final controller = TextEditingController(text: currentPPS);
-    
+
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -330,7 +354,12 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     if (result == null || result == currentPPS) return;
 
     try {
-      await widget.repository.updateUserPPS(userId, result.isEmpty ? null : result, widget.raceId);
+      await widget.repository.updateUserPPS(
+        userId,
+        result.isEmpty ? null : result,
+        widget.raceId,
+        widget.teamId,
+      );
 
       if (mounted) {
         _showSnackBar('Formulaire PPS mis à jour !', isSuccess: true);
@@ -344,15 +373,21 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
-  Future<void> _editChipNumber(int userId, int? currentChip, String memberName) async {
+  Future<void> _editChipNumber(
+    int userId,
+    int? currentChip,
+    String memberName,
+  ) async {
     // ✅ Vérifier si l'utilisateur peut modifier ce membre
     if (!_canEditMember(userId)) {
       _showSnackBar('Vous ne pouvez modifier que vos propres informations');
       return;
     }
 
-    final controller = TextEditingController(text: currentChip?.toString() ?? '');
-    
+    final controller = TextEditingController(
+      text: currentChip?.toString() ?? '',
+    );
+
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -383,7 +418,12 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     try {
       final chipNumber = result.isEmpty ? null : int.parse(result);
-      await widget.repository.updateUserChipNumber(userId, widget.raceId, chipNumber);
+      await widget.repository.updateUserChipNumber(
+        userId,
+        widget.raceId,
+        chipNumber,
+        widget.teamId,
+      );
 
       if (mounted) {
         _showSnackBar('Numéro de puce mis à jour !', isSuccess: true);
@@ -442,7 +482,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isDestructive ? Colors.red : const Color(0xFF52B788),
+              backgroundColor: isDestructive
+                  ? Colors.red
+                  : const Color(0xFF52B788),
             ),
             child: Text(actionLabel),
           ),
@@ -471,39 +513,36 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _team == null
-              ? const Center(child: Text('Équipe introuvable'))
-              : SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TeamHeader(
-                        team: _team!,
-                        dossardNumber: _dossardNumber,
-                      ),
-                      
-                      // ✅ Bouton de validation visible UNIQUEMENT pour le responsable
-                      if (widget.isRaceManager)
-                        TeamValidationButton(
-                          isValid: _team!.isValid ?? false,
-                          isValidating: _isValidating,
-                          onPressed: _toggleTeamValidation,
-                        ),
-                      
-                      TeamMembersList(
-                        members: _membersWithDetails,
-                        canManageTeam: _canManageTeam(),
-                        isRaceManager: widget.isRaceManager,
-                        currentUserId: widget.currentUserId, // ✅ AJOUTE
-                        canEditMember: _canEditMember, // ✅ AJOUTE
-                        raceId: widget.raceId,
-                        onAddMember: _addMember,
-                        onRemoveMember: _removeMember,
-                        onEditPPS: _editPPSForm,
-                        onEditChipNumber: _editChipNumber,
-                      ),
-                    ],
+          ? const Center(child: Text('Équipe introuvable'))
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TeamHeader(team: _team!, dossardNumber: _dossardNumber),
+
+                  // ✅ Bouton de validation visible UNIQUEMENT pour le responsable
+                  if (widget.isRaceManager)
+                    TeamValidationButton(
+                      isValid: _team!.isValid ?? false,
+                      isValidating: _isValidating,
+                      onPressed: _toggleTeamValidation,
+                    ),
+
+                  TeamMembersList(
+                    members: _membersWithDetails,
+                    canManageTeam: _canManageTeam(),
+                    isRaceManager: widget.isRaceManager,
+                    currentUserId: widget.currentUserId, // ✅ AJOUTE
+                    canEditMember: _canEditMember, // ✅ AJOUTE
+                    raceId: widget.raceId,
+                    onAddMember: _addMember,
+                    onRemoveMember: _removeMember,
+                    onEditPPS: _editPPSForm,
+                    onEditChipNumber: _editChipNumber,
                   ),
-                ),
+                ],
+              ),
+            ),
     );
   }
 }

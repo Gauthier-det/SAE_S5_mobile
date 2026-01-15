@@ -21,7 +21,8 @@ class TeamRaceRegistrationView extends StatefulWidget {
   });
 
   @override
-  State<TeamRaceRegistrationView> createState() => _TeamRaceRegistrationViewState();
+  State<TeamRaceRegistrationView> createState() =>
+      _TeamRaceRegistrationViewState();
 }
 
 class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
@@ -29,10 +30,10 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
   final _nameController = TextEditingController();
 
   List<User> _availableUsers = [];
-  List<User> _selectedMembers = [];
+  final List<User> _selectedMembers = [];
   bool _isLoading = false;
   bool _isLoadingUsers = true;
-  
+
   Map<String, dynamic>? _raceDetails;
   int _maxTeamSize = 5;
   String? _requiredGender;
@@ -47,7 +48,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
   Future<void> _loadRaceDetails() async {
     try {
       final details = await widget.repository.getRaceDetails(widget.raceId);
-      
+
       if (mounted && details != null) {
         setState(() {
           _raceDetails = details;
@@ -62,11 +63,13 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
   Future<void> _loadUsers() async {
     setState(() => _isLoadingUsers = true);
-    
+
     try {
       // ✅ Maintenant cette méthode retourne déjà les users filtrés !
-      final users = await widget.repository.getAvailableUsersForRace(widget.raceId);
-      
+      final users = await widget.repository.getAvailableUsersForRace(
+        widget.raceId,
+      );
+
       if (mounted) {
         setState(() {
           _availableUsers = users;
@@ -76,9 +79,9 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingUsers = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
       }
     }
   }
@@ -112,9 +115,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF52B788).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF52B788),
-                        ),
+                        border: Border.all(color: const Color(0xFF52B788)),
                       ),
                       child: Row(
                         children: [
@@ -142,7 +143,8 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                if (_requiredGender != null && _requiredGender != 'Mixte')
+                                if (_requiredGender != null &&
+                                    _requiredGender != 'Mixte')
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(
@@ -175,7 +177,10 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.info_outline, color: Colors.blue.shade700),
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue.shade700,
+                              ),
                               const SizedBox(width: 12),
                               const Expanded(
                                 child: Text(
@@ -230,8 +235,8 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                     Text(
                       'Membres de l\'équipe * (${_selectedMembers.length}/$_maxTeamSize)',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -242,13 +247,17 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                         setState(() {
                           if (_selectedMembers.any((m) => m.id == user.id)) {
                             // Retirer
-                            _selectedMembers.removeWhere((m) => m.id == user.id);
+                            _selectedMembers.removeWhere(
+                              (m) => m.id == user.id,
+                            );
                           } else {
                             // ✅ Vérifier uniquement la limite de taille
                             if (_selectedMembers.length >= _maxTeamSize) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Nombre maximum de membres atteint ($_maxTeamSize)'),
+                                  content: Text(
+                                    'Nombre maximum de membres atteint ($_maxTeamSize)',
+                                  ),
                                   backgroundColor: Colors.orange,
                                 ),
                               );
@@ -318,19 +327,13 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
         throw Exception('Utilisateur non connecté');
       }
 
-      final db = await DatabaseHelper.database;
-      final users = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [currentUser.email],
-        limit: 1,
-      );
+      // Use userId from authProvider directly (API-first strategy)
+      // Conversion explicite car AuthUser.id est String mais Team.managerId est int
+      final userId = int.tryParse(currentUser.id);
 
-      if (users.isEmpty) {
-        throw Exception('Utilisateur introuvable');
+      if (userId == null || userId == 0) {
+        throw Exception('ID utilisateur invalide (non numérique)');
       }
-
-      final userId = users.first['USE_ID'] as int;
 
       final team = Team(
         id: DateTime.now().millisecondsSinceEpoch,
@@ -339,7 +342,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
       );
 
       final memberIds = _selectedMembers.map((m) => m.id).toList();
-      
+
       await widget.repository.createTeamAndRegisterToRace(
         team: team,
         memberIds: memberIds,
@@ -357,9 +360,9 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
       }
     } finally {
       if (mounted) {

@@ -14,7 +14,7 @@ class User {
   final String name;
   final String lastName;
   final DateTime? birthdate;
-  final int? phoneNumber;
+  final String? phoneNumber;
   final int? licenceNumber;
   final String? ppsForm;
   final DateTime? membershipDate;
@@ -24,6 +24,14 @@ class User {
   final Address? address;
   final Club? club;
   final List<Role>? roles;
+
+  // Availability flags (from /races/{id}/available-users API)
+  final bool? isSelf;
+  final bool? alreadyInTeam;
+  final bool? hasOverlappingRace;
+  final bool? invalidAge;
+  final int? userAge;
+  final bool? isAvailable;
 
   User({
     required this.id,
@@ -42,6 +50,12 @@ class User {
     this.club,
     this.roles,
     required this.sex,
+    this.isSelf,
+    this.alreadyInTeam,
+    this.hasOverlappingRace,
+    this.invalidAge,
+    this.userAge,
+    this.isAvailable,
   });
 
   /// Creates User from database JSON
@@ -73,11 +87,20 @@ class User {
       name: json['USE_NAME'] ?? '',
       lastName: json['USE_LAST_NAME'] ?? '',
       birthdate: birthdate,
-      phoneNumber: json['USE_PHONE_NUMBER'],
-      licenceNumber: json['USE_LICENCE_NUMBER'],
+      phoneNumber: json['USE_PHONE_NUMBER']?.toString(), // API returns String
+      licenceNumber: json['USE_LICENCE_NUMBER'] is String
+          ? int.tryParse(json['USE_LICENCE_NUMBER'])
+          : json['USE_LICENCE_NUMBER'],
       membershipDate: membershipDate,
       address: address,
-      sex: json['USE_GENDER'],
+      sex: json['USE_GENDER'] ?? 'Mixte',
+      // Availability flags from /races/{id}/available-users API
+      isSelf: json['is_self'],
+      alreadyInTeam: json['already_in_team'],
+      hasOverlappingRace: json['has_overlapping_race'],
+      invalidAge: json['invalid_age'],
+      userAge: json['user_age'],
+      isAvailable: json['is_available'],
     );
   }
 

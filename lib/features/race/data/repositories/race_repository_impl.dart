@@ -33,7 +33,8 @@ class RacesRepositoryImpl implements RacesRepository {
       // Récupérer depuis l'API
       final remoteRaces = await apiSources.getRacesByRaid(raidId);
 
-      // Sauvegarder en local
+      // Remplacer le cache local (clear + insert)
+      await localSources.clearRacesByRaidId(raidId);
       for (var race in remoteRaces) {
         await localSources.insertRace(race);
       }
@@ -55,14 +56,14 @@ class RacesRepositoryImpl implements RacesRepository {
   // lib/features/races/data/repositories/race_repository_impl.dart
 
   @override
-  Future<int> createRace(Race race, Map<int, double> categoryPrices) async {
+  Future<int> createRace(Race race, Map<int, int> categoryPrices) async {
     // Essayer de créer via l'API
     try {
       // Récupérer le token et l'injecter
       final token = authLocalSources.getToken();
       apiSources.setAuthToken(token);
 
-      final createdRace = await apiSources.createRace(race);
+      final createdRace = await apiSources.createRace(race, categoryPrices);
 
       // Sauvegarder en local
       await localSources.insertRace(createdRace);
@@ -123,16 +124,21 @@ class RacesRepositoryImpl implements RacesRepository {
 
   @override
   Future<List<Category>> getCategories() async {
-    final data = await localSources.getCategories();
-    return data.map((json) => Category.fromJson(json)).toList();
+    // Categories are fixed data, return them directly
+    // Matches Laravel seeder: CAT_ID 1=Mineur, 2=Majeur non licencié, 3=Licencié
+    return [
+      Category(id: 1, label: 'Mineur'),
+      Category(id: 2, label: 'Majeur non licencié'),
+      Category(id: 3, label: 'Licencié'),
+    ];
   }
 
   @override
-  Future<Map<int, double>> getRaceCategoryPrices(int raceId) async {
+  Future<Map<int, int>> getRaceCategoryPrices(int raceId) async {
     final data = await localSources.getRaceCategoryPrices(raceId);
     return Map.fromEntries(
       data.map(
-        (e) => MapEntry(e['CAT_ID'] as int, (e['price'] as num).toDouble()),
+        (e) => MapEntry(e['CAT_ID'] as int, (e['CAR_PRICE'] as num).toInt()),
       ),
     );
   }

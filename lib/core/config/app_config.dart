@@ -11,6 +11,6 @@ class AppConfig {
   /// API Base URL
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://g13-devc3.unicaen.fr/api',
+    defaultValue: 'http://192.168.1.194:8000/api',
   );
 }

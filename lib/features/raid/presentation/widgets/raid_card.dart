@@ -35,7 +35,7 @@ class RaidCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       child: Icon(
                         Icons.landscape,
                         size: 64,

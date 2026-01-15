@@ -14,7 +14,6 @@ import 'widgets/category_price_selector.dart';
 import 'widgets/race_form_date_field.dart';
 import 'widgets/race_form_participants_section.dart';
 
-
 class RaceCreationView extends StatefulWidget {
   final Raid raid;
   final RacesRepository repository;
@@ -29,7 +28,6 @@ class RaceCreationView extends StatefulWidget {
   State<RaceCreationView> createState() => _RaceCreationViewState();
 }
 
-
 class _RaceCreationViewState extends State<RaceCreationView> {
   final _formKey = GlobalKey<FormState>();
 
@@ -38,7 +36,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   final _maxParticipantsController = TextEditingController(text: '200');
   final _minTeamsController = TextEditingController(text: '1');
   final _maxTeamsController = TextEditingController(text: '200');
-  final _teamMembersController = TextEditingController();
+  final _minTeamMembersController = TextEditingController(text: '2');
+  final _maxTeamMembersController = TextEditingController(text: '2');
   final _ageMinController = TextEditingController();
   final _ageMiddleController = TextEditingController();
   final _ageMaxController = TextEditingController();
@@ -56,7 +55,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
   List<User> _clubMembers = [];
   List<Category> _categories = [];
-  Map<int, double> _categoryPrices = {};
+  Map<int, int> _categoryPrices = {};
 
   bool _isLoading = false;
   bool _isLoadingData = true;
@@ -73,23 +72,22 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         context,
         listen: false,
       );
-      final db = await DatabaseHelper.database;
 
-      final raidData = await db.query(
-        'SAN_RAIDS',
-        where: 'RAI_ID = ?',
-        whereArgs: [widget.raid.id],
-        limit: 1,
+      // Use clubId from the raid passed as widget parameter
+      // instead of querying local DB which may be empty
+      final clubId = widget.raid.clubId;
+      print(
+        '🏁 RaceCreationView._loadData - Using clubId: $clubId from raid: ${widget.raid.name}',
       );
-
-      if (raidData.isEmpty) throw Exception('Raid introuvable');
-
-      final clubId = raidData.first['CLU_ID'] as int;
 
       final results = await Future.wait([
         clubRepository.getClubMembers(clubId),
         widget.repository.getCategories(),
       ]);
+
+      print(
+        '🏁 RaceCreationView._loadData - Got ${(results[0] as List).length} club members',
+      );
 
       if (mounted) {
         setState(() {
@@ -99,6 +97,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         });
       }
     } catch (e) {
+      print('❌ RaceCreationView._loadData - Error: $e');
       if (mounted) {
         setState(() => _isLoadingData = false);
         ScaffoldMessenger.of(
@@ -116,7 +115,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     _maxParticipantsController.dispose();
     _minTeamsController.dispose();
     _maxTeamsController.dispose();
-    _teamMembersController.dispose();
+    _minTeamMembersController.dispose();
+    _maxTeamMembersController.dispose();
     _ageMinController.dispose();
     _ageMiddleController.dispose();
     _ageMaxController.dispose();
@@ -161,20 +161,34 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Gestionnaire
+                    // Gestionnaire (only show members with licence)
                     DropdownButtonFormField<User>(
-                      value: _selectedManager,
+                      initialValue: _selectedManager,
                       decoration: const InputDecoration(
                         labelText: 'Gestionnaire *',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person),
+                        helperText:
+                            'Le gestionnaire doit avoir un numéro de licence',
                       ),
-                      items: _clubMembers
-                          .map((m) => DropdownMenuItem(
-                                value: m,
-                                child: Text(m.fullName),
-                              ))
-                          .toList(),
+                      items: _clubMembers.map((m) {
+                        final hasLicence = m.licenceNumber != null;
+                        return DropdownMenuItem(
+                          value: m,
+                          enabled: hasLicence,
+                          child: Text(
+                            hasLicence
+                                ? m.fullName
+                                : '${m.fullName} (Pas de licence)',
+                            style: TextStyle(
+                              color: hasLicence ? null : Colors.grey,
+                              fontStyle: hasLicence
+                                  ? FontStyle.normal
+                                  : FontStyle.italic,
+                            ),
+                          ),
+                        );
+                      }).toList(),
                       onChanged: (value) =>
                           setState(() => _selectedManager = value),
                       validator: (value) => value == null
@@ -211,16 +225,18 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _selectedType,
+                            initialValue: _selectedType,
                             decoration: const InputDecoration(
                               labelText: 'Type *',
                               border: OutlineInputBorder(),
                             ),
                             items: _types
-                                .map((t) => DropdownMenuItem(
-                                      value: t,
-                                      child: Text(t),
-                                    ))
+                                .map(
+                                  (t) => DropdownMenuItem(
+                                    value: t,
+                                    child: Text(t),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (value) {
                               setState(() {
@@ -231,7 +247,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                                 }
                               });
                             },
-                            validator: (value) => value == null ? 'Obligatoire' : null,
+                            validator: (value) =>
+                                value == null ? 'Obligatoire' : null,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -271,9 +288,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                             Expanded(
                               child: Text(
                                 'Puce électronique obligatoire ?',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w500),
                               ),
                             ),
                             Switch(
@@ -281,12 +297,12 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                               onChanged: (value) {
                                 setState(() => _chipMandatory = value);
                               },
-                              activeColor: const Color(0xFFFF6B00),
+                              activeThumbColor: const Color(0xFFFF6B00),
                             ),
                           ],
                         ),
                       ),
-                    
+
                     // Indicateur pour Compétitif
                     if (_selectedType == 'Compétitif')
                       Container(
@@ -303,30 +319,28 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                             Expanded(
                               child: Text(
                                 'Puce électronique obligatoire pour les courses compétitives',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.blue.shade800,
-                                    ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.blue.shade800),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    
+
                     const SizedBox(height: 24),
 
                     // Sexe
                     DropdownButtonFormField<String>(
-                      value: _selectedSex,
+                      initialValue: _selectedSex,
                       decoration: const InputDecoration(
                         labelText: 'Sexe *',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.people),
                       ),
                       items: _sexes
-                          .map((s) => DropdownMenuItem(
-                                value: s,
-                                child: Text(s),
-                              ))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
                       onChanged: (value) =>
                           setState(() => _selectedSex = value),
@@ -341,7 +355,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                       maxParticipantsController: _maxParticipantsController,
                       minTeamsController: _minTeamsController,
                       maxTeamsController: _maxTeamsController,
-                      teamMembersController: _teamMembersController,
+                      minTeamMembersController: _minTeamMembersController,
+                      maxTeamMembersController: _maxTeamMembersController,
                     ),
                     const SizedBox(height: 24),
 
@@ -477,8 +492,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
     try {
       // Calculer chipMandatory : toujours 1 si Compétitif, sinon selon le switch
-      final chipMandatory = _selectedType == 'Compétitif' 
-          ? 1 
+      final chipMandatory = _selectedType == 'Compétitif'
+          ? 1
           : (_chipMandatory ? 1 : 0);
 
       final race = Race(
@@ -495,7 +510,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         maxParticipants: int.parse(_maxParticipantsController.text),
         minTeams: int.parse(_minTeamsController.text),
         maxTeams: int.parse(_maxTeamsController.text),
-        teamMembers: int.parse(_teamMembersController.text),
+        minTeamMembers: int.parse(_minTeamMembersController.text),
+        teamMembers: int.parse(_maxTeamMembersController.text),
         ageMin: int.parse(_ageMinController.text),
         ageMiddle: int.parse(_ageMiddleController.text),
         ageMax: int.parse(_ageMaxController.text),
