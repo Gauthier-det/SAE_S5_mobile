@@ -95,7 +95,7 @@ class TeamLocalSources {
     if (raceInfo.isEmpty) return [];
     
     final race = raceInfo.first;
-    final raceSex = race['RAC_SEX'] as String?;
+    final raceSex = race['RAC_GENDER'] as String?;
     final raceStart = race['RAC_TIME_START'] as String;
     final raceEnd = race['RAC_TIME_END'] as String;
     
@@ -474,6 +474,4 @@ class TeamLocalSources {
         )
     ''', [userId, raceId, endTime, startTime, startTime, endTime]);
   }
-
-
 }

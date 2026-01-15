@@ -9,7 +9,7 @@ class Race {
   final DateTime endDate; // RAC_TIME_END
   final String type; // RAC_TYPE
   final String difficulty; // RAC_DIFFICULTY
-  final String sex; // RAC_SEX ← AJOUTE CE CHAMP
+  final String sex; // RAC_GENDER ← AJOUTE CE CHAMP
   final int minParticipants; // RAC_MIN_PARTICIPANTS
   final int maxParticipants; // RAC_MAX_PARTICIPANTS
   final int minTeams; // RAC_MIN_TEAMS
@@ -56,7 +56,7 @@ class Race {
       type: json['RAC_TYPE'] as String? ?? '',
       difficulty: json['RAC_DIFFICULTY'] as String? ?? '',
       sex:
-          (json['RAC_SEX'] ?? json['RAC_GENDER']) as String? ??
+          (json['RAC_GENDER'] ?? json['RAC_GENDER']) as String? ??
           'Mixte', // Support API (GENDER) et DB (SEX)
       minParticipants: json['RAC_MIN_PARTICIPANTS'] as int? ?? 0,
       maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int? ?? 0,
@@ -79,7 +79,7 @@ class Race {
       'RAC_TIME_END': endDate.toIso8601String(),
       'RAC_TYPE': type,
       'RAC_DIFFICULTY': difficulty,
-      'RAC_SEX': sex, // ← AJOUTE CE CHAMP
+      'RAC_GENDER': sex, // ← AJOUTE CE CHAMP
       'RAC_MIN_PARTICIPANTS': minParticipants,
       'RAC_MAX_PARTICIPANTS': maxParticipants,
       'RAC_MIN_TEAMS': minTeams,

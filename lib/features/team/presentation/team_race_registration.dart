@@ -52,7 +52,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
         setState(() {
           _raceDetails = details;
           _maxTeamSize = details['RAC_TEAM_MEMBERS'] as int? ?? 5;
-          _requiredGender = details['RAC_SEX']?.toString();
+          _requiredGender = details['RAC_GENDER']?.toString();
         });
       }
     } catch (e) {

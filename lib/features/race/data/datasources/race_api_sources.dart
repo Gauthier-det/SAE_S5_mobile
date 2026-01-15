@@ -83,9 +83,9 @@ class RaceApiSources {
       // Convertir en JSON et adapter les champs pour l'API
       final raceJson = race.toJson();
       
-      // Mapper RAC_SEX vers RAC_GENDER pour l'API
+      // Mapper RAC_GENDER vers RAC_GENDER pour l'API
       // L'API accepte uniquement : 'Homme', 'Femme', 'Mixte'
-      final sexValue = raceJson.remove('RAC_SEX') as String?;
+      final sexValue = raceJson.remove('RAC_GENDER') as String?;
       raceJson['RAC_GENDER'] = sexValue ?? 'Mixte';
       
       // Mapper RAC_TEAM_MEMBERS vers RAC_MAX_TEAM_MEMBERS pour l'API
