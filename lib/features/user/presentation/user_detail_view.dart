@@ -9,11 +9,11 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final user = authProvider.currentUser;
-        
+
         if (user == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Profil')),
@@ -41,12 +41,16 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 32),
-                
+
                 // Profile Image
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
-                  child: user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.2,
+                  ),
+                  child:
+                      user.profileImageUrl != null &&
+                          user.profileImageUrl!.isNotEmpty
                       ? ClipOval(
                           child: Image.network(
                             user.profileImageUrl!,
@@ -68,9 +72,9 @@ class ProfileScreen extends StatelessWidget {
                           color: theme.colorScheme.primary,
                         ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // User Name
                 Text(
                   user.fullName,
@@ -78,9 +82,9 @@ class ProfileScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Email
                 Text(
                   user.email,
@@ -88,9 +92,9 @@ class ProfileScreen extends StatelessWidget {
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Profile Details Card
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -98,78 +102,90 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         ListTile(
-                          leading: Icon(Icons.person_outline, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.person_outline,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Nom'),
                           subtitle: Text(user.lastName),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.person, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.person,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Prénom'),
                           subtitle: Text(user.firstName),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.email, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.email,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Email'),
                           subtitle: Text(user.email),
                           trailing: Icon(
                             Icons.lock,
                             size: 16,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.phone, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.phone,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Téléphone'),
                           subtitle: Text(user.phoneNumber ?? 'Non renseigné'),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.cake, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.cake,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Âge'),
                           subtitle: Text(_calculateAge(user.birthDate)),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.groups, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.groups,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Club'),
                           subtitle: Text(user.club ?? 'Non renseigné'),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.badge, color: theme.colorScheme.primary),
+                          leading: Icon(
+                            Icons.badge,
+                            color: theme.colorScheme.primary,
+                          ),
                           title: const Text('Numéro de licence'),
                           subtitle: Text(user.licenceNumber ?? 'Non renseigné'),
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: Icon(Icons.numbers, color: theme.colorScheme.primary),
-                          title: const Text('Numéro PPS'),
-                          subtitle: Text(user.ppsNumber ?? 'Non renseigné'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: Icon(Icons.memory, color: theme.colorScheme.primary),
-                          title: const Text('Numéro de puce'),
-                          subtitle: Text(user.chipNumber ?? 'Non renseigné'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: Icon(Icons.calendar_today, color: theme.colorScheme.primary),
-                          title: const Text('Date de création du compte'),
-                          subtitle: Text(
-                            _formatDate(user.createdAt),
+                          leading: Icon(
+                            Icons.calendar_today,
+                            color: theme.colorScheme.primary,
                           ),
+                          title: const Text('Date de création du compte'),
+                          subtitle: Text(_formatDate(user.createdAt)),
                         ),
                       ],
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Edit Profile Button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -188,7 +204,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
               ],
             ),
@@ -197,11 +213,21 @@ class ProfileScreen extends StatelessWidget {
       },
     );
   }
-  
+
   String _formatDate(DateTime date) {
     final months = [
-      'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -214,7 +240,7 @@ class ProfileScreen extends StatelessWidget {
       final birth = DateTime.parse(birthDate);
       final now = DateTime.now();
       int age = now.year - birth.year;
-      if (now.month < birth.month || 
+      if (now.month < birth.month ||
           (now.month == birth.month && now.day < birth.day)) {
         age--;
       }
