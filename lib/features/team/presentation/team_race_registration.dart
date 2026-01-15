@@ -32,17 +32,39 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
   List<User> _selectedMembers = [];
   bool _isLoading = false;
   bool _isLoadingUsers = true;
+  
+  Map<String, dynamic>? _raceDetails;
+  int _maxTeamSize = 5;
+  String? _requiredGender;
 
   @override
   void initState() {
     super.initState();
+    _loadRaceDetails();
     _loadUsers();
+  }
+
+  Future<void> _loadRaceDetails() async {
+    try {
+      final details = await widget.repository.getRaceDetails(widget.raceId);
+      
+      if (mounted && details != null) {
+        setState(() {
+          _raceDetails = details;
+          _maxTeamSize = details['RAC_TEAM_MEMBERS'] as int? ?? 5;
+          _requiredGender = details['RAC_SEX']?.toString();
+        });
+      }
+    } catch (e) {
+      print('Error loading race details: $e');
+    }
   }
 
   Future<void> _loadUsers() async {
     setState(() => _isLoadingUsers = true);
     
     try {
+      // ✅ Maintenant cette méthode retourne déjà les users filtrés !
       final users = await widget.repository.getAvailableUsersForRace(widget.raceId);
       
       if (mounted) {
@@ -120,6 +142,18 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                if (_requiredGender != null && _requiredGender != 'Mixte')
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      'Course $_requiredGender uniquement',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -156,9 +190,9 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '• Maximum 5 membres par équipe\n'
+                            '• Maximum $_maxTeamSize membres par équipe\n'
                             '• Tous les membres doivent avoir au moins 12 ans\n'
-                            '• L\'équipe sera soumise à validation',
+                            '• Les personnes affichées sont déjà filtrées selon les critères',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey.shade700,
@@ -194,7 +228,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
                     // Sélection des membres
                     Text(
-                      'Membres de l\'équipe *',
+                      'Membres de l\'équipe * (${_selectedMembers.length}/$_maxTeamSize)',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -207,8 +241,20 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                       onUserSelected: (user) {
                         setState(() {
                           if (_selectedMembers.any((m) => m.id == user.id)) {
+                            // Retirer
                             _selectedMembers.removeWhere((m) => m.id == user.id);
                           } else {
+                            // ✅ Vérifier uniquement la limite de taille
+                            if (_selectedMembers.length >= _maxTeamSize) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Nombre maximum de membres atteint ($_maxTeamSize)'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+                            // Ajouter
                             _selectedMembers.add(user);
                           }
                         });

@@ -25,8 +25,9 @@ abstract class TeamRepository {
   Future<void> deleteTeam(int teamId, int raceId);
   Future<void> updateUserPPS(int userId, String? ppsForm, int raceId);
   Future<void> updateUserChipNumber(int userId, int raceId, int? chipNumber);
+  Future<Map<String, dynamic>?> getRaceDetails(int raceId);
+  Future<List<Map<String, dynamic>>> getUserConflictingRaces(int userId, int raceId);
   
-  // ← AJOUTE CETTE MÉTHODE
   Future<void> createTeamAndRegisterToRace({
     required Team team,
     required List<int> memberIds,

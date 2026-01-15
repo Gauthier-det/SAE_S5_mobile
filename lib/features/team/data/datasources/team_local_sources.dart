@@ -80,32 +80,83 @@ class TeamLocalSources {
     }
   }
 
+  // Remplace getAvailableUsersForRace par cette version améliorée
   Future<List<Map<String, dynamic>>> getAvailableUsersForRace(int raceId) async {
     final db = await DatabaseHelper.database;
     
+    // Récupérer les infos de la course
+    final raceInfo = await db.query(
+      'SAN_RACES',
+      where: 'RAC_ID = ?',
+      whereArgs: [raceId],
+      limit: 1,
+    );
+    
+    if (raceInfo.isEmpty) return [];
+    
+    final race = raceInfo.first;
+    final raceSex = race['RAC_SEX'] as String?;
+    final raceStart = race['RAC_TIME_START'] as String;
+    final raceEnd = race['RAC_TIME_END'] as String;
+    
+    // Construire la clause WHERE pour le genre
+    String genderFilter = '';
+    if (raceSex == 'Masculin') {
+      genderFilter = "AND USE_SEX = 'Masculin'";
+    } else if (raceSex == 'Féminin') {
+      genderFilter = "AND USE_SEX = 'Féminin'";
+    }
+    // Si Mixte ou autre, pas de filtre (tous les genres acceptés)
+    
     return await db.rawQuery('''
-      SELECT USE_ID, USE_NAME, USE_LAST_NAME, USE_MAIL, USE_BIRTHDATE,
-             ADD_ID, CLU_ID, USE_LICENCE_NUMBER
+      SELECT 
+        USE_ID, 
+        USE_NAME, 
+        USE_LAST_NAME, 
+        USE_MAIL, 
+        USE_BIRTHDATE,
+        USE_SEX,
+        ADD_ID, 
+        CLU_ID, 
+        USE_LICENCE_NUMBER
       FROM SAN_USERS
       WHERE 
         -- Au moins 12 ans
         (julianday('now') - julianday(USE_BIRTHDATE)) / 365.25 >= 12
+        
         -- Pas déjà inscrit à cette course
         AND USE_ID NOT IN (
           SELECT USE_ID 
           FROM SAN_USERS_RACES 
           WHERE RAC_ID = ?
         )
+        
+        -- Filtre de genre
+        $genderFilter
+        
+        -- Pas de conflit horaire avec d'autres courses
+        AND USE_ID NOT IN (
+          SELECT DISTINCT ur.USE_ID
+          FROM SAN_USERS_RACES ur
+          INNER JOIN SAN_RACES r ON ur.RAC_ID = r.RAC_ID
+          WHERE r.RAC_ID != ?
+            AND (
+              (r.RAC_TIME_START < ? AND r.RAC_TIME_END > ?)
+              OR (r.RAC_TIME_START >= ? AND r.RAC_TIME_START < ?)
+            )
+        )
+        
       ORDER BY USE_LAST_NAME, USE_NAME
-    ''', [raceId]);
+    ''', [raceId, raceId, raceEnd, raceStart, raceStart, raceEnd]);
   }
+
 
   Future<List<Map<String, dynamic>>> getTeamMembers(int teamId) async {
     final db = await DatabaseHelper.database;
     
     return await db.rawQuery('''
       SELECT u.USE_ID, u.USE_NAME, u.USE_LAST_NAME, u.USE_MAIL, u.USE_BIRTHDATE,
-             u.ADD_ID, u.CLU_ID, u.USE_LICENCE_NUMBER 
+             u.ADD_ID, u.CLU_ID, u.USE_LICENCE_NUMBER, u.USE_SEX 
       FROM SAN_USERS u
       INNER JOIN SAN_USERS_TEAMS ut ON u.USE_ID = ut.USE_ID
       WHERE ut.TEA_ID = ?
@@ -183,7 +234,7 @@ class TeamLocalSources {
       SELECT 
         u.USE_ID, u.USE_NAME, u.USE_LAST_NAME, u.USE_MAIL, 
         u.USE_BIRTHDATE, u.USE_LICENCE_NUMBER, ur.USR_PPS_FORM,
-        ur.USR_CHIP_NUMBER
+        ur.USR_CHIP_NUMBER, u.USE_SEX
       FROM SAN_USERS u
       INNER JOIN SAN_USERS_TEAMS ut ON u.USE_ID = ut.USE_ID
       LEFT JOIN SAN_USERS_RACES ur ON u.USE_ID = ur.USE_ID AND ur.RAC_ID = ?
@@ -211,6 +262,12 @@ class TeamLocalSources {
       where: 'TEA_ID = ? AND USE_ID = ?',
       whereArgs: [teamId, userId],
     );
+
+    await db.delete(
+      'SAN_USERS_RACES',
+      where: 'USE_ID = ? AND RAC_ID IN (SELECT RAC_ID FROM SAN_TEAMS_RACES WHERE TEA_ID = ?)',
+      whereArgs: [userId, teamId],
+    );
   }
 
   Future<void> deleteTeam(int teamId, int raceId) async {
@@ -220,6 +277,12 @@ class TeamLocalSources {
     await db.delete(
       'SAN_TEAMS_RACES',
       where: 'TEA_ID = ? AND RAC_ID = ?',
+      whereArgs: [teamId, raceId],
+    );
+
+    await db.delete(
+      'SAN_USERS_RACES',
+      where: 'USE_ID IN (SELECT USE_ID FROM SAN_USERS_TEAMS WHERE TEA_ID = ? and RAC_ID = ?)',
       whereArgs: [teamId, raceId],
     );
     
@@ -364,5 +427,53 @@ class TeamLocalSources {
       isValid: teamData['isValid'] == 1, // ✅ Récupéré depuis SAN_TEAMS_RACES
     );
   }
+
+  Future<Map<String, dynamic>?> getRaceDetails(int raceId) async {
+    final db = await DatabaseHelper.database;
+    
+    final result = await db.query(
+      'SAN_RACES',
+      where: 'RAC_ID = ?',
+      whereArgs: [raceId],
+      limit: 1,
+    );
+    
+    return result.isEmpty ? null : result.first;
+  }
+
+  Future<List<Map<String, dynamic>>> getUserConflictingRaces(
+    int userId, 
+    int raceId,
+  ) async {
+    final db = await DatabaseHelper.database;
+    
+    // Récupérer les horaires de la course cible
+    final targetRace = await db.query(
+      'SAN_RACES',
+      where: 'RAC_ID = ?',
+      whereArgs: [raceId],
+      limit: 1,
+    );
+  
+    if (targetRace.isEmpty) return [];
+    
+    final startTime = targetRace.first['RAC_START_TIME'] as String;
+    final endTime = targetRace.first['RAC_END_TIME'] as String;
+    
+    // Trouver les courses où l'utilisateur est inscrit qui se chevauchent
+    return await db.rawQuery('''
+      SELECT r.RAC_ID, r.RAC_NAME, r.RAC_START_TIME, r.RAC_END_TIME
+      FROM SAN_RACES r
+      INNER JOIN SAN_USERS_RACES ur ON r.RAC_ID = ur.RAC_ID
+      WHERE ur.USE_ID = ?
+        AND r.RAC_ID != ?
+        AND (
+          -- La course chevauche
+          (r.RAC_START_TIME < ? AND r.RAC_END_TIME > ?)
+          OR (r.RAC_START_TIME >= ? AND r.RAC_START_TIME < ?)
+        )
+    ''', [userId, raceId, endTime, startTime, startTime, endTime]);
+  }
+
 
 }

@@ -131,4 +131,14 @@ class TeamRepositoryImpl implements TeamRepository {
     );
   }
 
+  @override
+  Future<Map<String, dynamic>?> getRaceDetails(int raceId) async {
+    return await localSources.getRaceDetails(raceId);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getUserConflictingRaces(int userId, int raceId) async {
+    return await localSources.getUserConflictingRaces(userId, raceId);
+  }
+
 }

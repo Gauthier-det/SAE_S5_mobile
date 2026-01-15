@@ -18,6 +18,7 @@ class User {
   final int? licenceNumber;
   final String? ppsForm;
   final DateTime? membershipDate;
+  final String sex; 
 
   // Related objects (loaded via JOIN)
   final Address? address;
@@ -40,6 +41,7 @@ class User {
     this.address,
     this.club,
     this.roles,
+    required this.sex,
   });
 
   /// Creates User from database JSON
@@ -75,6 +77,7 @@ class User {
       licenceNumber: json['USE_LICENCE_NUMBER'],
       membershipDate: membershipDate,
       address: address,
+      sex: json['USE_SEX'],
     );
   }
 
@@ -92,6 +95,7 @@ class User {
       'USE_PHONE_NUMBER': phoneNumber,
       'USE_LICENCE_NUMBER': licenceNumber,
       'USE_MEMBERSHIP_DATE': membershipDate?.toIso8601String(),
+      'USE_SEX': sex,
     };
   }
 
