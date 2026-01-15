@@ -217,7 +217,8 @@ class TeamApiSources {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        return responseData['data'] as Map<String, dynamic>;
+        // Backend returns direct object {team:..., race:..., members:...}
+        return responseData as Map<String, dynamic>;
       } else if (response.statusCode == 404) {
         throw Exception('Équipe ou course non trouvée');
       } else if (response.statusCode == 403) {
@@ -239,9 +240,13 @@ class TeamApiSources {
   ) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/teams/$teamId/races/$raceId/remove-member'),
+        Uri.parse('$baseUrl/teams/member/remove'),
         headers: _headers,
-        body: json.encode({'user_id': userId}),
+        body: json.encode({
+          'team_id': teamId,
+          'race_id': raceId,
+          'user_id': userId,
+        }),
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -265,18 +270,17 @@ class TeamApiSources {
     String? ppsForm,
   ) async {
     try {
-      final body = <String, dynamic>{'user_id': userId};
-      if (chipNumber != null && chipNumber.isNotEmpty) {
-        body['chip_number'] = chipNumber;
-      }
-      if (ppsForm != null && ppsForm.isNotEmpty) {
-        body['pps_form'] = ppsForm;
-      }
-
       final response = await client.post(
-        Uri.parse('$baseUrl/teams/$teamId/races/$raceId/update-member'),
+        Uri.parse('$baseUrl/teams/member/update-info'),
         headers: _headers,
-        body: json.encode(body),
+        body: json.encode({
+          'team_id': teamId,
+          'race_id': raceId,
+          'user_id': userId,
+          if (chipNumber != null && chipNumber.isNotEmpty)
+            'chip_number': chipNumber,
+          if (ppsForm != null && ppsForm.isNotEmpty) 'pps': ppsForm,
+        }),
       );
 
       if (response.statusCode != 200) {
@@ -294,9 +298,9 @@ class TeamApiSources {
   Future<void> validateTeamForRace(int teamId, int raceId) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/teams/$teamId/races/$raceId/validate'),
+        Uri.parse('$baseUrl/teams/validate-race'),
         headers: _headers,
-        body: json.encode({}),
+        body: json.encode({'team_id': teamId, 'race_id': raceId}),
       );
 
       if (response.statusCode != 200) {
@@ -312,9 +316,9 @@ class TeamApiSources {
   Future<void> unvalidateTeamForRace(int teamId, int raceId) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/teams/$teamId/races/$raceId/unvalidate'),
+        Uri.parse('$baseUrl/teams/unvalidate-race'),
         headers: _headers,
-        body: json.encode({}),
+        body: json.encode({'team_id': teamId, 'race_id': raceId}),
       );
 
       if (response.statusCode != 200) {
@@ -333,21 +337,67 @@ class TeamApiSources {
   // ============================================================================
 
   /// GET /races/{raceId}/teams - Liste des équipes d'une course
+  /// Modified: Uses /races/{raceId}/details instead to get validation status (is_valid)
   Future<List<Team>> getRaceTeams(int raceId) async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/races/$raceId/teams'),
+        // Utiliser l'endpoint details car il contient le statut 'is_valid'
+        Uri.parse('$baseUrl/races/$raceId/details'),
         headers: _headers,
       );
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        final List<dynamic> teamsList = responseData['data'];
-        return teamsList.map((json) => Team.fromJson(json)).toList();
+
+        // La structure est data -> teams_list
+        if (responseData['data'] != null &&
+            responseData['data']['teams_list'] != null) {
+          final List<dynamic> teamsList = responseData['data']['teams_list'];
+          return teamsList.map((teamJson) {
+            // Adapter: 'responsible' -> 'manager_id'
+            // L'endpoint details renvoie un objet 'responsible', mais Team attend 'manager_id' ou 'USE_ID'
+            if (teamJson['responsible'] != null &&
+                teamJson['responsible'] is Map) {
+              teamJson['manager_id'] = teamJson['responsible']['id'];
+            }
+            return Team.fromJson(teamJson);
+          }).toList();
+        }
+
+        // Fallback: si teams_list n'existe pas, essayer structure classique (peu probable pour cet endpoint)
+        if (responseData['data'] is List) {
+          final List<dynamic> list = responseData['data'];
+          return list.map((json) => Team.fromJson(json)).toList();
+        }
+
+        return [];
       } else if (response.statusCode == 404) {
         return [];
       } else {
         throw Exception('Erreur API: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur réseau: $e');
+    }
+  }
+
+  // ===================================
+  // DELETE TEAM
+  // ===================================
+
+  /// DELETE /teams/{teamId}
+  Future<void> deleteTeam(int teamId) async {
+    try {
+      final response = await client.delete(
+        Uri.parse('$baseUrl/teams/$teamId'),
+        headers: _headers,
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(
+          errorData['message'] ?? 'Erreur lors de la suppression de l\'équipe',
+        );
       }
     } catch (e) {
       throw Exception('Erreur réseau: $e');

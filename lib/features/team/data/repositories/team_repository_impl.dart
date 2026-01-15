@@ -100,14 +100,29 @@ class TeamRepositoryImpl implements TeamRepository {
   }
 
   @override
-  Future<void> addTeamMember(int teamId, int userId) async {
+  Future<void> addTeamMember(int teamId, int userId, {int? raceId}) async {
     try {
       _setAuthToken();
-      await apiSources.addMemberToTeam({'team_id': teamId, 'user_id': userId});
+      if (raceId != null) {
+        await apiSources.addMemberToTeam({
+          'team_id': teamId,
+          'user_id': userId,
+          'race_id': raceId,
+        });
+      } else {
+        // Fallback or error if raceId is required by API
+        await apiSources.addMemberToTeam({
+          'team_id': teamId,
+          'user_id': userId,
+        });
+      }
     } catch (e) {
       print('API sync failed, saving locally: $e');
 
       await localSources.addTeamMember(teamId, userId);
+      if (raceId != null) {
+        await localSources.registerUserToRace(userId, raceId);
+      }
     }
   }
 
@@ -364,13 +379,27 @@ class TeamRepositoryImpl implements TeamRepository {
   }
 
   @override
-  Future<void> removeMemberFromTeam(int teamId, int userId) async {
+  Future<void> removeMemberFromTeam(
+    int teamId,
+    int userId, {
+    int? raceId,
+  }) async {
     try {
       _setAuthToken();
-      // L'API nécessite raceId, mais on peut essayer quand même
-      // Sinon utiliser la méthode avec raceId
+
+      if (raceId != null) {
+        // Use the specific endpoint for removing from team + race
+        await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
+      } else {
+        // Local removal or basic API removal if exists
+        // Note: Current API requires raceId, so we might just do local if it's missing
+        // or try the base remove endpoint if one existed.
+      }
+
+      // ✅ ALWAYS remove locally after success (or if skipping API)
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
+      // If API fails, we still remove locally (optimistic/offline)
       await localSources.removeMemberFromTeam(teamId, userId);
     }
   }
@@ -398,22 +427,38 @@ class TeamRepositoryImpl implements TeamRepository {
   Future<void> deleteTeam(int teamId, int raceId) async {
     try {
       _setAuthToken();
-      // L'API n'a pas cette route
-      // On supprime juste en local
+      // Appel de la nouvelle route API de suppression
+      await apiSources.deleteTeam(teamId);
+
+      // Suppression locale (synchro)
       await localSources.deleteTeam(teamId, raceId);
     } catch (e) {
+      print('API deletion failed (offline?): $e');
+      // On supprime quand même en local
       await localSources.deleteTeam(teamId, raceId);
     }
   }
 
   @override
-  Future<void> updateUserPPS(int userId, String? ppsForm, int raceId) async {
+  Future<void> updateUserPPS(
+    int userId,
+    String? ppsForm,
+    int raceId,
+    int teamId,
+  ) async {
     try {
       _setAuthToken();
-      // L'API utilise updateMemberRaceInfo
-      // En local on a une méthode dédiée
+      await apiSources.updateMemberRaceInfo(
+        teamId,
+        raceId,
+        userId,
+        null, // No chip update
+        ppsForm,
+      );
+
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     } catch (e) {
+      print('API sync failed, saving locally: $e');
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     }
   }
@@ -423,13 +468,21 @@ class TeamRepositoryImpl implements TeamRepository {
     int userId,
     int raceId,
     int? chipNumber,
+    int teamId,
   ) async {
     try {
       _setAuthToken();
-      // L'API utilise updateMemberRaceInfo
-      // En local on a une méthode dédiée
+      await apiSources.updateMemberRaceInfo(
+        teamId,
+        raceId,
+        userId,
+        chipNumber?.toString(),
+        null, // No pps update
+      );
+
       await localSources.updateUserChipNumber(userId, raceId, chipNumber);
     } catch (e) {
+      print('API sync failed, saving locally: $e');
       await localSources.updateUserChipNumber(userId, raceId, chipNumber);
     }
   }
