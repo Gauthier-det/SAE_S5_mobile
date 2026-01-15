@@ -77,7 +77,7 @@ class User {
       licenceNumber: json['USE_LICENCE_NUMBER'],
       membershipDate: membershipDate,
       address: address,
-      sex: json['USE_SEX'],
+      sex: json['USE_GENDER'],
     );
   }
 
@@ -95,7 +95,7 @@ class User {
       'USE_PHONE_NUMBER': phoneNumber,
       'USE_LICENCE_NUMBER': licenceNumber,
       'USE_MEMBERSHIP_DATE': membershipDate?.toIso8601String(),
-      'USE_SEX': sex,
+      'USE_GENDER': sex,
     };
   }
 

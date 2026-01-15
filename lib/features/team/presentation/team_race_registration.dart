@@ -51,8 +51,8 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
       if (mounted && details != null) {
         setState(() {
           _raceDetails = details;
-          _maxTeamSize = details['RAC_TEAM_MEMBERS'] as int? ?? 5;
-          _requiredGender = details['RAC_SEX']?.toString();
+          _maxTeamSize = details['RAC_MAX_TEAM_MEMBERS'] as int? ?? 5;
+          _requiredGender = details['RAC_GENDER']?.toString();
         });
       }
     } catch (e) {

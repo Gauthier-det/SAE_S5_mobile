@@ -124,7 +124,7 @@ class RaceLocalSources {
     // Récupérer le raid avec sa limite
     final raidResult = await db.query(
       'SAN_RAIDS',
-      columns: ['RAI_RACE_COUNT'],
+      columns: ['RAI_NB_RACES'],
       where: 'RAI_ID = ?',
       whereArgs: [raidId],
       limit: 1,
@@ -132,7 +132,7 @@ class RaceLocalSources {
 
     if (raidResult.isEmpty) return false;
 
-    final maxRaces = raidResult.first['RAI_RACE_COUNT'] as int?;
+    final maxRaces = raidResult.first['RAI_NB_RACES'] as int?;
 
     // Si pas de limite définie, autoriser
     if (maxRaces == null) return true;
@@ -157,13 +157,13 @@ class RaceLocalSources {
 
     final raidResult = await db.query(
       'SAN_RAIDS',
-      columns: ['RAI_RACE_COUNT'],
+      columns: ['RAI_NB_RACES'],
       where: 'RAI_ID = ?',
       whereArgs: [raidId],
       limit: 1,
     );
     if (raidResult.isEmpty) return null;
 
-    return raidResult.first['RAI_RACE_COUNT'] as int?;
+    return raidResult.first['RAI_NB_RACES'] as int?;
   }
 }
