@@ -3,14 +3,25 @@ import '../../domain/user_auth.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_sources.dart';
+import '../datasources/auth_api_sources.dart';
+import '../../../../core/services/api_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalSources _localDataSource;
+  final AuthApiSources? _apiDataSource;
+  final ApiService? _apiService;
 
-  AuthRepositoryImpl(this._localDataSource);
+  AuthRepositoryImpl(
+    this._localDataSource, {
+    AuthApiSources? apiDataSource,
+    ApiService? apiService,
+  }) : _apiDataSource = apiDataSource,
+       _apiService = apiService;
 
   bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
     return emailRegex.hasMatch(email);
   }
 
@@ -33,14 +44,45 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     if (!_isValidPassword(password)) {
-      throw ValidationException('Le mot de passe doit contenir au moins 8 caractères');
+      throw ValidationException(
+        'Le mot de passe doit contenir au moins 8 caractères',
+      );
     }
 
     if (firstName.isEmpty || lastName.isEmpty) {
       throw ValidationException('Le prénom et le nom sont requis');
     }
 
-    // Check if email already exists
+    // Tentative d'inscription via API si disponible
+    if (_apiDataSource != null && _apiService != null) {
+      try {
+        final apiUser = await _apiDataSource.register(
+          email: email,
+          password: password,
+          firstName: firstName,
+          lastName: lastName,
+          birthDate: birthDate,
+          phoneNumber: phoneNumber,
+          licenceNumber: licenceNumber,
+        );
+
+        // Sauvegarder localement
+        final registeredUsers = await _localDataSource.getRegisteredUsers();
+        final updatedUsers = [
+          ...registeredUsers,
+          {...apiUser.toJson(), 'password': password},
+        ];
+        await _localDataSource.saveRegisteredUsers(updatedUsers);
+        await _localDataSource.saveUser(apiUser);
+        await _localDataSource.saveToken('token_${apiUser.id}');
+
+        return apiUser;
+      } catch (e) {
+        print('API non disponible pour l\'inscription, utilisation locale: $e');
+      }
+    }
+
+    // Fallback: Inscription locale
     final registeredUsers = await _localDataSource.getRegisteredUsers();
     if (registeredUsers.any((user) => user['email'] == email)) {
       throw EmailAlreadyExistsException();
@@ -59,10 +101,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     final updatedUsers = [
       ...registeredUsers,
-      {
-        ...user.toJson(),
-        'password': password,
-      }
+      {...user.toJson(), 'password': password},
     ];
     await _localDataSource.saveRegisteredUsers(updatedUsers);
 
@@ -73,10 +112,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<User> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<User> login({required String email, required String password}) async {
     if (!_isValidEmail(email)) {
       throw ValidationException('Email invalide');
     }
@@ -85,7 +121,25 @@ class AuthRepositoryImpl implements AuthRepository {
       throw ValidationException('Le mot de passe est requis');
     }
 
-    // Find user in SQLite database
+    // Tentative de connexion via API si disponible
+    if (_apiDataSource != null && _apiService != null) {
+      try {
+        final apiUser = await _apiDataSource.login(
+          email: email,
+          password: password,
+        );
+
+        // Sauvegarder localement
+        await _localDataSource.saveUser(apiUser);
+        await _localDataSource.saveToken('token_${apiUser.id}');
+
+        return apiUser;
+      } catch (e) {
+        print('API non disponible pour la connexion, utilisation locale: $e');
+      }
+    }
+
+    // Fallback: Connexion locale
     final registeredUsers = await _localDataSource.getRegisteredUsers();
     final userIndex = registeredUsers.indexWhere(
       (user) => user['email'] == email && user['password'] == password,
@@ -136,6 +190,27 @@ class AuthRepositoryImpl implements AuthRepository {
       throw AuthErrorException('Utilisateur non connecté');
     }
 
+    // Tentative de mise à jour via API si disponible
+    if (_apiDataSource != null && _apiService != null) {
+      try {
+        final apiUser = await _apiDataSource.updateProfile(
+          userId: currentUser.id,
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: phoneNumber,
+          birthDate: birthDate,
+          licenceNumber: licenceNumber,
+        );
+
+        // Sauvegarder localement
+        await _localDataSource.saveUser(apiUser);
+        return apiUser;
+      } catch (e) {
+        print('API non disponible pour la mise à jour, utilisation locale: $e');
+      }
+    }
+
+    // Fallback: Mise à jour locale
     final updatedUser = currentUser.copyWith(
       firstName: firstName ?? currentUser.firstName,
       lastName: lastName ?? currentUser.lastName,

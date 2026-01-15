@@ -11,6 +11,6 @@ class AppConfig {
   /// API Base URL
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.sanglier-explorer.fr',
+    defaultValue: 'http://172.20.10.5:8000/api',
   );
 }
