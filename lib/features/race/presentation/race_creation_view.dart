@@ -14,6 +14,7 @@ import 'widgets/category_price_selector.dart';
 import 'widgets/race_form_date_field.dart';
 import 'widgets/race_form_participants_section.dart';
 
+
 class RaceCreationView extends StatefulWidget {
   final Raid raid;
   final RacesRepository repository;
@@ -27,6 +28,7 @@ class RaceCreationView extends StatefulWidget {
   @override
   State<RaceCreationView> createState() => _RaceCreationViewState();
 }
+
 
 class _RaceCreationViewState extends State<RaceCreationView> {
   final _formKey = GlobalKey<FormState>();
@@ -45,11 +47,11 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   String? _selectedType;
   DateTime? _startDate;
   DateTime? _endDate;
-  String? _selectedSex; 
-
-
+  String? _selectedSex;
+  bool _chipMandatory = false;
 
   static const _sexes = ['Homme', 'Femme', 'Mixte'];
+  static const _types = ['Compétitif', 'Rando/Loisirs'];
 
   List<User> _clubMembers = [];
   List<Category> _categories = [];
@@ -57,8 +59,6 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   
   bool _isLoading = false;
   bool _isLoadingData = true;
-
-  static const _types = ['Compétitif', 'Rando/Loisirs'];
 
   @override
   void initState() {
@@ -115,7 +115,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     _ageMinController.dispose();
     _ageMiddleController.dispose();
     _ageMaxController.dispose();
-    _difficultyController.dispose(); 
+    _difficultyController.dispose();
     super.dispose();
   }
 
@@ -148,7 +148,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                         prefixIcon: Icon(Icons.person),
                       ),
                       items: _clubMembers
-                          .map((m) => DropdownMenuItem(value: m, child: Text(m.fullName)))
+                          .map((m) => DropdownMenuItem(
+                                value: m,
+                                child: Text(m.fullName),
+                              ))
                           .toList(),
                       onChanged: (value) => setState(() => _selectedManager = value),
                       validator: (value) => value == null 
@@ -179,6 +182,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                       onTap: () => _selectDate(isStart: false),
                     ),
                     const SizedBox(height: 24),
+
+                    // Type et Difficulté
                     Row(
                       children: [
                         Expanded(
@@ -189,9 +194,20 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                               border: OutlineInputBorder(),
                             ),
                             items: _types
-                                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                .map((t) => DropdownMenuItem(
+                                      value: t,
+                                      child: Text(t),
+                                    ))
                                 .toList(),
-                            onChanged: (value) => setState(() => _selectedType = value),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedType = value;
+                                // Si Compétitif, forcer la puce obligatoire
+                                if (value == 'Compétitif') {
+                                  _chipMandatory = true;
+                                }
+                              });
+                            },
                             validator: (value) => value == null ? 'Obligatoire' : null,
                           ),
                         ),
@@ -214,6 +230,65 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+
+                    // Puce obligatoire - Switch pour Rando/Loisirs
+                    if (_selectedType == 'Rando/Loisirs')
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.sd_card, color: Color(0xFFFF6B00)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Puce électronique obligatoire ?',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                              ),
+                            ),
+                            Switch(
+                              value: _chipMandatory,
+                              onChanged: (value) {
+                                setState(() => _chipMandatory = value);
+                              },
+                              activeColor: const Color(0xFFFF6B00),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
+                    // Indicateur pour Compétitif
+                    if (_selectedType == 'Compétitif')
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.blue),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Puce électronique obligatoire pour les courses compétitives',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.blue.shade800,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
                     const SizedBox(height: 24),
 
                     // Sexe
@@ -225,7 +300,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                         prefixIcon: Icon(Icons.people),
                       ),
                       items: _sexes
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map((s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(s),
+                              ))
                           .toList(),
                       onChanged: (value) => setState(() => _selectedSex = value),
                       validator: (value) => value == null ? 'Obligatoire' : null,
@@ -367,6 +445,11 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     setState(() => _isLoading = true);
 
     try {
+      // Calculer chipMandatory : toujours 1 si Compétitif, sinon selon le switch
+      final chipMandatory = _selectedType == 'Compétitif' 
+          ? 1 
+          : (_chipMandatory ? 1 : 0);
+
       final race = Race(
         id: 0,
         userId: _selectedManager!.id,
@@ -375,7 +458,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         endDate: _endDate!,
         type: _selectedType!,
         difficulty: _difficultyController.text.trim(),
-        sex: _selectedSex!, 
+        sex: _selectedSex!,
         minParticipants: int.parse(_minParticipantsController.text),
         maxParticipants: int.parse(_maxParticipantsController.text),
         minTeams: int.parse(_minTeamsController.text),
@@ -384,6 +467,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         ageMin: int.parse(_ageMinController.text),
         ageMiddle: int.parse(_ageMiddleController.text),
         ageMax: int.parse(_ageMaxController.text),
+        chipMandatory: chipMandatory,
       );
 
       await widget.repository.createRace(race, _categoryPrices);

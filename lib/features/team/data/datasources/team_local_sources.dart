@@ -95,16 +95,16 @@ class TeamLocalSources {
     if (raceInfo.isEmpty) return [];
     
     final race = raceInfo.first;
-    final raceSex = race['RAC_SEX'] as String?;
+    final raceSex = race['RAC_GENDER'] as String?;
     final raceStart = race['RAC_TIME_START'] as String;
     final raceEnd = race['RAC_TIME_END'] as String;
     
     // Construire la clause WHERE pour le genre
     String genderFilter = '';
     if (raceSex == 'Homme') {
-      genderFilter = "AND USE_SEX = 'Homme'";
+      genderFilter = "AND USE_GENDER = 'Homme'";
     } else if (raceSex == 'Femme') {
-      genderFilter = "AND USE_SEX = 'Femme'";
+      genderFilter = "AND USE_GENDER = 'Femme'";
     }
     // Si Mixte ou autre, pas de filtre (tous les genres acceptés)
     
@@ -115,7 +115,7 @@ class TeamLocalSources {
         USE_LAST_NAME, 
         USE_MAIL, 
         USE_BIRTHDATE,
-        USE_SEX,
+        USE_GENDER,
         ADD_ID, 
         CLU_ID, 
         USE_LICENCE_NUMBER
@@ -156,7 +156,7 @@ class TeamLocalSources {
     
     return await db.rawQuery('''
       SELECT u.USE_ID, u.USE_NAME, u.USE_LAST_NAME, u.USE_MAIL, u.USE_BIRTHDATE,
-             u.ADD_ID, u.CLU_ID, u.USE_LICENCE_NUMBER, u.USE_SEX 
+             u.ADD_ID, u.CLU_ID, u.USE_LICENCE_NUMBER, u.USE_GENDER 
       FROM SAN_USERS u
       INNER JOIN SAN_USERS_TEAMS ut ON u.USE_ID = ut.USE_ID
       WHERE ut.TEA_ID = ?
@@ -234,7 +234,7 @@ class TeamLocalSources {
       SELECT 
         u.USE_ID, u.USE_NAME, u.USE_LAST_NAME, u.USE_MAIL, 
         u.USE_BIRTHDATE, u.USE_LICENCE_NUMBER, ur.USR_PPS_FORM,
-        ur.USR_CHIP_NUMBER, u.USE_SEX
+        ur.USR_CHIP_NUMBER, u.USE_GENDER
       FROM SAN_USERS u
       INNER JOIN SAN_USERS_TEAMS ut ON u.USE_ID = ut.USE_ID
       LEFT JOIN SAN_USERS_RACES ur ON u.USE_ID = ur.USE_ID AND ur.RAC_ID = ?
