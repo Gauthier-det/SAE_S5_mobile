@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/config/app_config.dart';
+import '../../../../core/services/api_service.dart';
+import '../../data/datasources/auth_api_sources.dart';
 import '../../data/datasources/auth_local_sources.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/user_auth.dart';
@@ -26,7 +29,13 @@ class AuthProvider extends ChangeNotifier {
   static Future<AuthProvider> create() async {
     final prefs = await SharedPreferences.getInstance();
     final localDataSource = AuthLocalSources(prefs);
-    final repository = AuthRepositoryImpl(localDataSource);
+    final apiDataSource = AuthApiSources(baseUrl: AppConfig.apiBaseUrl);
+    final apiService = ApiService();
+    final repository = AuthRepositoryImpl(
+      localDataSource,
+      apiDataSource: apiDataSource,
+      apiService: apiService,
+    );
 
     return AuthProvider(repository)..checkAuth();
   }
@@ -87,19 +96,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Login user
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final user = await _repository.login(
-        email: email,
-        password: password,
-      );
+      final user = await _repository.login(email: email, password: password);
       _currentUser = user;
     } on AuthException catch (e) {
       _errorMessage = e.message;

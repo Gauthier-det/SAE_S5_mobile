@@ -4,12 +4,18 @@ import '../../domain/race_repository.dart';
 import '../../domain/race.dart';
 import '../datasources/race_api_sources.dart';
 import '../datasources/race_local_sources.dart';
+import '../../../../core/services/api_service.dart';
 
 class RacesRepositoryImpl implements RacesRepository {
   final RaceApiSources apiSources;
   final RaceLocalSources localSources;
+  final ApiService? apiService;
 
-  RacesRepositoryImpl({required this.apiSources, required this.localSources});
+  RacesRepositoryImpl({
+    required this.apiSources,
+    required this.localSources,
+    this.apiService,
+  });
 
   @override
   Future<List<Race>> getRaces() async {

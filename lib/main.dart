@@ -19,6 +19,7 @@ import 'package:sae5_g13_mobile/features/user/domain/user_repository.dart';
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/api_service.dart';
 import 'features/raid/presentation/raid_list_view.dart';
 import 'features/raid/domain/raid_repository.dart';
 import 'features/raid/data/repositories/raid_repository_impl.dart';

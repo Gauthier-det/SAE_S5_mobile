@@ -18,6 +18,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  
+  String _selectedGender = 'Autre';
 
   bool _isLoading = false;
   String? _errorMessage;
