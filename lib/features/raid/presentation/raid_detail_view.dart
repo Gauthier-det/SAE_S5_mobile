@@ -202,7 +202,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
           builder: (context, raceCountSnapshot) {
             final currentCount = raceCountSnapshot.data ?? 0;
             final maxCount = raid.nbRaces;
-            final isLimitReached = maxCount != null && currentCount >= maxCount;
+            final isLimitReached = currentCount >= maxCount;
 
             // ✅ Limite atteinte → Badge rouge
             if (isLimitReached) {
@@ -239,9 +239,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
               backgroundColor: const Color(0xFFFF6B00),
               icon: const Icon(Icons.add),
               label: Text(
-                maxCount != null
-                    ? 'AJOUTER ($currentCount/$maxCount)'
-                    : 'AJOUTER UNE COURSE',
+                'AJOUTER ($currentCount/$maxCount)',
               ),
               onPressed: () async {
                 // ✅ Navigation vers création de course

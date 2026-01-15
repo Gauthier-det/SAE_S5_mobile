@@ -56,7 +56,7 @@ class _RaceListWidgetState extends State<RaceListWidget> {
         
         // Filtre par âge minimum
         if (_filterAgeMin != null) {
-          if (race.ageMin! > _filterAgeMin!) return false;
+          if (race.ageMin > _filterAgeMin!) return false;
         }
         
         return true;

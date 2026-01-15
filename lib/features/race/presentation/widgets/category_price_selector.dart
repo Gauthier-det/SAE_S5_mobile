@@ -5,8 +5,8 @@ import 'package:sae5_g13_mobile/features/race/domain/category.dart';
 
 class CategoryPriceSelector extends StatefulWidget {
   final List<Category> categories;
-  final Map<int, double> initialPrices;
-  final ValueChanged<Map<int, double>> onChanged;
+  final Map<int, int> initialPrices;
+  final ValueChanged<Map<int, int>> onChanged;
 
   const CategoryPriceSelector({
     super.key,
@@ -21,7 +21,7 @@ class CategoryPriceSelector extends StatefulWidget {
 
 class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
   late Map<int, TextEditingController> _controllers;
-  late Map<int, double> _prices;
+  late Map<int, int> _prices;
   final Map<int, String?> _errors = {};
 
   @override
@@ -32,7 +32,7 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
 
     for (var category in widget.categories) {
       _controllers[category.id] = TextEditingController(
-        text: _prices[category.id]?.toStringAsFixed(2) ?? '',
+        text: _prices[category.id]?.toString() ?? '',
       );
     }
   }
@@ -46,9 +46,9 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
   }
 
   void _updatePrice(int categoryId, String value) {
-    final price = double.tryParse(value);
+    final price = int.tryParse(value);
     setState(() {
-      if (price != null && price > 0) {
+      if (price != null && price >= 0) {
         _prices[categoryId] = price;
         _validatePrices();
       } else {
@@ -81,13 +81,18 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
     final prixNonLicencie = _prices[nonLicencieCat.id];
 
     // Validation 1 : Prix licencié <= Prix mineur
-    if (prixLicencie != null && prixMineur != null && prixLicencie > prixMineur) {
-      _errors[licencieCat.id] = 'Doit être ≤ au prix Mineur (${prixMineur.toStringAsFixed(2)}€)';
+    if (prixLicencie != null &&
+        prixMineur != null &&
+        prixLicencie > prixMineur) {
+      _errors[licencieCat.id] = 'Doit être ≤ au prix Mineur (${prixMineur}€)';
     }
 
     // Validation 2 : Prix non licencié >= Prix mineur
-    if (prixNonLicencie != null && prixMineur != null && prixNonLicencie < prixMineur) {
-      _errors[nonLicencieCat.id] = 'Doit être ≥ au prix Mineur (${prixMineur.toStringAsFixed(2)}€)';
+    if (prixNonLicencie != null &&
+        prixMineur != null &&
+        prixNonLicencie < prixMineur) {
+      _errors[nonLicencieCat.id] =
+          'Doit être ≥ au prix Mineur (${prixMineur}€)';
     }
   }
 
@@ -102,16 +107,12 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
           children: [
             Text(
               'Prix par catégorie (€)',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.info_outline,
-              size: 18,
-              color: Colors.grey.shade600,
-            ),
+            Icon(Icons.info_outline, size: 18, color: Colors.grey.shade600),
           ],
         ),
         const SizedBox(height: 8),
@@ -160,12 +161,10 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
                 Expanded(
                   child: TextFormField(
                     controller: _controllers[category.id],
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                    ],
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
-                      hintText: '0.00',
+                      hintText: '0',
                       suffixText: '€',
                       border: OutlineInputBorder(
                         borderSide: BorderSide(
@@ -189,7 +188,7 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
                       if (value == null || value.isEmpty) {
                         return 'Obligatoire';
                       }
-                      if (double.tryParse(value) == null) {
+                      if (int.tryParse(value) == null) {
                         return 'Invalide';
                       }
                       if (_errors.containsKey(category.id)) {
@@ -202,7 +201,7 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

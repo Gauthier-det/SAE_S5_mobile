@@ -15,14 +15,15 @@ class Team {
   });
 
   factory Team.fromJson(Map<String, dynamic> json) {
+    final isValidVal = json['TER_IS_VALID'] ?? json['is_valid'];
+    final bool isValid = isValidVal == 1 || isValidVal == true;
+
     return Team(
-      id: json['TEA_ID'] as int,
-      managerId: json['USE_ID'] as int,
-      name: json['TEA_NAME'] as String,
-      image: json['TEA_IMAGE'] as String?,
-      isValid: json['TER_IS_VALID'] != null 
-          ? (json['TER_IS_VALID'] as int) == 1 
-          : null,
+      id: (json['TEA_ID'] ?? json['id'] ?? 0) as int,
+      managerId: (json['USE_ID'] ?? json['manager_id'] ?? 0) as int,
+      name: (json['TEA_NAME'] ?? json['name'] ?? '') as String,
+      image: (json['TEA_IMAGE'] ?? json['image']) as String?,
+      isValid: isValid,
     );
   }
 

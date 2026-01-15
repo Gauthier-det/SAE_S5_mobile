@@ -53,18 +53,9 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
 
       // Récupérer l'ID de l'utilisateur
       final db = await DatabaseHelper.database;
-      final users = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [currentUser.email],
-        limit: 1,
-      );
 
-      if (users.isEmpty) {
-        throw Exception('Utilisateur introuvable');
-      }
-
-      _currentUserId = users.first['USE_ID'] as int;
+      // Use ID directly from Auth Provider instead of querying local DB (which might be empty)
+      _currentUserId = int.parse(currentUser.id);
 
       // Vérifier si l'utilisateur est responsable de la course
       final race = await db.query(
@@ -137,17 +128,13 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red.shade300,
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
             const SizedBox(height: 16),
             Text(
               'Erreur',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -174,17 +161,13 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.groups_outlined,
-              size: 80,
-              color: Colors.grey.shade300,
-            ),
+            Icon(Icons.groups_outlined, size: 80, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
               'Aucune équipe inscrite',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -207,9 +190,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
             decoration: BoxDecoration(
               color: const Color(0xFF52B788).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF52B788),
-              ),
+              border: Border.all(color: const Color(0xFF52B788)),
             ),
             child: Row(
               children: [
@@ -267,9 +248,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () async {
           // Vérifier si l'utilisateur peut accéder au détail
@@ -422,10 +401,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
               ),
 
               // Icône chevron
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey.shade400,
-              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
             ],
           ),
         ),

@@ -15,6 +15,7 @@ class Race {
   final int maxParticipants; // RAC_MAX_PARTICIPANTS
   final int minTeams; // RAC_MIN_TEAMS
   final int maxTeams; // RAC_MAX_TEAMS
+  final int minTeamMembers; // RAC_MIN_TEAM_MEMBERS
   final int teamMembers; // RAC_MAX_TEAM_MEMBERS
   final int ageMin; // RAC_AGE_MIN (nullable)
   final int ageMiddle; // RAC_AGE_MIDDLE (nullable)
@@ -35,6 +36,7 @@ class Race {
     required this.maxParticipants,
     required this.minTeams,
     required this.maxTeams,
+    required this.minTeamMembers,
     required this.teamMembers,
     required this.ageMin,
     required this.ageMiddle,
@@ -67,11 +69,12 @@ class Race {
       maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int? ?? 0,
       minTeams: json['RAC_MIN_TEAMS'] as int? ?? 0,
       maxTeams: json['RAC_MAX_TEAMS'] as int? ?? 0,
+      minTeamMembers: json['RAC_MIN_TEAM_MEMBERS'] as int? ?? 2,
       teamMembers: json['RAC_MAX_TEAM_MEMBERS'] as int? ?? 0,
       ageMin: json['RAC_AGE_MIN'] as int,
       ageMiddle: json['RAC_AGE_MIDDLE'] as int,
       ageMax: json['RAC_AGE_MAX'] as int,
-      chipMandatory: json['RAC_CHIP_MANDATORY'] as int? ?? 0
+      chipMandatory: json['RAC_CHIP_MANDATORY'] as int? ?? 0,
     );
   }
 
@@ -82,8 +85,10 @@ class Race {
       'RAC_NAME': name,
       'USE_ID': userId,
       'RAI_ID': raidId,
-      'RAC_TIME_START': startDate.toIso8601String(),
-      'RAC_TIME_END': endDate.toIso8601String(),
+      'RAC_TIME_START':
+          "${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')} ${startDate.hour.toString().padLeft(2, '0')}:${startDate.minute.toString().padLeft(2, '0')}:${startDate.second.toString().padLeft(2, '0')}",
+      'RAC_TIME_END':
+          "${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')} ${endDate.hour.toString().padLeft(2, '0')}:${endDate.minute.toString().padLeft(2, '0')}:${endDate.second.toString().padLeft(2, '0')}",
       'RAC_TYPE': type,
       'RAC_DIFFICULTY': difficulty,
       'RAC_GENDER': sex, // ← AJOUTE CE CHAMP
@@ -91,11 +96,12 @@ class Race {
       'RAC_MAX_PARTICIPANTS': maxParticipants,
       'RAC_MIN_TEAMS': minTeams,
       'RAC_MAX_TEAMS': maxTeams,
+      'RAC_MIN_TEAM_MEMBERS': minTeamMembers,
       'RAC_MAX_TEAM_MEMBERS': teamMembers,
       'RAC_AGE_MIN': ageMin,
       'RAC_AGE_MIDDLE': ageMiddle,
       'RAC_AGE_MAX': ageMax,
-      'RAC_CHIP_MANDATORY': chipMandatory
+      'RAC_CHIP_MANDATORY': chipMandatory,
     };
   }
 
@@ -114,6 +120,7 @@ class Race {
     int? maxParticipants,
     int? minTeams,
     int? maxTeams,
+    int? minTeamMembers,
     int? teamMembers,
     int? ageMin,
     int? ageMiddle,
@@ -134,11 +141,12 @@ class Race {
       maxParticipants: maxParticipants ?? this.maxParticipants,
       minTeams: minTeams ?? this.minTeams,
       maxTeams: maxTeams ?? this.maxTeams,
+      minTeamMembers: minTeamMembers ?? this.minTeamMembers,
       teamMembers: teamMembers ?? this.teamMembers,
       ageMin: ageMin ?? this.ageMin,
       ageMiddle: ageMiddle ?? this.ageMiddle,
       ageMax: ageMax ?? this.ageMax,
-      chipMandatory: chipMandatory ?? this.chipMandatory
+      chipMandatory: chipMandatory ?? this.chipMandatory,
     );
   }
 }

@@ -27,7 +27,7 @@ class RaceAgesSection extends StatelessWidget {
               Expanded(
                 child: _buildAgeChip(
                   label: 'Min',
-                  age: race.ageMin!,
+                  age: race.ageMin,
                   color: Colors.blue,
                 ),
               ),
@@ -37,7 +37,7 @@ class RaceAgesSection extends StatelessWidget {
               Expanded(
                 child: _buildAgeChip(
                   label: 'Moyen',
-                  age: race.ageMiddle!,
+                  age: race.ageMiddle,
                   color: Colors.orange,
                 ),
               ),
@@ -47,7 +47,7 @@ class RaceAgesSection extends StatelessWidget {
               Expanded(
                 child: _buildAgeChip(
                   label: 'Max',
-                  age: race.ageMax!,
+                  age: race.ageMax,
                   color: Colors.red,
                 ),
               ),

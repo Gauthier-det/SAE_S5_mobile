@@ -104,17 +104,23 @@ class RaceLocalSources {
     );
   }
 
+  /// Supprime toutes les courses d'un raid (pour remplacer par données API)
+  Future<void> clearRacesByRaidId(int raidId) async {
+    final db = await DatabaseHelper.database;
+    await db.delete('SAN_RACES', where: 'RAI_ID = ?', whereArgs: [raidId]);
+  }
+
   Future<void> createRaceCategoryPrice(
     int raceId,
     int categoryId,
-    double price,
+    int price,
   ) async {
     final db = await DatabaseHelper.database;
     await db.insert('SAN_CATEGORIES_RACES', {
       'RAC_ID': raceId,
       'CAT_ID': categoryId,
       'CAR_PRICE': price,
-    });
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   // Ajoute cette méthode pour vérifier le nombre de courses

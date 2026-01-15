@@ -10,14 +10,17 @@ class TeamApiSources {
   String? _authToken;
 
   TeamApiSources({required this.baseUrl, http.Client? client})
-      : client = client ?? http.Client();
+    : client = client ?? http.Client();
 
   void setAuthToken(String? token) {
     _authToken = token;
   }
 
   Map<String, String> get _headers {
-    final headers = {'Content-Type': 'application/json'};
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
     if (_authToken != null) {
       headers['Authorization'] = 'Bearer $_authToken';
     }
@@ -54,14 +57,20 @@ class TeamApiSources {
   /// Utilisé dans: TeamRegistration + TeamRaceManagement
   Future<List<User>> getAvailableUsersForRace(int raceId) async {
     try {
+      print('🔍 GetAvailableUsers - Requesting users for race $raceId');
       final response = await client.get(
         Uri.parse('$baseUrl/races/$raceId/available-users'),
         headers: _headers,
       );
 
+      print('🔍 GetAvailableUsers - Status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> usersList = responseData['data'];
+        print('🔍 GetAvailableUsers - Found ${usersList.length} users');
+        if (usersList.isNotEmpty) {
+          print('🔍 GetAvailableUsers - First user: ${usersList.first}');
+        }
         return usersList.map((json) => User.fromJson(json)).toList();
       } else {
         throw Exception('Erreur API: ${response.statusCode}');
@@ -79,7 +88,7 @@ class TeamApiSources {
       // ✅ LOG: Vérifier le token et les données
       print('🔑 CreateTeam - Token présent: ${_authToken != null}');
       print('📦 CreateTeam - Data: $teamData');
-      
+
       final response = await client.post(
         Uri.parse('$baseUrl/teams'),
         headers: _headers,
@@ -93,12 +102,20 @@ class TeamApiSources {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['data'] == null) {
-          throw Exception('Réponse API invalide');
+          throw Exception('Réponse API invalide: champ "data" manquant');
         }
-        final teamId = responseData['data']['TEA_ID'] ?? 
-                      responseData['data']['id'] ?? 
-                      responseData['team_id'];
+
+        final data = responseData['data'];
+
+        // La réponse API est {"data": {"team_id": 11, "team_name": "...", ...}}
+        final teamId = data is Map ? (data['team_id'] ?? data['id']) : null;
+
         if (teamId == null) {
+          // Fallback au cas où le format serait différent (ex: {"team_id": 11})
+          if (responseData['team_id'] != null) {
+            return responseData['team_id'] as int;
+          }
+          print('❌ CreateTeam - Structure reçue: $responseData');
           throw Exception('ID d\'équipe manquant dans la réponse');
         }
         return teamId as int;
@@ -108,15 +125,20 @@ class TeamApiSources {
         // ✅ Mieux gérer l'erreur de validation
         try {
           final errorData = json.decode(response.body);
-          final errors = errorData['errors'] ?? errorData['message'] ?? response.body;
+          final errors =
+              errorData['errors'] ?? errorData['message'] ?? response.body;
           throw Exception('Validation: $errors');
         } catch (e) {
           // Si le body n'est pas du JSON valide
-          throw Exception('Erreur de validation (HTML reçu): ${response.body.substring(0, 100)}');
+          throw Exception(
+            'Erreur de validation (HTML reçu): ${response.body.substring(0, 100)}',
+          );
         }
       } else {
         // ✅ Afficher le début du body pour déboguer
-        throw Exception('Erreur API ${response.statusCode}: ${response.body.substring(0, 100)}');
+        throw Exception(
+          'Erreur API ${response.statusCode}: ${response.body.substring(0, 100)}',
+        );
       }
     } catch (e) {
       throw Exception('Erreur lors de la création de l\'équipe: $e');
@@ -128,7 +150,7 @@ class TeamApiSources {
     try {
       print('🔑 AddMember - Token présent: ${_authToken != null}');
       print('📦 AddMember - Data: $data');
-      
+
       final response = await client.post(
         Uri.parse('$baseUrl/teams/addMember'),
         headers: _headers,
@@ -136,13 +158,17 @@ class TeamApiSources {
       );
 
       print('📡 AddMember - Status: ${response.statusCode}');
-      print('📡 AddMember - Response: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}');
+      print(
+        '📡 AddMember - Response: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
+      );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         // ✅ Gérer le HTML
         try {
           final errorData = json.decode(response.body);
-          throw Exception(errorData['message'] ?? 'Erreur lors de l\'ajout du membre');
+          throw Exception(
+            errorData['message'] ?? 'Erreur lors de l\'ajout du membre',
+          );
         } catch (e) {
           throw Exception('Erreur ${response.statusCode} (HTML reçu)');
         }
@@ -151,6 +177,7 @@ class TeamApiSources {
       throw Exception('Erreur réseau: $e');
     }
   }
+
   /// POST /teams/{teamId}/register-race - Inscrire une équipe à une course
   /// Body: { race_id: number } ou peut-être vide si race_id dans l'URL suffit
   Future<void> registerTeamToRace(int teamId, int raceId) async {
@@ -163,7 +190,9 @@ class TeamApiSources {
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Erreur lors de l\'inscription de l\'équipe');
+        throw Exception(
+          errorData['message'] ?? 'Erreur lors de l\'inscription de l\'équipe',
+        );
       }
     } catch (e) {
       throw Exception('Erreur réseau: $e');
@@ -176,7 +205,10 @@ class TeamApiSources {
 
   /// GET /teams/{teamId}/races/{raceId} - Détails complets équipe pour une course
   /// Returns: TeamRaceDetails (team info + members + race info)
-  Future<Map<String, dynamic>> getTeamRaceDetails(int teamId, int raceId) async {
+  Future<Map<String, dynamic>> getTeamRaceDetails(
+    int teamId,
+    int raceId,
+  ) async {
     try {
       final response = await client.get(
         Uri.parse('$baseUrl/teams/$teamId/races/$raceId'),
@@ -200,7 +232,11 @@ class TeamApiSources {
 
   /// POST /teams/{teamId}/races/{raceId}/remove-member - Retirer un membre
   /// Body: { user_id: number }
-  Future<void> removeMemberFromTeamRace(int teamId, int raceId, int userId) async {
+  Future<void> removeMemberFromTeamRace(
+    int teamId,
+    int raceId,
+    int userId,
+  ) async {
     try {
       final response = await client.post(
         Uri.parse('$baseUrl/teams/$teamId/races/$raceId/remove-member'),
@@ -210,7 +246,9 @@ class TeamApiSources {
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Erreur lors de la suppression du membre');
+        throw Exception(
+          errorData['message'] ?? 'Erreur lors de la suppression du membre',
+        );
       }
     } catch (e) {
       throw Exception('Erreur réseau: $e');
@@ -243,7 +281,9 @@ class TeamApiSources {
 
       if (response.statusCode != 200) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Erreur lors de la mise à jour');
+        throw Exception(
+          errorData['message'] ?? 'Erreur lors de la mise à jour',
+        );
       }
     } catch (e) {
       throw Exception('Erreur réseau: $e');
@@ -279,7 +319,9 @@ class TeamApiSources {
 
       if (response.statusCode != 200) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Erreur lors de la dévalidation');
+        throw Exception(
+          errorData['message'] ?? 'Erreur lors de la dévalidation',
+        );
       }
     } catch (e) {
       throw Exception('Erreur réseau: $e');

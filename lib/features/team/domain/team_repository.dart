@@ -19,15 +19,21 @@ abstract class TeamRepository {
   });
   Future<Team?> getTeamByIdWithRaceStatus(int teamId, int raceId);
   Future<int?> getTeamDossardNumber(int teamId, int raceId);
-  Future<List<Map<String, dynamic>>> getTeamMembersWithRaceDetails(int teamId, int raceId);
+  Future<List<Map<String, dynamic>>> getTeamMembersWithRaceDetails(
+    int teamId,
+    int raceId,
+  );
   Future<void> invalidateTeamForRace(int teamId, int raceId);
   Future<void> removeMemberFromTeam(int teamId, int userId);
   Future<void> deleteTeam(int teamId, int raceId);
   Future<void> updateUserPPS(int userId, String? ppsForm, int raceId);
   Future<void> updateUserChipNumber(int userId, int raceId, int? chipNumber);
   Future<Map<String, dynamic>?> getRaceDetails(int raceId);
-  Future<List<Map<String, dynamic>>> getUserConflictingRaces(int userId, int raceId);
-  
+  Future<List<Map<String, dynamic>>> getUserConflictingRaces(
+    int userId,
+    int raceId,
+  );
+
   Future<void> createTeamAndRegisterToRace({
     required Team team,
     required List<int> memberIds,
