@@ -1,8 +1,5 @@
-// lib/features/raids/presentation/raid_create_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sae5_g13_mobile/core/database/database_helper.dart';
-import 'package:sae5_g13_mobile/features/race/domain/race_repository.dart';
 import '../../raid/domain/raid.dart';
 import '../domain/raid_repository.dart';
 import '../../user/domain/user_repository.dart';
@@ -27,7 +24,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   // GlobalKey: unique identifier for the form
   // Allows validating and saving form data
   final _formKey = GlobalKey<FormState>();
-  
+
   // TextEditingController: manages the content of a text field
   // One controller per field to retrieve values
   final _nameController = TextEditingController();
@@ -37,17 +34,17 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   final _raceCountController = TextEditingController();
   Address? _selectedAddress;
   List<Address> _addresses = [];
-  
+
   // Variables to store selected dates
   // DateTime? means "can be null" (not yet selected)
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _registrationStart;
   DateTime? _registrationEnd;
-  
+
   // Variable to display loading during save
   bool _isLoading = false;
-  
+
   // NEW: Club and raid manager selection
   int? _clubId;
   User? _selectedRaidManager;
@@ -56,62 +53,69 @@ class _RaidCreateViewState extends State<RaidCreateView> {
 
   @override
   void initState() {
-  super.initState();
+    super.initState();
     // Appeler après que le widget soit monté
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadClubData();
     });
   }
 
-  
   Future<void> _loadClubData() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userRepository = Provider.of<UserRepository>(context, listen: false);
-      final clubRepository = Provider.of<ClubRepository>(context, listen: false);
-      final addressRepository = Provider.of<AddressRepository>(context, listen: false);
-      
+      final userRepository = Provider.of<UserRepository>(
+        context,
+        listen: false,
+      );
+      final clubRepository = Provider.of<ClubRepository>(
+        context,
+        listen: false,
+      );
+      final addressRepository = Provider.of<AddressRepository>(
+        context,
+        listen: false,
+      );
+
       final currentUser = authProvider.currentUser;
-      
+
       if (currentUser == null) {
         throw Exception('Utilisateur non connecté');
       }
-      
-      final db = await DatabaseHelper.database;
-      final List<Map<String, dynamic>> users = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [currentUser.email],
-        limit: 1,
-      );
-      
-      if (users.isEmpty) {
-        throw Exception('Utilisateur non trouvé dans la base de données');
+
+      final userId = int.tryParse(currentUser.id);
+      if (userId == null) {
+        throw Exception('ID utilisateur invalide');
       }
-      
-      final sqliteUserId = users.first['USE_ID'] as int;
-      final clubId = await userRepository.getUserClubId(sqliteUserId);
-      
+
+      final user = await userRepository.getUserById(userId);
+      if (user == null) {
+        throw Exception('Utilisateur introuvable');
+      }
+
+      final clubId = user.clubId;
+
       if (clubId == null) {
-        throw Exception('Vous devez être responsable de club pour créer un raid');
+        throw Exception(
+          'Vous devez être responsable de club pour créer un raid',
+        );
       }
-      
+
       // Charger membres ET adresses en parallèle
       final results = await Future.wait([
         clubRepository.getClubMembers(clubId),
         addressRepository.getAllAddresses(),
       ]);
-      
+
       final members = results[0] as List<User>;
       final addresses = results[1] as List<Address>;
-      
+
       if (mounted) {
         setState(() {
           _clubId = clubId;
           _clubMembers = members;
           _addresses = addresses;
           _selectedRaidManager = members.firstWhere(
-            (m) => m.id == sqliteUserId,
+            (m) => m.id == userId,
             orElse: () => members.first,
           );
           _isLoadingMembers = false;
@@ -122,22 +126,18 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         setState(() {
           _isLoadingMembers = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
         Navigator.pop(context);
       }
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Créer un Raid'),
-      ),
+      appBar: AppBar(title: const Text('Créer un Raid')),
       body: _isLoading || _isLoadingMembers
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -164,9 +164,9 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                         return null; // null = validation OK
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // NEW: Raid manager dropdown
                     DropdownButtonFormField<User>(
                       value: _selectedRaidManager,
@@ -238,7 +238,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                     ),
 
                     const SizedBox(height: 16),
-                    
+
                     // Email field
                     TextFormField(
                       controller: _emailController,
@@ -251,16 +251,18 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                       validator: (value) {
                         if (value != null && value.isNotEmpty) {
                           // RegExp = regular expression to validate email format
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
                             return 'Email invalide';
                           }
                         }
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Phone field
                     TextFormField(
                       controller: _phoneController,
@@ -270,17 +272,17 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                       ),
                       keyboardType: TextInputType.phone,
                       validator: (value) {
-                        if(value != null && value.isNotEmpty){
-                          if(value.length != 10){
+                        if (value != null && value.isNotEmpty) {
+                          if (value.length != 10) {
                             return 'Numéro invalide';
                           }
                         }
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Website field
                     TextFormField(
                       controller: _websiteController,
@@ -290,79 +292,83 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                       ),
                       keyboardType: TextInputType.url,
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Dates section
                     Text(
                       'Dates de l\'événement',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // Button to select start date
                     _buildDateField(
                       label: 'Date de début *',
                       date: _startDate,
-                      onTap: () => _selectDate(context, isStart: true, isEvent: true),
+                      onTap: () =>
+                          _selectDate(context, isStart: true, isEvent: true),
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     _buildDateField(
                       label: 'Date de fin *',
                       date: _endDate,
-                      onTap: () => _selectDate(context, isStart: false, isEvent: true),
+                      onTap: () =>
+                          _selectDate(context, isStart: false, isEvent: true),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     Text(
                       'Période d\'inscription',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     _buildDateField(
                       label: 'Ouverture des inscriptions *',
                       date: _registrationStart,
-                      onTap: () => _selectDate(context, isStart: true, isEvent: false),
+                      onTap: () =>
+                          _selectDate(context, isStart: true, isEvent: false),
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     _buildDateField(
                       label: 'Clôture des inscriptions *',
                       date: _registrationEnd,
-                      onTap: () => _selectDate(context, isStart: false, isEvent: false),
+                      onTap: () =>
+                          _selectDate(context, isStart: false, isEvent: false),
                     ),
-                    
+
                     const SizedBox(height: 32),
 
                     TextFormField(
-                    controller: _raceCountController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre maximum de courses *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.format_list_numbered),
-                      hintText: 'Ex: 5',
-                      helperText: 'Nombre de courses autorisées dans ce raid',
+                      controller: _raceCountController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre maximum de courses *',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.format_list_numbered),
+                        hintText: 'Ex: 5',
+                        helperText: 'Nombre de courses autorisées dans ce raid',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ce champ est obligatoire';
+                        }
+                        final number = int.tryParse(value);
+                        if (number == null || number < 1) {
+                          return 'Doit être un nombre >= 1';
+                        }
+                        return null;
+                      },
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Ce champ est obligatoire';
-                      }
-                      final number = int.tryParse(value);
-                      if (number == null || number < 1) {
-                        return 'Doit être un nombre >= 1';
-                      }
-                      return null;
-                    },
-                  ),
-                    
+
                     // Submit button
                     ElevatedButton(
                       onPressed: _submitForm,
@@ -395,11 +401,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // If date is null, display "Select", otherwise display the date
-            Text(
-              date == null 
-                  ? 'Sélectionner une date' 
-                  : _formatDate(date),
-            ),
+            Text(date == null ? 'Sélectionner une date' : _formatDate(date)),
             const Icon(Icons.calendar_today),
           ],
         ),
@@ -499,16 +501,16 @@ class _RaidCreateViewState extends State<RaidCreateView> {
                   context,
                   listen: false,
                 );
-                
+
                 final newAddress = Address(
                   postalCode: int.parse(postalCodeController.text),
                   city: cityController.text,
                   streetName: streetNameController.text,
                   streetNumber: streetNumberController.text,
                 );
-                
+
                 final id = await addressRepository.createAddress(newAddress);
-                
+
                 Navigator.pop(
                   context,
                   Address(
@@ -535,7 +537,6 @@ class _RaidCreateViewState extends State<RaidCreateView> {
     }
   }
 
-
   /// Displays the native date picker followed by time picker
   /// async = asynchronous function that can "await" a response
   Future<void> _selectDate(
@@ -551,20 +552,20 @@ class _RaidCreateViewState extends State<RaidCreateView> {
       firstDate: DateTime.now(), // No past dates
       lastDate: DateTime(2030),
     );
-    
+
     // If user cancelled date selection, stop here
     if (pickedDate == null) return;
-    
+
     // Step 2: Pick the time
     // showTimePicker = Flutter function that displays a time picker
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    
+
     // If user cancelled time selection, stop here
     if (pickedTime == null) return;
-    
+
     // Step 3: Combine date and time into a single DateTime
     final DateTime finalDateTime = DateTime(
       pickedDate.year,
@@ -573,7 +574,7 @@ class _RaidCreateViewState extends State<RaidCreateView> {
       pickedTime.hour,
       pickedTime.minute,
     );
-    
+
     // If the user selected both date and time
     if (mounted) {
       // setState: informs Flutter that data has changed
@@ -600,10 +601,20 @@ class _RaidCreateViewState extends State<RaidCreateView> {
   /// Example: "13 janvier 2026 à 14h30"
   String _formatDate(DateTime date) {
     final months = [
-      'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
     ];
-    
+
     // Format: day month year at HH:mm
     return '${date.day} ${months[date.month - 1]} ${date.year} à ${date.hour}h${date.minute.toString().padLeft(2, '0')}';
   }
@@ -614,53 +625,69 @@ class _RaidCreateViewState extends State<RaidCreateView> {
     if (!_formKey.currentState!.validate()) {
       return; // Stop if validation fails
     }
-    
+
     // 2. Check that dates are filled in
-    if (_startDate == null || _endDate == null || 
-        _registrationStart == null || _registrationEnd == null) {
+    if (_startDate == null ||
+        _endDate == null ||
+        _registrationStart == null ||
+        _registrationEnd == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Toutes les dates sont obligatoires')),
       );
       return;
     }
-    
+
     // 3. Check event dates consistency
     if (_endDate!.isBefore(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La date de fin doit être après la date de début')),
+        const SnackBar(
+          content: Text('La date de fin doit être après la date de début'),
+        ),
       );
       return;
     }
-    
+
     // 4. Check registration dates consistency
     if (_registrationEnd!.isBefore(_registrationStart!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La clôture doit être après l\'ouverture des inscriptions')),
+        const SnackBar(
+          content: Text(
+            'La clôture doit être après l\'ouverture des inscriptions',
+          ),
+        ),
       );
       return;
     }
-    
+
     // 5. Check that registration start is before event start
     if (_registrationStart!.isAfter(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Les inscriptions doivent ouvrir avant le début de l\'événement')),
+        const SnackBar(
+          content: Text(
+            'Les inscriptions doivent ouvrir avant le début de l\'événement',
+          ),
+        ),
       );
       return;
     }
-    
+
     // 6. Check that registration end is before or at event start
     if (_registrationEnd!.isAfter(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Les inscriptions doivent se clôturer avant le début de l\'événement')),
+        const SnackBar(
+          content: Text(
+            'Les inscriptions doivent se clôturer avant le début de l\'événement',
+          ),
+        ),
       );
       return;
     }
-    
+
     // 7. Display loading
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // 8. Create Raid object with form data
       final newRaid = Raid(
@@ -670,8 +697,12 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         userId: _selectedRaidManager!.id, // Use selected raid manager
         name: _nameController.text,
         email: _emailController.text.isEmpty ? null : _emailController.text,
-        phoneNumber: _phoneController.text.isEmpty ? null : _phoneController.text,
-        website: _websiteController.text.isEmpty ? null : _websiteController.text,
+        phoneNumber: _phoneController.text.isEmpty
+            ? null
+            : _phoneController.text,
+        website: _websiteController.text.isEmpty
+            ? null
+            : _websiteController.text,
         image: null, // TODO: add image upload
         timeStart: _startDate!,
         timeEnd: _endDate!,
@@ -679,10 +710,10 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         registrationEnd: _registrationEnd!,
         nbRaces: int.parse(_raceCountController.text), // Initial number
       );
-      
+
       // 9. Save via repository
       await widget.repository.createRaid(newRaid);
-      
+
       // 10. Success: return to previous screen
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -690,13 +721,12 @@ class _RaidCreateViewState extends State<RaidCreateView> {
         );
         Navigator.pop(context, true); // true = success signal
       }
-      
     } catch (e) {
       // 11. Error: display a message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
       }
     } finally {
       // 12. Hide loading in all cases
@@ -707,6 +737,4 @@ class _RaidCreateViewState extends State<RaidCreateView> {
       }
     }
   }
-
-  
 }

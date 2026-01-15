@@ -6,7 +6,6 @@ import '../../../core/presentation/widgets/common_error_view.dart';
 import '../../../core/presentation/widgets/common_empty_view.dart';
 import '../../../core/presentation/widgets/common_list_header.dart';
 import '../../../core/presentation/widgets/common_results_header.dart';
-import '../../../core/database/database_helper.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../../user/domain/user_repository.dart';
 import '../../raid/domain/raid.dart';
@@ -35,7 +34,8 @@ class _RaidListViewState extends State<RaidListView> {
   String? _selectedRegistrationStatus;
   DateTime? _filterStartDate;
   DateTime? _filterEndDate;
-  final _searchController = TextEditingController(); // ← NOUVEAU: Recherche par nom
+  final _searchController =
+      TextEditingController(); // ← NOUVEAU: Recherche par nom
 
   // Tri
   bool _sortAscending = true;
@@ -63,23 +63,25 @@ class _RaidListViewState extends State<RaidListView> {
             return false;
           }
         }
-        
-        if (_selectedStatus != null && !_matchesStatus(raid, _selectedStatus!)) {
+
+        if (_selectedStatus != null &&
+            !_matchesStatus(raid, _selectedStatus!)) {
           return false;
         }
         if (_selectedRegistrationStatus != null &&
             !_matchesRegistrationStatus(raid, _selectedRegistrationStatus!)) {
           return false;
         }
-        
+
         // Filtres par date
-        if (_filterStartDate != null && raid.timeEnd.isBefore(_filterStartDate!)) {
+        if (_filterStartDate != null &&
+            raid.timeEnd.isBefore(_filterStartDate!)) {
           return false;
         }
         if (_filterEndDate != null && raid.timeStart.isAfter(_filterEndDate!)) {
           return false;
         }
-        
+
         return true;
       }).toList();
 
@@ -202,7 +204,8 @@ class _RaidListViewState extends State<RaidListView> {
 
   @override
   Widget build(BuildContext context) {
-    final hasActiveFilters = _selectedStatus != null || 
+    final hasActiveFilters =
+        _selectedStatus != null ||
         _selectedRegistrationStatus != null ||
         _filterStartDate != null ||
         _filterEndDate != null ||
@@ -243,7 +246,8 @@ class _RaidListViewState extends State<RaidListView> {
           }
 
           _allRaids = snapshot.data ?? [];
-          if (_filteredRaids.isEmpty || _filteredRaids.length != _allRaids.length) {
+          if (_filteredRaids.isEmpty ||
+              _filteredRaids.length != _allRaids.length) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _applyFiltersAndSort();
             });
@@ -283,7 +287,7 @@ class _RaidListViewState extends State<RaidListView> {
                   ),
                 ),
               ),
-              
+
               // Filtres par date
               if (_filterStartDate != null || _filterEndDate != null)
                 Container(
@@ -296,15 +300,19 @@ class _RaidListViewState extends State<RaidListView> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.date_range, size: 20, color: Colors.blue),
+                      const Icon(
+                        Icons.date_range,
+                        size: 20,
+                        color: Colors.blue,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _filterStartDate != null && _filterEndDate != null
                               ? 'Du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year} au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}'
                               : _filterStartDate != null
-                                  ? 'À partir du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year}'
-                                  : 'Jusqu\'au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}',
+                              ? 'À partir du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year}'
+                              : 'Jusqu\'au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}',
                           style: const TextStyle(
                             color: Colors.blue,
                             fontWeight: FontWeight.w500,
@@ -326,7 +334,7 @@ class _RaidListViewState extends State<RaidListView> {
                     ],
                   ),
                 ),
-              
+
               // Boutons de sélection de dates
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -344,8 +352,8 @@ class _RaidListViewState extends State<RaidListView> {
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          foregroundColor: _filterStartDate != null 
-                              ? const Color(0xFFFF6B00) 
+                          foregroundColor: _filterStartDate != null
+                              ? const Color(0xFFFF6B00)
                               : Colors.grey,
                           side: BorderSide(
                             color: _filterStartDate != null
@@ -368,8 +376,8 @@ class _RaidListViewState extends State<RaidListView> {
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          foregroundColor: _filterEndDate != null 
-                              ? const Color(0xFFFF6B00) 
+                          foregroundColor: _filterEndDate != null
+                              ? const Color(0xFFFF6B00)
                               : Colors.grey,
                           side: BorderSide(
                             color: _filterEndDate != null
@@ -382,7 +390,7 @@ class _RaidListViewState extends State<RaidListView> {
                   ],
                 ),
               ),
-              
+
               CommonResultsHeader(
                 count: _filteredRaids.length,
                 itemName: 'raid',
@@ -454,7 +462,8 @@ class _RaidListViewState extends State<RaidListView> {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RaidCreateView(repository: widget.repository),
+                  builder: (context) =>
+                      RaidCreateView(repository: widget.repository),
                 ),
               );
               if (result == true && mounted) {
@@ -474,25 +483,21 @@ class _RaidListViewState extends State<RaidListView> {
   Future<bool> _canCreateRaid() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userRepository = Provider.of<UserRepository>(context, listen: false);
+      final userRepository = Provider.of<UserRepository>(
+        context,
+        listen: false,
+      );
       final currentUser = authProvider.currentUser;
 
       if (currentUser == null) return false;
 
-      final db = await DatabaseHelper.database;
-      final users = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [currentUser.email],
-        limit: 1,
-      );
+      // Use API/Repository to get full user details including clubId
+      final userId = int.tryParse(currentUser.id);
+      if (userId == null) return false;
 
-      if (users.isEmpty) return false;
+      final user = await userRepository.getUserById(userId);
 
-      final sqliteUserId = users.first['USE_ID'] as int;
-      final clubId = await userRepository.getUserClubId(sqliteUserId);
-
-      return clubId != null;
+      return user?.clubId != null;
     } catch (e) {
       return false;
     }

@@ -12,6 +12,7 @@ import '../../../core/presentation/widgets/common_empty_view.dart';
 import '../domain/raid_repository.dart';
 import 'widgets/raid_info_section.dart';
 import '../../race/presentation/widgets/race_list_widget.dart';
+import 'raid_edit_view.dart';
 
 class RaidDetailView extends StatefulWidget {
   final int raidId;
@@ -36,10 +37,56 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     _raidFuture = widget.repository.getRaidById(widget.raidId);
   }
 
+  void _refreshRaid() {
+    setState(() {
+      _raidFuture = widget.repository.getRaidById(widget.raidId);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Détail du Raid')),
+      appBar: AppBar(
+        title: const Text('Détail du Raid'),
+        actions: [
+          FutureBuilder<Raid?>(
+            future: _raidFuture,
+            builder: (context, snapshot) {
+              final raid = snapshot.data;
+              if (raid == null) return const SizedBox.shrink();
+
+              return FutureBuilder<bool>(
+                future: _canEditRaid(context, raid),
+                builder: (context, canEditSnapshot) {
+                  if (canEditSnapshot.data != true) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return IconButton(
+                    icon: const Icon(Icons.edit),
+                    tooltip: 'Modifier le raid',
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RaidEditView(
+                            raid: raid,
+                            repository: widget.repository,
+                          ),
+                        ),
+                      );
+
+                      if (result == true) {
+                        _refreshRaid();
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<Raid?>(
         future: _raidFuture,
         builder: (context, snapshot) {
@@ -69,10 +116,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   child: RaidInfoSection(raid: raid),
                 ),
                 const Divider(height: 32),
-                RaceListWidget(
-                  raid: raid,
-                  raidId: widget.raidId,
-                ),
+                RaceListWidget(raid: raid, raidId: widget.raidId),
                 const SizedBox(height: 80),
               ],
             ),
@@ -89,6 +133,28 @@ class _RaidDetailViewState extends State<RaidDetailView> {
         },
       ),
     );
+  }
+
+  Future<bool> _canEditRaid(BuildContext context, Raid raid) async {
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final user = auth.currentUser;
+      if (user == null) return false;
+
+      final db = await DatabaseHelper.database;
+      final res = await db.query(
+        'SAN_USERS',
+        where: 'USE_MAIL = ?',
+        whereArgs: [user.email],
+        limit: 1,
+      );
+
+      if (res.isEmpty) return false;
+      // Raid manager can edit their own raid
+      return raid.userId == res.first['USE_ID'];
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _buildHeader(Raid raid) {
@@ -120,10 +186,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
+                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
               ),
             ),
           ),
@@ -165,7 +228,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
   Widget _badge(String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -184,7 +250,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-    Widget _buildFab(BuildContext context, Raid raid) {
+  Widget _buildFab(BuildContext context, Raid raid) {
     // Raid terminé → Rien
     if (DateTime.now().isAfter(raid.timeEnd)) {
       return const SizedBox.shrink();
@@ -210,7 +276,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
             // ✅ Limite atteinte → Badge rouge
             if (isLimitReached) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(24),
@@ -250,7 +319,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   MaterialPageRoute(
                     builder: (context) => RaceCreationView(
                       raid: raid,
-                      repository: Provider.of<RacesRepository>(context, listen: false),
+                      repository: Provider.of<RacesRepository>(
+                        context,
+                        listen: false,
+                      ),
                     ),
                   ),
                 );
@@ -268,7 +340,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
       },
     );
   }
-
 
   // ✅ Méthode pour compter les courses
   Future<int> _getRaceCount(int raidId) async {

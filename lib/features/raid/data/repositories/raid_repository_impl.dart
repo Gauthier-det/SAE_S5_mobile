@@ -81,4 +81,23 @@ class RaidRepositoryImpl implements RaidRepository {
       await localSources.insertRaid(raid);
     }
   }
+
+  @override
+  Future<Raid> updateRaid(int id, Raid raid) async {
+    final token = authLocalSources.getToken();
+    apiSources.setAuthToken(token);
+
+    final updatedRaid = await apiSources.updateRaid(id, raid);
+    await localSources.insertRaid(updatedRaid);
+    return updatedRaid;
+  }
+
+  @override
+  Future<void> deleteRaid(int id) async {
+    final token = authLocalSources.getToken();
+    apiSources.setAuthToken(token);
+
+    await apiSources.deleteRaid(id);
+    // TODO: Remove from local cache if needed
+  }
 }

@@ -18,15 +18,28 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<List<User>> getAllUsers() async {
+    print('👥 UserRepositoryImpl.getAllUsers - Start');
     try {
       final token = authLocalSources.getToken();
+      print(
+        '👥 UserRepositoryImpl.getAllUsers - Token: ${token != null ? "present" : "null"}',
+      );
       apiSources.setAuthToken(token);
 
       final users = await apiSources.getAllUsers();
+      print(
+        '👥 UserRepositoryImpl.getAllUsers - Got ${users.length} users from API',
+      );
       return users;
     } catch (e) {
-      print('API getAllUsers failed: $e. Falling back to local...');
-      return await localSources.getAllUsers();
+      print(
+        '❌ UserRepositoryImpl.getAllUsers - API failed: $e. Falling back to local...',
+      );
+      final localUsers = await localSources.getAllUsers();
+      print(
+        '👥 UserRepositoryImpl.getAllUsers - Got ${localUsers.length} users from local',
+      );
+      return localUsers;
     }
   }
 

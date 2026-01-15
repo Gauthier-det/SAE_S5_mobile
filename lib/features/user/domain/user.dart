@@ -18,7 +18,7 @@ class User {
   final int? licenceNumber;
   final String? ppsForm;
   final DateTime? membershipDate;
-  final String sex; 
+  final String sex;
 
   // Related objects (loaded via JOIN)
   final Address? address;
@@ -65,19 +65,19 @@ class User {
     }
 
     return User(
-      id: json['USE_ID'],
-      addressId: json['ADD_ID'],
+      id: json['USE_ID'] ?? 0,
+      addressId: json['ADD_ID'] ?? 0,
       clubId: json['CLU_ID'],
-      email: json['USE_MAIL'],
+      email: json['USE_MAIL'] ?? '',
       password: json['USE_PASSWORD'],
-      name: json['USE_NAME'],
-      lastName: json['USE_LAST_NAME'],
+      name: json['USE_NAME'] ?? '',
+      lastName: json['USE_LAST_NAME'] ?? '',
       birthdate: birthdate,
       phoneNumber: json['USE_PHONE_NUMBER'],
       licenceNumber: json['USE_LICENCE_NUMBER'],
       membershipDate: membershipDate,
       address: address,
-      sex: json['USE_SEX'],
+      sex: json['USE_SEX'] ?? '',
     );
   }
 
