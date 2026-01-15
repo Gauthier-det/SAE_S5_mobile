@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/club_provider.dart';
 import '../../domain/club.dart';
 import '../../../user/domain/user.dart';
-import '../../../user/data/datasources/user_local_sources.dart';
+import '../../../user/domain/user_repository.dart';
 import '../../../address/data/datasources/address_local_sources.dart';
 import '../../../address/domain/address.dart';
 
@@ -41,10 +41,11 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
 
   Future<void> _loadData() async {
     try {
-      final userSources = UserLocalSources();
+      // Use UserRepository to fetch users from API
+      final userRepository = context.read<UserRepository>();
       final addressSources = AddressLocalSources();
 
-      final users = await userSources.getAllUsers();
+      final users = await userRepository.getAllUsers();
       final addresses = await addressSources.getAllAddresses();
 
       if (mounted) {

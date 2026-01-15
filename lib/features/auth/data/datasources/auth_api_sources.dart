@@ -100,6 +100,19 @@ class AuthApiSources {
       // Stocker le token pour les futures requêtes
       _accessToken = data['access_token'];
 
+      // Extract roles from response
+      List<int> roles = [];
+      if (data['roles'] != null) {
+        roles = (data['roles'] as List<dynamic>).map((r) => r as int).toList();
+      } else if (data['user_roles'] != null) {
+        roles = (data['user_roles'] as List<dynamic>)
+            .map((r) => r as int)
+            .toList();
+      }
+
+      print('🔐 User roles from API: $roles');
+      print('🔐 Is Site Manager (role 2): ${roles.contains(2)}');
+
       print('🔐 Mapping user data for fromJson...');
       final userMap = {
         'id': data['user_id'].toString(),
@@ -114,13 +127,30 @@ class AuthApiSources {
         'chipNumber': null,
         'profileImageUrl': null,
         'createdAt': DateTime.now().toIso8601String(),
-        'roles': [],
+        'roles': roles,
       };
       print('🔐 User map: $userMap');
 
       try {
         final user = User.fromJson(userMap);
         print('🔐 User créé avec succès: ${user.email}');
+
+        // Check if user is admin via separate API call
+        try {
+          final isAdmin = await _checkIsAdmin();
+          print('🔐 User isAdmin from /user/is-admin: $isAdmin');
+          if (isAdmin) {
+            // Return user with site manager role
+            return User.fromJson({
+              ...userMap,
+              'roles': [2],
+            });
+          }
+        } catch (e) {
+          print('🔐 Could not check admin status: $e');
+        }
+
+        print('🔐 User isSiteManager: ${user.isSiteManager}');
         return user;
       } catch (e, stackTrace) {
         print('🔐 Erreur lors du User.fromJson: $e');
@@ -130,11 +160,37 @@ class AuthApiSources {
     } else if (response.statusCode == 401) {
       throw Exception('Email ou mot de passe incorrect');
     } else {
-      print(
-        '🔐 Login API error: Exception: Erreur de connexion: ${response.statusCode}',
-      );
       throw Exception('Erreur de connexion: ${response.statusCode}');
     }
+  }
+
+  /// Check if current user is admin
+  Future<bool> _checkIsAdmin() async {
+    if (_accessToken == null) return false;
+
+    final response = await client
+        .get(
+          Uri.parse('$baseUrl/user/is-admin'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_accessToken',
+          },
+        )
+        .timeout(const Duration(seconds: 5));
+
+    print(
+      '🔐 /user/is-admin response: ${response.statusCode} - ${response.body}',
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      // Try different response formats
+      return data['is_admin'] == true ||
+          data['isAdmin'] == true ||
+          data['data'] == true ||
+          data == true;
+    }
+    return false;
   }
 
   /// Mise à jour du profil via API

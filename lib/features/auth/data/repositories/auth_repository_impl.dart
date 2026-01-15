@@ -38,6 +38,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? birthDate,
     String? phoneNumber,
     String? licenceNumber,
+    String gender = 'Autre',
   }) async {
     if (!_isValidEmail(email)) {
       throw ValidationException('Email invalide');
@@ -64,6 +65,7 @@ class AuthRepositoryImpl implements AuthRepository {
           birthDate: birthDate,
           phoneNumber: phoneNumber,
           licenceNumber: licenceNumber,
+          gender: gender,
         );
 
         // Sauvegarder localement

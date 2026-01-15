@@ -16,6 +16,41 @@ class UserApiSources {
     _authToken = token;
   }
 
+  /// Gets all users from API
+  Future<List<User>> getAllUsers() async {
+    print('👥 UserApiSources.getAllUsers - Start');
+
+    try {
+      final headers = {
+        'Content-Type': 'application/json',
+        if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+      };
+
+      final response = await client.get(
+        Uri.parse('$baseUrl/users'),
+        headers: headers,
+      );
+
+      print(
+        '👥 UserApiSources.getAllUsers - Response status: ${response.statusCode}',
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final List<dynamic> usersJson = responseData['data'] ?? responseData;
+        print('✅ UserApiSources.getAllUsers - Found ${usersJson.length} users');
+        return usersJson.map((json) => User.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Non authentifié - Token invalide ou manquant');
+      } else {
+        throw Exception('Failed to fetch users: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ UserApiSources.getAllUsers - Error: $e');
+      throw Exception('Network error: $e');
+    }
+  }
+
   /// Gets user by ID from API
   Future<User?> getUserById(int id) async {
     try {
