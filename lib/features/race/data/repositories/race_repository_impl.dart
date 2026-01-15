@@ -100,12 +100,12 @@ class RacesRepositoryImpl implements RacesRepository {
         'RAC_MAX_PARTICIPANTS': race.maxParticipants,
         'RAC_MIN_TEAMS': race.minTeams,
         'RAC_MAX_TEAMS': race.maxTeams,
-        'RAC_TEAM_MEMBERS': race.teamMembers,
+        'RAC_MAX_TEAM_MEMBERS': race.teamMembers,
         'RAC_AGE_MIN': race.ageMin,
         'RAC_AGE_MIDDLE': race.ageMiddle,
         'RAC_AGE_MAX': race.ageMax,
-        'RAC_SEX': race.sex,
-        'RAC_CHIP_REQUIRED': racRequired,
+        'RAC_GENDER': race.sex,
+        'RAC_CHIP_MANDATORY': racRequired,
       });
 
       // Créer les prix par catégorie

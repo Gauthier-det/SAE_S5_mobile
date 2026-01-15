@@ -155,7 +155,7 @@ class Raid {
         registrationEnd: DateTime.parse(json['RAI_REGISTRATION_END']),
         address: address,
         manager: manager,
-        nbRaces: json['RAI_RACE_COUNT'], // DB locale utilise RAI_RACE_COUNT
+        nbRaces: json['RAI_NB_RACES'], // DB locale utilise RAI_NB_RACES
       );
     }
   }
@@ -176,7 +176,7 @@ class Raid {
       'RAI_TIME_END': timeEnd.toIso8601String(),
       'RAI_REGISTRATION_START': registrationStart.toIso8601String(),
       'RAI_REGISTRATION_END': registrationEnd.toIso8601String(),
-      'RAI_RACE_COUNT': nbRaces, // Ajout du champ requis pour la DB locale
+      'RAI_NB_RACES': nbRaces, // Ajout du champ requis pour la DB locale
     };
   }
 

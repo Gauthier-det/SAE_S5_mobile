@@ -150,8 +150,9 @@ class SanglierExplorerApp extends StatelessWidget {
         localSources: AddressLocalSources(),
       ),
       'teamRepository': TeamRepositoryImpl(
-        localSources: TeamLocalSources(),
         apiSources: TeamApiSources(baseUrl: AppConfig.apiBaseUrl),
+        localSources: TeamLocalSources(),
+        authLocalSources: authLocalSources,
       ),
     };
   }

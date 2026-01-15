@@ -10,15 +10,16 @@ class Race {
   final DateTime endDate; // RAC_TIME_END
   final String type; // RAC_TYPE
   final String difficulty; // RAC_DIFFICULTY
-  final String sex; // RAC_SEX
+  final String sex; // RAC_GENDER ← AJOUTE CE CHAMP
   final int minParticipants; // RAC_MIN_PARTICIPANTS
   final int maxParticipants; // RAC_MAX_PARTICIPANTS
   final int minTeams; // RAC_MIN_TEAMS
   final int maxTeams; // RAC_MAX_TEAMS
-  final int teamMembers; // RAC_TEAM_MEMBERS
+  final int teamMembers; // RAC_MAX_TEAM_MEMBERS
   final int ageMin; // RAC_AGE_MIN (nullable)
   final int ageMiddle; // RAC_AGE_MIDDLE (nullable)
   final int ageMax; // RAC_AGE_MAX (nullable)
+  final int chipMandatory;
 
   Race({
     required this.id,
@@ -38,6 +39,7 @@ class Race {
     required this.ageMin,
     required this.ageMiddle,
     required this.ageMax,
+    required this.chipMandatory,
   });
 
   /// Retourne le label de difficulté
@@ -59,16 +61,17 @@ class Race {
       type: json['RAC_TYPE'] as String? ?? '',
       difficulty: json['RAC_DIFFICULTY'] as String? ?? '',
       sex:
-          (json['RAC_SEX'] ?? json['RAC_GENDER']) as String? ??
+          (json['RAC_GENDER'] ?? json['RAC_GENDER']) as String? ??
           'Mixte', // Support API (GENDER) et DB (SEX)
       minParticipants: json['RAC_MIN_PARTICIPANTS'] as int? ?? 0,
       maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int? ?? 0,
       minTeams: json['RAC_MIN_TEAMS'] as int? ?? 0,
       maxTeams: json['RAC_MAX_TEAMS'] as int? ?? 0,
-      teamMembers: json['RAC_TEAM_MEMBERS'] as int? ?? 0,
+      teamMembers: json['RAC_MAX_TEAM_MEMBERS'] as int? ?? 0,
       ageMin: json['RAC_AGE_MIN'] as int,
       ageMiddle: json['RAC_AGE_MIDDLE'] as int,
       ageMax: json['RAC_AGE_MAX'] as int,
+      chipMandatory: json['RAC_CHIP_MANDATORY'] as int? ?? 0
     );
   }
 
@@ -83,16 +86,16 @@ class Race {
       'RAC_TIME_END': endDate.toIso8601String(),
       'RAC_TYPE': type,
       'RAC_DIFFICULTY': difficulty,
-      'RAC_SEX': sex,
+      'RAC_GENDER': sex, // ← AJOUTE CE CHAMP
       'RAC_MIN_PARTICIPANTS': minParticipants,
       'RAC_MAX_PARTICIPANTS': maxParticipants,
       'RAC_MIN_TEAMS': minTeams,
       'RAC_MAX_TEAMS': maxTeams,
-      'RAC_TEAM_MEMBERS': teamMembers,
+      'RAC_MAX_TEAM_MEMBERS': teamMembers,
       'RAC_AGE_MIN': ageMin,
       'RAC_AGE_MIDDLE': ageMiddle,
       'RAC_AGE_MAX': ageMax,
-      'RAC_CHIP_REQUIRED': type == 'Compétitif' ? 1 : 0,
+      'RAC_CHIP_MANDATORY': chipMandatory
     };
   }
 
@@ -115,6 +118,7 @@ class Race {
     int? ageMin,
     int? ageMiddle,
     int? ageMax,
+    int? chipMandatory,
   }) {
     return Race(
       id: id ?? this.id,
@@ -134,6 +138,7 @@ class Race {
       ageMin: ageMin ?? this.ageMin,
       ageMiddle: ageMiddle ?? this.ageMiddle,
       ageMax: ageMax ?? this.ageMax,
+      chipMandatory: chipMandatory ?? this.chipMandatory
     );
   }
 }

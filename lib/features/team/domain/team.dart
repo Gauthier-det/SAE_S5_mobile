@@ -26,6 +26,14 @@ class Team {
     );
   }
 
+  Map<String, dynamic> toApiJson() {
+    return {
+      'name': name, // Laravel attend 'name', pas 'TEA_NAME'
+      if (image != null && image!.isNotEmpty) 'image': image,
+      // Ne pas envoyer USE_ID ici, l'API le prend du token
+    };
+  }
+
   /// Convertit l'instance Team en Map pour JSON (envoi API)
   Map<String, dynamic> toJson() {
     return {
@@ -36,16 +44,6 @@ class Team {
       if (image != null) 'TEA_IMAGE': image,
       // N'inclure TER_IS_VALID que si non-null
       if (isValid != null) 'TER_IS_VALID': isValid! ? 1 : 0,
-    };
-  }
-
-  /// Version alternative sans TER_IS_VALID (pour création de team seule)
-  Map<String, dynamic> toApiJson() {
-    return {
-      'TEA_ID': id,
-      'USE_ID': managerId,
-      'TEA_NAME': name,
-      if (image != null) 'TEA_IMAGE': image,
     };
   }
 }

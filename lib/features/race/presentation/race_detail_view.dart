@@ -41,12 +41,8 @@ class _RaceDetailViewState extends State<RaceDetailView> {
     final repository = Provider.of<RacesRepository>(context, listen: false);
     _raceFuture = repository.getRaceById(widget.raceId);
     _teamsCountFuture = repository.getRegisteredTeamsCount(widget.raceId);
-
-    // Initialiser le repository des équipes
-    _teamRepository = TeamRepositoryImpl(
-      localSources: TeamLocalSources(),
-      apiSources: TeamApiSources(baseUrl: AppConfig.apiBaseUrl),
-    );
+    final teamRepository = Provider.of<TeamRepository>(context, listen: false);
+    _teamRepository = teamRepository;
   }
 
   @override
