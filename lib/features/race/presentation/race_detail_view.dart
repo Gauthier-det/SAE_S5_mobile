@@ -77,8 +77,8 @@ class _RaceDetailViewState extends State<RaceDetailView> {
               SliverAppBar(
                 expandedHeight: 140,
                 pinned: true,
-                backgroundColor: race.type == 'Compétitif' 
-                    ? const Color(0xFFFF6B00) 
+                backgroundColor: race.type == 'Compétitif'
+                    ? const Color(0xFFFF6B00)
                     : const Color(0xFF52B788),
                 flexibleSpace: FlexibleSpaceBar(
                   background: RaceHeader(race: race),
@@ -105,9 +105,8 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                             context,
                             listen: false,
                           );
-                          _teamsCountFuture = repository.getRegisteredTeamsCount(
-                            widget.raceId,
-                          );
+                          _teamsCountFuture = repository
+                              .getRegisteredTeamsCount(widget.raceId);
                         });
                       });
                     },
@@ -200,17 +199,11 @@ class _RaceDetailViewState extends State<RaceDetailView> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
         ),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -266,10 +259,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
             icon: const Icon(Icons.groups),
             label: Text(
               'VOIR LES ÉQUIPES ($registeredTeams/${race.maxTeams})',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         );
@@ -351,10 +341,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
             icon: Icon(buttonIcon),
             label: Text(
               buttonText,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         );
@@ -363,7 +350,6 @@ class _RaceDetailViewState extends State<RaceDetailView> {
   }
 
   String _getRaceName(Race race) {
-    // Construire un nom descriptif pour la course
-    return 'Course ${race.type} - ${race.difficulty}';
+    return race.name;
   }
 }

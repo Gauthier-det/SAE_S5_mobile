@@ -32,7 +32,8 @@ class RaceCreationView extends StatefulWidget {
 
 class _RaceCreationViewState extends State<RaceCreationView> {
   final _formKey = GlobalKey<FormState>();
-  
+
+  final _nameController = TextEditingController();
   final _minParticipantsController = TextEditingController(text: '1');
   final _maxParticipantsController = TextEditingController(text: '200');
   final _minTeamsController = TextEditingController(text: '1');
@@ -56,7 +57,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   List<User> _clubMembers = [];
   List<Category> _categories = [];
   Map<int, double> _categoryPrices = {};
-  
+
   bool _isLoading = false;
   bool _isLoadingData = true;
 
@@ -68,25 +69,28 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
   Future<void> _loadData() async {
     try {
-      final clubRepository = Provider.of<ClubRepository>(context, listen: false);
+      final clubRepository = Provider.of<ClubRepository>(
+        context,
+        listen: false,
+      );
       final db = await DatabaseHelper.database;
-      
+
       final raidData = await db.query(
         'SAN_RAIDS',
         where: 'RAI_ID = ?',
         whereArgs: [widget.raid.id],
         limit: 1,
       );
-      
+
       if (raidData.isEmpty) throw Exception('Raid introuvable');
-      
+
       final clubId = raidData.first['CLU_ID'] as int;
-      
+
       final results = await Future.wait([
         clubRepository.getClubMembers(clubId),
         widget.repository.getCategories(),
       ]);
-      
+
       if (mounted) {
         setState(() {
           _clubMembers = results[0] as List<User>;
@@ -97,9 +101,9 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingData = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
         Navigator.pop(context);
       }
     }
@@ -107,6 +111,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _minParticipantsController.dispose();
     _maxParticipantsController.dispose();
     _minTeamsController.dispose();
@@ -139,6 +144,23 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     RaidInfoBanner(raid: widget.raid),
                     const SizedBox(height: 24),
 
+                    // Nom de la course
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom de la course *',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.flag),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Veuillez saisir un nom';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
                     // Gestionnaire
                     DropdownButtonFormField<User>(
                       value: _selectedManager,
@@ -153,9 +175,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                                 child: Text(m.fullName),
                               ))
                           .toList(),
-                      onChanged: (value) => setState(() => _selectedManager = value),
-                      validator: (value) => value == null 
-                          ? 'Veuillez sélectionner un gestionnaire' 
+                      onChanged: (value) =>
+                          setState(() => _selectedManager = value),
+                      validator: (value) => value == null
+                          ? 'Veuillez sélectionner un gestionnaire'
                           : null,
                     ),
                     const SizedBox(height: 24),
@@ -164,18 +187,18 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     Text(
                       'Dates de la course',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     RaceFormDateField(
                       label: 'Date de début *',
                       date: _startDate,
                       onTap: () => _selectDate(isStart: true),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     RaceFormDateField(
                       label: 'Date de fin *',
                       date: _endDate,
@@ -305,8 +328,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                                 child: Text(s),
                               ))
                           .toList(),
-                      onChanged: (value) => setState(() => _selectedSex = value),
-                      validator: (value) => value == null ? 'Obligatoire' : null,
+                      onChanged: (value) =>
+                          setState(() => _selectedSex = value),
+                      validator: (value) =>
+                          value == null ? 'Obligatoire' : null,
                     ),
                     const SizedBox(height: 24),
 
@@ -332,7 +357,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     CategoryPriceSelector(
                       categories: _categories,
                       initialPrices: _categoryPrices,
-                      onChanged: (prices) => setState(() => _categoryPrices = prices),
+                      onChanged: (prices) =>
+                          setState(() => _categoryPrices = prices),
                     ),
                     const SizedBox(height: 32),
 
@@ -346,7 +372,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                       ),
                       child: const Text(
                         'CRÉER LA COURSE',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -359,14 +388,16 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   Future<void> _selectDate({required bool isStart}) async {
     final initialDate = isStart
         ? (widget.raid.timeStart.isAfter(DateTime.now())
-            ? widget.raid.timeStart
-            : DateTime.now())
+              ? widget.raid.timeStart
+              : DateTime.now())
         : (_startDate ?? widget.raid.timeStart);
 
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: isStart ? widget.raid.timeStart : (_startDate ?? widget.raid.timeStart),
+      firstDate: isStart
+          ? widget.raid.timeStart
+          : (_startDate ?? widget.raid.timeStart),
       lastDate: widget.raid.timeEnd,
     );
 
@@ -452,6 +483,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
       final race = Race(
         id: 0,
+        name: _nameController.text.trim(),
         userId: _selectedManager!.id,
         raidId: widget.raid.id,
         startDate: _startDate!,
@@ -529,8 +561,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

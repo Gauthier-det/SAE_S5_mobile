@@ -5,38 +5,128 @@ class SeedData {
   static Future<void> seedDatabase(Database db) async {
     // Vérifier si la base contient déjà des données
     final count = Sqflite.firstIntValue(
-      await db.rawQuery('SELECT COUNT(*) FROM SAN_RAIDS')
+      await db.rawQuery('SELECT COUNT(*) FROM SAN_RAIDS'),
     );
-    
+
     if (count != null && count > 0) {
       print('Database already seeded, skipping...');
       return;
     }
-    
+
     print('Seeding database with sample data...');
-    
+
     // 1. Adresses
     final addresses = [
-      {'ADD_ID': 1, 'ADD_POSTAL_CODE': 50100, 'ADD_CITY': 'Cherbourg-en-Cotentin', 'ADD_STREET_NAME': 'Rue des Marins', 'ADD_STREET_NUMBER': '12'},
-      {'ADD_ID': 2, 'ADD_POSTAL_CODE': 50100, 'ADD_CITY': 'Alençon', 'ADD_STREET_NAME': 'Rue Victor Hugo', 'ADD_STREET_NUMBER': '5'},
-      {'ADD_ID': 3, 'ADD_POSTAL_CODE': 14000, 'ADD_CITY': 'Caen', 'ADD_STREET_NAME': 'Avenue des Sports', 'ADD_STREET_NUMBER': '7'},
-      {'ADD_ID': 4, 'ADD_POSTAL_CODE': 76790, 'ADD_CITY': 'Étretat', 'ADD_STREET_NAME': 'Rue des Falaises', 'ADD_STREET_NUMBER': '3'},
-      {'ADD_ID': 5, 'ADD_POSTAL_CODE': 75010, 'ADD_CITY': 'Paris', 'ADD_STREET_NAME': 'Rue de Paris', 'ADD_STREET_NUMBER': '21'},
-      {'ADD_ID': 6, 'ADD_POSTAL_CODE': 75009, 'ADD_CITY': 'Paris', 'ADD_STREET_NAME': 'Rue Lafayette', 'ADD_STREET_NUMBER': '14'},
-      {'ADD_ID': 7, 'ADD_POSTAL_CODE': 50110, 'ADD_CITY': 'Tourlaville', 'ADD_STREET_NAME': 'Rue des Mielles', 'ADD_STREET_NUMBER': '10'},
-      {'ADD_ID': 8, 'ADD_POSTAL_CODE': 50760, 'ADD_CITY': 'Barfleur', 'ADD_STREET_NAME': 'Rue du Port', 'ADD_STREET_NUMBER': '3'},
-      {'ADD_ID': 9, 'ADD_POSTAL_CODE': 76000, 'ADD_CITY': 'Rouen', 'ADD_STREET_NAME': 'Rue des Arts', 'ADD_STREET_NUMBER': '11'},
-      {'ADD_ID': 10, 'ADD_POSTAL_CODE': 76600, 'ADD_CITY': 'Le Havre', 'ADD_STREET_NAME': 'Rue de la République', 'ADD_STREET_NUMBER': '6'},
-      {'ADD_ID': 11, 'ADD_POSTAL_CODE': 14100, 'ADD_CITY': 'Lisieux', 'ADD_STREET_NAME': 'Rue des Lilas', 'ADD_STREET_NUMBER': '9'},
-      {'ADD_ID': 12, 'ADD_POSTAL_CODE': 14400, 'ADD_CITY': 'Bayeux', 'ADD_STREET_NAME': 'Rue des Jardins', 'ADD_STREET_NUMBER': '3'},
-      {'ADD_ID': 13, 'ADD_POSTAL_CODE': 14510, 'ADD_CITY': 'Houlgate', 'ADD_STREET_NAME': 'Rue du Casino', 'ADD_STREET_NUMBER': '4'},
-      {'ADD_ID': 14, 'ADD_POSTAL_CODE': 50120, 'ADD_CITY': 'Équeurdreville', 'ADD_STREET_NAME': 'Rue des Poètes', 'ADD_STREET_NUMBER': '2'},
-      {'ADD_ID': 15, 'ADD_POSTAL_CODE': 50200, 'ADD_CITY': 'Coutances', 'ADD_STREET_NAME': 'Rue des Tamaris', 'ADD_STREET_NUMBER': '5'},
+      {
+        'ADD_ID': 1,
+        'ADD_POSTAL_CODE': 50100,
+        'ADD_CITY': 'Cherbourg-en-Cotentin',
+        'ADD_STREET_NAME': 'Rue des Marins',
+        'ADD_STREET_NUMBER': '12',
+      },
+      {
+        'ADD_ID': 2,
+        'ADD_POSTAL_CODE': 50100,
+        'ADD_CITY': 'Alençon',
+        'ADD_STREET_NAME': 'Rue Victor Hugo',
+        'ADD_STREET_NUMBER': '5',
+      },
+      {
+        'ADD_ID': 3,
+        'ADD_POSTAL_CODE': 14000,
+        'ADD_CITY': 'Caen',
+        'ADD_STREET_NAME': 'Avenue des Sports',
+        'ADD_STREET_NUMBER': '7',
+      },
+      {
+        'ADD_ID': 4,
+        'ADD_POSTAL_CODE': 76790,
+        'ADD_CITY': 'Étretat',
+        'ADD_STREET_NAME': 'Rue des Falaises',
+        'ADD_STREET_NUMBER': '3',
+      },
+      {
+        'ADD_ID': 5,
+        'ADD_POSTAL_CODE': 75010,
+        'ADD_CITY': 'Paris',
+        'ADD_STREET_NAME': 'Rue de Paris',
+        'ADD_STREET_NUMBER': '21',
+      },
+      {
+        'ADD_ID': 6,
+        'ADD_POSTAL_CODE': 75009,
+        'ADD_CITY': 'Paris',
+        'ADD_STREET_NAME': 'Rue Lafayette',
+        'ADD_STREET_NUMBER': '14',
+      },
+      {
+        'ADD_ID': 7,
+        'ADD_POSTAL_CODE': 50110,
+        'ADD_CITY': 'Tourlaville',
+        'ADD_STREET_NAME': 'Rue des Mielles',
+        'ADD_STREET_NUMBER': '10',
+      },
+      {
+        'ADD_ID': 8,
+        'ADD_POSTAL_CODE': 50760,
+        'ADD_CITY': 'Barfleur',
+        'ADD_STREET_NAME': 'Rue du Port',
+        'ADD_STREET_NUMBER': '3',
+      },
+      {
+        'ADD_ID': 9,
+        'ADD_POSTAL_CODE': 76000,
+        'ADD_CITY': 'Rouen',
+        'ADD_STREET_NAME': 'Rue des Arts',
+        'ADD_STREET_NUMBER': '11',
+      },
+      {
+        'ADD_ID': 10,
+        'ADD_POSTAL_CODE': 76600,
+        'ADD_CITY': 'Le Havre',
+        'ADD_STREET_NAME': 'Rue de la République',
+        'ADD_STREET_NUMBER': '6',
+      },
+      {
+        'ADD_ID': 11,
+        'ADD_POSTAL_CODE': 14100,
+        'ADD_CITY': 'Lisieux',
+        'ADD_STREET_NAME': 'Rue des Lilas',
+        'ADD_STREET_NUMBER': '9',
+      },
+      {
+        'ADD_ID': 12,
+        'ADD_POSTAL_CODE': 14400,
+        'ADD_CITY': 'Bayeux',
+        'ADD_STREET_NAME': 'Rue des Jardins',
+        'ADD_STREET_NUMBER': '3',
+      },
+      {
+        'ADD_ID': 13,
+        'ADD_POSTAL_CODE': 14510,
+        'ADD_CITY': 'Houlgate',
+        'ADD_STREET_NAME': 'Rue du Casino',
+        'ADD_STREET_NUMBER': '4',
+      },
+      {
+        'ADD_ID': 14,
+        'ADD_POSTAL_CODE': 50120,
+        'ADD_CITY': 'Équeurdreville',
+        'ADD_STREET_NAME': 'Rue des Poètes',
+        'ADD_STREET_NUMBER': '2',
+      },
+      {
+        'ADD_ID': 15,
+        'ADD_POSTAL_CODE': 50200,
+        'ADD_CITY': 'Coutances',
+        'ADD_STREET_NAME': 'Rue des Tamaris',
+        'ADD_STREET_NUMBER': '5',
+      },
     ];
     for (var addr in addresses) {
       await db.insert('SAN_ADDRESSES', addr);
     }
-    
+
     // 2. Catégories
     final categories = [
       {'CAT_ID': 1, 'CAT_LABEL': 'Mineur'},
@@ -46,7 +136,7 @@ class SeedData {
     for (var cat in categories) {
       await db.insert('SAN_CATEGORIES', cat);
     }
-    
+
     final users = [
       {'USE_ID': 1, 'ADD_ID': 1, 'CLU_ID': null, 'USE_MAIL': 'admin.site@example.com', 'USE_PASSWORD': 'pwd123', 'USE_NAME': 'Admin', 'USE_LAST_NAME': 'Site', 'USE_BIRTHDATE': '1980-01-01', 'USE_PHONE_NUMBER': 610000001, 'USE_LICENCE_NUMBER': null, 'USE_GENDER': 'Autre', 'USE_MEMBERSHIP_DATE': null},
       {'USE_ID': 2, 'ADD_ID': 2, 'CLU_ID': null, 'USE_MAIL': 'marc.marquez@example.com', 'USE_PASSWORD': 'pwd123', 'USE_NAME': 'Marc', 'USE_LAST_NAME': 'Marquez', 'USE_BIRTHDATE': '1985-05-10', 'USE_PHONE_NUMBER': 610000002, 'USE_LICENCE_NUMBER': 100002, 'USE_GENDER': 'Homme', 'USE_MEMBERSHIP_DATE': '2021-01-01'},
@@ -64,7 +154,7 @@ class SeedData {
     for (var user in users) {
       await db.insert('SAN_USERS', user);
     }
-    
+
     // 4. Clubs
     final clubs = [
       {'CLU_ID': 1, 'USE_ID': 2, 'ADD_ID': 1, 'CLU_NAME': 'CO-DE'},
@@ -73,11 +163,13 @@ class SeedData {
     for (var club in clubs) {
       await db.insert('SAN_CLUBS', club);
     }
-    
+
     // 5. Mettre à jour CLU_ID des users
     await db.update('SAN_USERS', {'CLU_ID': 1}, where: 'USE_ID IN (2,4,7,8,9)');
-    await db.update('SAN_USERS', {'CLU_ID': 2}, where: 'USE_ID IN (3,5,6,10,11)');
-    
+    await db.update('SAN_USERS', {
+      'CLU_ID': 2,
+    }, where: 'USE_ID IN (3,5,6,10,11)');
+
     // 6. Roles
     final roles = [
       {'ROL_ID': 1, 'ROL_NAME': 'Coureur'},
@@ -86,7 +178,7 @@ class SeedData {
     for (var role in roles) {
       await db.insert('SAN_ROLES', role);
     }
-    
+
     // 7. Roles_Users
     final rolesUsers = [
       {'USE_ID': 1, 'ROL_ID': 2}, // admin
@@ -94,7 +186,9 @@ class SeedData {
       {'USE_ID': 4, 'ROL_ID': 1}, {'USE_ID': 5, 'ROL_ID': 1},
       {'USE_ID': 6, 'ROL_ID': 1},
       {'USE_ID': 7, 'ROL_ID': 1}, {'USE_ID': 8, 'ROL_ID': 1},
-      {'USE_ID': 9, 'ROL_ID': 1}, {'USE_ID': 10, 'ROL_ID': 1}, {'USE_ID': 11, 'ROL_ID': 1},
+      {'USE_ID': 9, 'ROL_ID': 1},
+      {'USE_ID': 10, 'ROL_ID': 1},
+      {'USE_ID': 11, 'ROL_ID': 1},
       {'USE_ID': 12, 'ROL_ID': 1},
     ];
     for (var ru in rolesUsers) {
@@ -104,12 +198,16 @@ class SeedData {
     // 8. Raids (avec RAI_NB_RACES)
     final raids = [
       {
-        'RAI_ID': 1, 'CLU_ID': 1, 'ADD_ID': 7, 'USE_ID': 4,
+        'RAI_ID': 1,
+        'CLU_ID': 1,
+        'ADD_ID': 7,
+        'USE_ID': 4,
         'RAI_NAME': 'Raid Cotentin 2026',
         'RAI_MAIL': 'contact@raidcotentin.fr',
         'RAI_PHONE_NUMBER': null,
         'RAI_WEB_SITE': 'https://raidcotentin.fr',
-        'RAI_IMAGE': 'https://woody.cloudly.space/app/uploads/villarddelanscorrencon/2022/06/thumbs/course-orientation-ete-8-claire-szymanek-640x360.jpg',
+        'RAI_IMAGE':
+            'https://woody.cloudly.space/app/uploads/villarddelanscorrencon/2022/06/thumbs/course-orientation-ete-8-claire-szymanek-640x360.jpg',
         'RAI_TIME_START': '2025-10-10 08:00:00',
         'RAI_TIME_END': '2025-10-10 20:00:00',
         'RAI_REGISTRATION_START': '2025-09-01 00:00:00',
@@ -117,12 +215,16 @@ class SeedData {
         'RAI_NB_RACES': 5, 
       },
       {
-        'RAI_ID': 2, 'CLU_ID': 2, 'ADD_ID': 4, 'USE_ID': 5,
+        'RAI_ID': 2,
+        'CLU_ID': 2,
+        'ADD_ID': 4,
+        'USE_ID': 5,
         'RAI_NAME': 'Raid de Vanves 2025',
         'RAI_MAIL': 'contact@trailvanves.fr',
         'RAI_PHONE_NUMBER': null,
         'RAI_WEB_SITE': 'https://trailfalaises.fr',
-        'RAI_IMAGE': 'https://www.cursan.fr/wp-content/uploads/2022/12/Course-dorientation.jpg',
+        'RAI_IMAGE':
+            'https://www.cursan.fr/wp-content/uploads/2022/12/Course-dorientation.jpg',
         'RAI_TIME_START': '2026-04-20 07:30:00',
         'RAI_TIME_END': '2026-04-20 19:00:00',
         'RAI_REGISTRATION_START': '2025-12-01 00:00:00',
@@ -144,82 +246,269 @@ class SeedData {
     for (var race in races) {
       await db.insert('SAN_RACES', race);
     }
-    
+
     // 10. Categories_Races
     final categoriesRaces = [
-      {'RAC_ID': 1, 'CAT_ID': 1, 'CAR_PRICE': 8.00}, {'RAC_ID': 1, 'CAT_ID': 2, 'CAR_PRICE': 12.00}, {'RAC_ID': 1, 'CAT_ID': 3, 'CAR_PRICE': 7.00},
-      {'RAC_ID': 2, 'CAT_ID': 1, 'CAR_PRICE': 4.00}, {'RAC_ID': 2, 'CAT_ID': 2, 'CAR_PRICE': 7.00}, {'RAC_ID': 2, 'CAT_ID': 3, 'CAR_PRICE': 4.00},
-      {'RAC_ID': 3, 'CAT_ID': 1, 'CAR_PRICE': 10.00}, {'RAC_ID': 3, 'CAT_ID': 2, 'CAR_PRICE': 15.00}, {'RAC_ID': 3, 'CAT_ID': 3, 'CAR_PRICE': 7.50},
-      {'RAC_ID': 4, 'CAT_ID': 1, 'CAR_PRICE': 6.00}, {'RAC_ID': 4, 'CAT_ID': 2, 'CAR_PRICE': 8.00}, {'RAC_ID': 4, 'CAT_ID': 3, 'CAR_PRICE': 6.00},
+      {'RAC_ID': 1, 'CAT_ID': 1, 'CAR_PRICE': 8.00},
+      {'RAC_ID': 1, 'CAT_ID': 2, 'CAR_PRICE': 12.00},
+      {'RAC_ID': 1, 'CAT_ID': 3, 'CAR_PRICE': 7.00},
+      {'RAC_ID': 2, 'CAT_ID': 1, 'CAR_PRICE': 4.00},
+      {'RAC_ID': 2, 'CAT_ID': 2, 'CAR_PRICE': 7.00},
+      {'RAC_ID': 2, 'CAT_ID': 3, 'CAR_PRICE': 4.00},
+      {'RAC_ID': 3, 'CAT_ID': 1, 'CAR_PRICE': 10.00},
+      {'RAC_ID': 3, 'CAT_ID': 2, 'CAR_PRICE': 15.00},
+      {'RAC_ID': 3, 'CAT_ID': 3, 'CAR_PRICE': 7.50},
+      {'RAC_ID': 4, 'CAT_ID': 1, 'CAR_PRICE': 6.00},
+      {'RAC_ID': 4, 'CAT_ID': 2, 'CAR_PRICE': 8.00},
+      {'RAC_ID': 4, 'CAT_ID': 3, 'CAR_PRICE': 6.00},
     ];
     for (var cr in categoriesRaces) {
       await db.insert('SAN_CATEGORIES_RACES', cr);
     }
-    
+
     // 11. Teams
     final teams = [
       {'TEA_ID': 1, 'USE_ID': 2, 'TEA_NAME': 'Lunatic', 'TEA_IMAGE': null},
       {'TEA_ID': 2, 'USE_ID': 7, 'TEA_NAME': 'Arsenik', 'TEA_IMAGE': null},
-      {'TEA_ID': 3, 'USE_ID': 10, 'TEA_NAME': 'Arctic Mokeys', 'TEA_IMAGE': null},
+      {
+        'TEA_ID': 3,
+        'USE_ID': 10,
+        'TEA_NAME': 'Arctic Mokeys',
+        'TEA_IMAGE': null,
+      },
       {'TEA_ID': 4, 'USE_ID': 12, 'TEA_NAME': 'Pink Floyd', 'TEA_IMAGE': null},
     ];
     for (var team in teams) {
       await db.insert('SAN_TEAMS', team);
     }
-    
+
     // 12. Users_Teams
     final usersTeams = [
-      {'USE_ID': 7, 'TEA_ID': 1}, {'USE_ID': 8, 'TEA_ID': 1}, {'USE_ID': 9, 'TEA_ID': 1},
-      {'USE_ID': 10, 'TEA_ID': 2}, {'USE_ID': 11, 'TEA_ID': 2},
-      {'USE_ID': 7, 'TEA_ID': 3}, {'USE_ID': 8, 'TEA_ID': 3}, {'USE_ID': 9, 'TEA_ID': 3},
-      {'USE_ID': 10, 'TEA_ID': 4}, {'USE_ID': 3, 'TEA_ID': 4},
+      {'USE_ID': 7, 'TEA_ID': 1},
+      {'USE_ID': 8, 'TEA_ID': 1},
+      {'USE_ID': 9, 'TEA_ID': 1},
+      {'USE_ID': 10, 'TEA_ID': 2},
+      {'USE_ID': 11, 'TEA_ID': 2},
+      {'USE_ID': 7, 'TEA_ID': 3},
+      {'USE_ID': 8, 'TEA_ID': 3},
+      {'USE_ID': 9, 'TEA_ID': 3},
+      {'USE_ID': 10, 'TEA_ID': 4},
+      {'USE_ID': 3, 'TEA_ID': 4},
     ];
     for (var ut in usersTeams) {
       await db.insert('SAN_USERS_TEAMS', ut);
     }
-    
+
     // 13. Teams_Races
     final teamsRaces = [
-      {'TEA_ID': 1, 'RAC_ID': 1, 'TER_TIME': '02:45:30', 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 101},
-      {'TEA_ID': 3, 'RAC_ID': 1, 'TER_TIME': '01:55:00', 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 402},
-      {'TEA_ID': 2, 'RAC_ID': 2, 'TER_TIME': '02:50:10', 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 102},
-      {'TEA_ID': 4, 'RAC_ID': 2, 'TER_TIME': '02:45:12', 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 501},
-      {'TEA_ID': 1, 'RAC_ID': 3, 'TER_TIME': null, 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 103},
-      {'TEA_ID': 3, 'RAC_ID': 3, 'TER_TIME': null, 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 502},
-      {'TEA_ID': 2, 'RAC_ID': 4, 'TER_TIME': null, 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 201},
-      {'TEA_ID': 4, 'RAC_ID': 4, 'TER_TIME': null, 'TER_IS_VALID': 1, 'TER_RACE_NUMBER': 601},
+      {
+        'TEA_ID': 1,
+        'RAC_ID': 1,
+        'TER_TIME': '02:45:30',
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 101,
+      },
+      {
+        'TEA_ID': 3,
+        'RAC_ID': 1,
+        'TER_TIME': '01:55:00',
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 402,
+      },
+      {
+        'TEA_ID': 2,
+        'RAC_ID': 2,
+        'TER_TIME': '02:50:10',
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 102,
+      },
+      {
+        'TEA_ID': 4,
+        'RAC_ID': 2,
+        'TER_TIME': '02:45:12',
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 501,
+      },
+      {
+        'TEA_ID': 1,
+        'RAC_ID': 3,
+        'TER_TIME': null,
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 103,
+      },
+      {
+        'TEA_ID': 3,
+        'RAC_ID': 3,
+        'TER_TIME': null,
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 502,
+      },
+      {
+        'TEA_ID': 2,
+        'RAC_ID': 4,
+        'TER_TIME': null,
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 201,
+      },
+      {
+        'TEA_ID': 4,
+        'RAC_ID': 4,
+        'TER_TIME': null,
+        'TER_IS_VALID': 1,
+        'TER_RACE_NUMBER': 601,
+      },
     ];
     for (var tr in teamsRaces) {
       await db.insert('SAN_TEAMS_RACES', tr);
     }
-    
+
     // 14. Users_Races (avec USR_PPS_FORM déplacé ici)
     final usersRaces = [
-      {'USE_ID': 7, 'RAC_ID': 1, 'USR_CHIP_NUMBER': 1001, 'USR_TIME': 165.50, 'USR_PPS_FORM': null},
-      {'USE_ID': 8, 'RAC_ID': 1, 'USR_CHIP_NUMBER': 1002, 'USR_TIME': 170.20, 'USR_PPS_FORM': null},
-      {'USE_ID': 9, 'RAC_ID': 1, 'USR_CHIP_NUMBER': 1001, 'USR_TIME': 165.50, 'USR_PPS_FORM': null},
-      {'USE_ID': 10, 'RAC_ID': 1, 'USR_CHIP_NUMBER': 1002, 'USR_TIME': 170.20, 'USR_PPS_FORM': null},
-      {'USE_ID': 11, 'RAC_ID': 1, 'USR_CHIP_NUMBER': 1001, 'USR_TIME': 165.50, 'USR_PPS_FORM': null},
-      {'USE_ID': 12, 'RAC_ID': 1, 'USR_CHIP_NUMBER': 1002, 'USR_TIME': 170.20, 'USR_PPS_FORM': 'pps_chloe_race1.pdf'},
-      {'USE_ID': 7, 'RAC_ID': 2, 'USR_CHIP_NUMBER': 1003, 'USR_TIME': 295.56, 'USR_PPS_FORM': null},
-      {'USE_ID': 8, 'RAC_ID': 2, 'USR_CHIP_NUMBER': 1004, 'USR_TIME': 310.30, 'USR_PPS_FORM': null},
-      {'USE_ID': 10, 'RAC_ID': 2, 'USR_CHIP_NUMBER': 1003, 'USR_TIME': 295.56, 'USR_PPS_FORM': null},
-      {'USE_ID': 3, 'RAC_ID': 2, 'USR_CHIP_NUMBER': 1004, 'USR_TIME': 310.30, 'USR_PPS_FORM': null},
-      {'USE_ID': 7, 'RAC_ID': 3, 'USR_CHIP_NUMBER': 1005, 'USR_TIME': 185.29, 'USR_PPS_FORM': null},
-      {'USE_ID': 8, 'RAC_ID': 3, 'USR_CHIP_NUMBER': 1006, 'USR_TIME': 190.10, 'USR_PPS_FORM': null},
-      {'USE_ID': 9, 'RAC_ID': 3, 'USR_CHIP_NUMBER': 1005, 'USR_TIME': 185.29, 'USR_PPS_FORM': null},
-      {'USE_ID': 10, 'RAC_ID': 3, 'USR_CHIP_NUMBER': 1006, 'USR_TIME': 190.10, 'USR_PPS_FORM': null},
-      {'USE_ID': 11, 'RAC_ID': 3, 'USR_CHIP_NUMBER': 1005, 'USR_TIME': 185.29, 'USR_PPS_FORM': null},
-      {'USE_ID': 12, 'RAC_ID': 3, 'USR_CHIP_NUMBER': 1006, 'USR_TIME': 190.10, 'USR_PPS_FORM': 'pps_chloe_race3.pdf'},
-      {'USE_ID': 7, 'RAC_ID': 4, 'USR_CHIP_NUMBER': null, 'USR_TIME': 120.50, 'USR_PPS_FORM': null},
-      {'USE_ID': 8, 'RAC_ID': 4, 'USR_CHIP_NUMBER': null, 'USR_TIME': 118.40, 'USR_PPS_FORM': null},
-      {'USE_ID': 10, 'RAC_ID': 4, 'USR_CHIP_NUMBER': null, 'USR_TIME': 120.50, 'USR_PPS_FORM': null},
-      {'USE_ID': 3, 'RAC_ID': 4, 'USR_CHIP_NUMBER': null, 'USR_TIME': 118.40, 'USR_PPS_FORM': null},
+      {
+        'USE_ID': 7,
+        'RAC_ID': 1,
+        'USR_CHIP_NUMBER': 1001,
+        'USR_TIME': 165.50,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 8,
+        'RAC_ID': 1,
+        'USR_CHIP_NUMBER': 1002,
+        'USR_TIME': 170.20,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 9,
+        'RAC_ID': 1,
+        'USR_CHIP_NUMBER': 1001,
+        'USR_TIME': 165.50,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 10,
+        'RAC_ID': 1,
+        'USR_CHIP_NUMBER': 1002,
+        'USR_TIME': 170.20,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 11,
+        'RAC_ID': 1,
+        'USR_CHIP_NUMBER': 1001,
+        'USR_TIME': 165.50,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 12,
+        'RAC_ID': 1,
+        'USR_CHIP_NUMBER': 1002,
+        'USR_TIME': 170.20,
+        'USR_PPS_FORM': 'pps_chloe_race1.pdf',
+      },
+      {
+        'USE_ID': 7,
+        'RAC_ID': 2,
+        'USR_CHIP_NUMBER': 1003,
+        'USR_TIME': 295.56,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 8,
+        'RAC_ID': 2,
+        'USR_CHIP_NUMBER': 1004,
+        'USR_TIME': 310.30,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 10,
+        'RAC_ID': 2,
+        'USR_CHIP_NUMBER': 1003,
+        'USR_TIME': 295.56,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 3,
+        'RAC_ID': 2,
+        'USR_CHIP_NUMBER': 1004,
+        'USR_TIME': 310.30,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 7,
+        'RAC_ID': 3,
+        'USR_CHIP_NUMBER': 1005,
+        'USR_TIME': 185.29,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 8,
+        'RAC_ID': 3,
+        'USR_CHIP_NUMBER': 1006,
+        'USR_TIME': 190.10,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 9,
+        'RAC_ID': 3,
+        'USR_CHIP_NUMBER': 1005,
+        'USR_TIME': 185.29,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 10,
+        'RAC_ID': 3,
+        'USR_CHIP_NUMBER': 1006,
+        'USR_TIME': 190.10,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 11,
+        'RAC_ID': 3,
+        'USR_CHIP_NUMBER': 1005,
+        'USR_TIME': 185.29,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 12,
+        'RAC_ID': 3,
+        'USR_CHIP_NUMBER': 1006,
+        'USR_TIME': 190.10,
+        'USR_PPS_FORM': 'pps_chloe_race3.pdf',
+      },
+      {
+        'USE_ID': 7,
+        'RAC_ID': 4,
+        'USR_CHIP_NUMBER': null,
+        'USR_TIME': 120.50,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 8,
+        'RAC_ID': 4,
+        'USR_CHIP_NUMBER': null,
+        'USR_TIME': 118.40,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 10,
+        'RAC_ID': 4,
+        'USR_CHIP_NUMBER': null,
+        'USR_TIME': 120.50,
+        'USR_PPS_FORM': null,
+      },
+      {
+        'USE_ID': 3,
+        'RAC_ID': 4,
+        'USR_CHIP_NUMBER': null,
+        'USR_TIME': 118.40,
+        'USR_PPS_FORM': null,
+      },
     ];
     for (var ur in usersRaces) {
       await db.insert('SAN_USERS_RACES', ur);
     }
-    
+
     print('Database seeded successfully! 2 raids, 4 races, 12 users, 4 teams.');
   }
 }

@@ -1,8 +1,8 @@
-// lib/features/raid/presentation/raid_detail_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sae5_g13_mobile/core/database/database_helper.dart';
+
 import 'package:sae5_g13_mobile/features/auth/presentation/providers/auth_provider.dart';
+
 import 'package:sae5_g13_mobile/features/race/domain/race_repository.dart';
 import 'package:sae5_g13_mobile/features/race/presentation/race_creation_view.dart';
 import 'package:sae5_g13_mobile/features/raid/domain/raid.dart';
@@ -69,10 +69,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   child: RaidInfoSection(raid: raid),
                 ),
                 const Divider(height: 32),
-                RaceListWidget(
-                  raid: raid,
-                  raidId: widget.raidId,
-                ),
+                RaceListWidget(raid: raid, raidId: widget.raidId),
                 const SizedBox(height: 80),
               ],
             ),
@@ -120,10 +117,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
+                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
               ),
             ),
           ),
@@ -165,7 +159,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
   Widget _badge(String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -184,7 +181,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-    Widget _buildFab(BuildContext context, Raid raid) {
+  Widget _buildFab(BuildContext context, Raid raid) {
     // Raid terminé → Rien
     if (DateTime.now().isAfter(raid.timeEnd)) {
       return const SizedBox.shrink();
@@ -210,7 +207,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
             // ✅ Limite atteinte → Badge rouge
             if (isLimitReached) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(24),
@@ -250,7 +250,10 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   MaterialPageRoute(
                     builder: (context) => RaceCreationView(
                       raid: raid,
-                      repository: Provider.of<RacesRepository>(context, listen: false),
+                      repository: Provider.of<RacesRepository>(
+                        context,
+                        listen: false,
+                      ),
                     ),
                   ),
                 );
@@ -269,17 +272,15 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-
-  // ✅ Méthode pour compter les courses
+  // ✅ Méthode pour compter les courses via Repository (API/Local)
   Future<int> _getRaceCount(int raidId) async {
     try {
-      final db = await DatabaseHelper.database;
-      final result = await db.query(
-        'SAN_RACES',
-        where: 'RAI_ID = ?',
-        whereArgs: [raidId],
+      final raceRepository = Provider.of<RacesRepository>(
+        context,
+        listen: false,
       );
-      return result.length;
+      final races = await raceRepository.getRacesByRaidId(raidId);
+      return races.length;
     } catch (_) {
       return 0;
     }
@@ -291,16 +292,11 @@ class _RaidDetailViewState extends State<RaidDetailView> {
       final user = auth.currentUser;
       if (user == null) return false;
 
-      final db = await DatabaseHelper.database;
-      final res = await db.query(
-        'SAN_USERS',
-        where: 'USE_MAIL = ?',
-        whereArgs: [user.email],
-        limit: 1,
-      );
+      final currentUserId = int.tryParse(user.id);
+      if (currentUserId == null) return false;
 
-      if (res.isEmpty) return false;
-      return raid.userId == res.first['USE_ID'];
+      // Vérifier si l'utilisateur est le responsable du raid
+      return raid.userId == currentUserId;
     } catch (_) {
       return false;
     }

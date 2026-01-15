@@ -8,11 +8,7 @@ class RaceCard extends StatelessWidget {
   final Race race;
   final VoidCallback onTap;
 
-  const RaceCard({
-    super.key,
-    required this.race,
-    required this.onTap,
-  });
+  const RaceCard({super.key, required this.race, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +84,16 @@ class RaceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Nom de la course
+                  Text(
+                    race.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1B3022),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
                   // Date et durée
                   Row(
                     children: [
@@ -119,7 +125,8 @@ class RaceCard extends StatelessWidget {
                     future: repository.getRegisteredTeamsCount(race.id),
                     builder: (context, snapshot) {
                       final registeredTeams = snapshot.data ?? 0;
-                      final percentage = (registeredTeams / race.maxTeams * 100).round();
+                      final percentage = (registeredTeams / race.maxTeams * 100)
+                          .round();
                       final isFullyBooked = registeredTeams >= race.maxTeams;
 
                       return Column(
@@ -168,8 +175,8 @@ class RaceCard extends StatelessWidget {
                                 isFullyBooked
                                     ? Colors.red
                                     : percentage > 75
-                                        ? Colors.orange
-                                        : const Color(0xFF52B788),
+                                    ? Colors.orange
+                                    : const Color(0xFF52B788),
                               ),
                             ),
                           ),
@@ -231,8 +238,18 @@ class RaceCard extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final months = [
-      'jan', 'fév', 'mar', 'avr', 'mai', 'juin',
-      'juil', 'août', 'sep', 'oct', 'nov', 'déc'
+      'jan',
+      'fév',
+      'mar',
+      'avr',
+      'mai',
+      'juin',
+      'juil',
+      'août',
+      'sep',
+      'oct',
+      'nov',
+      'déc',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }

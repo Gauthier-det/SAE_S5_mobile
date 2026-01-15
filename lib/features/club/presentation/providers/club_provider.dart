@@ -42,7 +42,7 @@ class ClubProvider extends ChangeNotifier {
   }
 
   /// Create a new club
-  Future<void> createClub({
+  Future<Club> createClub({
     required String name,
     required int responsibleId,
     required int addressId,
@@ -52,7 +52,7 @@ class ClubProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _repository.createClub(
+      final newClub = await _repository.createClub(
         name: name,
         responsibleId: responsibleId,
         addressId: addressId,
@@ -60,6 +60,8 @@ class ClubProvider extends ChangeNotifier {
 
       // Recharger la liste
       await loadClubs();
+
+      return newClub;
     } catch (e) {
       _errorMessage = 'Erreur lors de la création du club: $e';
       debugPrint('Error creating club: $e');

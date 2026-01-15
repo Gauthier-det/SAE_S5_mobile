@@ -113,11 +113,20 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
           name: _nameController.text.trim(),
         );
       } else {
-        await clubProvider.createClub(
+        final newClub = await clubProvider.createClub(
           name: _nameController.text.trim(),
           responsibleId: _selectedResponsible!.id,
           addressId: _selectedAddress!.id!,
         );
+
+        // Assign created club to the responsible user
+        if (mounted) {
+          final userRepository = context.read<UserRepository>();
+          // Mettre jour le CLU_ID de l'utilisateur responsable
+          await userRepository.updateUserFields(_selectedResponsible!.id, {
+            'CLU_ID': newClub.id,
+          });
+        }
       }
 
       if (mounted) {
