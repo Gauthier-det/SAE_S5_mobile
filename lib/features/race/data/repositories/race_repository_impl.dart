@@ -4,17 +4,17 @@ import '../../domain/race_repository.dart';
 import '../../domain/race.dart';
 import '../datasources/race_api_sources.dart';
 import '../datasources/race_local_sources.dart';
-import '../../../../core/services/api_service.dart';
+import '../../../auth/data/datasources/auth_local_sources.dart';
 
 class RacesRepositoryImpl implements RacesRepository {
   final RaceApiSources apiSources;
   final RaceLocalSources localSources;
-  final ApiService? apiService;
+  final AuthLocalSources authLocalSources;
 
   RacesRepositoryImpl({
     required this.apiSources,
     required this.localSources,
-    this.apiService,
+    required this.authLocalSources,
   });
 
   @override
@@ -29,7 +29,22 @@ class RacesRepositoryImpl implements RacesRepository {
 
   @override
   Future<List<Race>> getRacesByRaidId(int raidId) async {
-    return await localSources.getRacesByRaidId(raidId);
+    try {
+      // Récupérer depuis l'API
+      final remoteRaces = await apiSources.getRacesByRaid(raidId);
+
+      // Sauvegarder en local
+      for (var race in remoteRaces) {
+        await localSources.insertRace(race);
+      }
+
+      return remoteRaces;
+    } catch (e) {
+      print('API fetch failed: $e. Falling back to local cache...');
+
+      // Fallback sur le cache local
+      return await localSources.getRacesByRaidId(raidId);
+    }
   }
 
   @override
@@ -41,38 +56,68 @@ class RacesRepositoryImpl implements RacesRepository {
 
   @override
   Future<int> createRace(Race race, Map<int, double> categoryPrices) async {
-    int racRequired;
-    if (race.type == 'Compétitif') {
-      racRequired = 1;
-    } else {
-      racRequired = 0;
+    // Essayer de créer via l'API
+    try {
+      // Récupérer le token et l'injecter
+      final token = authLocalSources.getToken();
+      apiSources.setAuthToken(token);
+
+      final createdRace = await apiSources.createRace(race);
+
+      // Sauvegarder en local
+      await localSources.insertRace(createdRace);
+
+      // Créer les prix par catégorie en local
+      for (var entry in categoryPrices.entries) {
+        await localSources.createRaceCategoryPrice(
+          createdRace.id,
+          entry.key,
+          entry.value,
+        );
+      }
+
+      return createdRace.id;
+    } catch (e) {
+      print('API sync failed, saving locally: $e');
+
+      // Fallback: créer en local uniquement
+      int racRequired;
+      if (race.type == 'Compétitif') {
+        racRequired = 1;
+      } else {
+        racRequired = 0;
+      }
+
+      final raceId = await localSources.createRace({
+        'RAI_ID': race.raidId,
+        'USE_ID': race.userId,
+        'RAC_TYPE': race.type,
+        'RAC_DIFFICULTY': race.difficulty,
+        'RAC_TIME_START': race.startDate.toIso8601String(),
+        'RAC_TIME_END': race.endDate.toIso8601String(),
+        'RAC_MIN_PARTICIPANTS': race.minParticipants,
+        'RAC_MAX_PARTICIPANTS': race.maxParticipants,
+        'RAC_MIN_TEAMS': race.minTeams,
+        'RAC_MAX_TEAMS': race.maxTeams,
+        'RAC_TEAM_MEMBERS': race.teamMembers,
+        'RAC_AGE_MIN': race.ageMin,
+        'RAC_AGE_MIDDLE': race.ageMiddle,
+        'RAC_AGE_MAX': race.ageMax,
+        'RAC_SEX': race.sex,
+        'RAC_CHIP_REQUIRED': racRequired,
+      });
+
+      // Créer les prix par catégorie
+      for (var entry in categoryPrices.entries) {
+        await localSources.createRaceCategoryPrice(
+          raceId,
+          entry.key,
+          entry.value,
+        );
+      }
+
+      return raceId;
     }
-
-    final raceId = await localSources.createRace({
-      'RAI_ID': race.raidId,
-      'USE_ID': race.userId,
-      'RAC_TYPE': race.type,
-      'RAC_DIFFICULTY': race.difficulty,
-      'RAC_TIME_START': race.startDate.toIso8601String(), 
-      'RAC_TIME_END': race.endDate.toIso8601String(),  
-      'RAC_MIN_PARTICIPANTS': race.minParticipants,
-      'RAC_MAX_PARTICIPANTS': race.maxParticipants,
-      'RAC_MIN_TEAMS': race.minTeams,
-      'RAC_MAX_TEAMS': race.maxTeams,
-      'RAC_TEAM_MEMBERS': race.teamMembers,
-      'RAC_AGE_MIN': race.ageMin,
-      'RAC_AGE_MIDDLE': race.ageMiddle,
-      'RAC_AGE_MAX': race.ageMax,
-      'RAC_SEX': race.sex,
-      'RAC_CHIP_REQUIRED': racRequired,
-    });
-
-    // Créer les prix par catégorie
-    for (var entry in categoryPrices.entries) {
-      await localSources.createRaceCategoryPrice(raceId, entry.key, entry.value);
-    }
-
-    return raceId;
   }
 
   @override
@@ -85,7 +130,9 @@ class RacesRepositoryImpl implements RacesRepository {
   Future<Map<int, double>> getRaceCategoryPrices(int raceId) async {
     final data = await localSources.getRaceCategoryPrices(raceId);
     return Map.fromEntries(
-      data.map((e) => MapEntry(e['CAT_ID'] as int, (e['price'] as num).toDouble())),
+      data.map(
+        (e) => MapEntry(e['CAT_ID'] as int, (e['price'] as num).toDouble()),
+      ),
     );
   }
 
@@ -104,5 +151,4 @@ class RacesRepositoryImpl implements RacesRepository {
   Future<int?> getMaxRaceCount(int raidId) async {
     return await localSources.getMaxRaceCount(raidId);
   }
-
 }
