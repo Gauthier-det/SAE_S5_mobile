@@ -1,6 +1,7 @@
 // lib/features/races/presentation/race_detail_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sae5_g13_mobile/core/config/app_config.dart';
 import 'package:sae5_g13_mobile/features/team/data/datasources/team_api_sources.dart';
 import 'package:sae5_g13_mobile/features/team/data/datasources/team_local_sources.dart';
 import 'package:sae5_g13_mobile/features/team/data/repositories/team_repository_impl.dart';
@@ -44,7 +45,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
     // Initialiser le repository des équipes
     _teamRepository = TeamRepositoryImpl(
       localSources: TeamLocalSources(), 
-      apiSources: TeamApiSources(),
+      apiSources: TeamApiSources(baseUrl: AppConfig.apiBaseUrl),
     );
   }
 
