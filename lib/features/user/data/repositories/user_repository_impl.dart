@@ -51,13 +51,15 @@ class UserRepositoryImpl implements UserRepository {
   Future<List<User>> getAllUsers() async {
     try {
       final token = authLocalSources.getToken();
+
       apiSources.setAuthToken(token);
 
       final users = await apiSources.getAllUsers();
+
       return users;
     } catch (e) {
-      // Fallback to local cache [web:310][web:313]
       final localUsers = await localSources.getAllUsers();
+
       return localUsers;
     }
   }
@@ -83,7 +85,6 @@ class UserRepositoryImpl implements UserRepository {
 
       return null;
     } catch (e) {
-      // Fallback to local cache [web:313]
       try {
         return await localSources.getUserById(userId);
       } catch (localError) {

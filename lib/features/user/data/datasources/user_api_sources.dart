@@ -65,6 +65,7 @@ class UserApiSources {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> usersJson = responseData['data'] ?? responseData;
+
         return usersJson.map((json) => User.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -169,6 +170,7 @@ class UserApiSources {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
+
         return responseData['data'] ?? {};
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');

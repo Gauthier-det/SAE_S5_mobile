@@ -96,6 +96,7 @@ class RaidApiSources {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
       };
 
+      // 3. Envoyer une requête POST
       final response = await client.post(
         Uri.parse('$baseUrl/raids'),
         headers: headers,

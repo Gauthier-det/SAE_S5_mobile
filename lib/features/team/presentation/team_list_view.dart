@@ -410,30 +410,50 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // Member count (async loaded)
-                    FutureBuilder<int>(
-                      future: _getTeamMemberCount(team.id),
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return Row(
-                          children: [
-                            Icon(
-                              Icons.people,
-                              size: 16,
+                    const SizedBox(height: 4),
+                    // Use membersCount from API if available, otherwise check local (fallback)
+                    if (team.membersCount != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people,
+                            size: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${team.membersCount} membre${(team.membersCount ?? 0) > 1 ? 's' : ''}',
+                            style: TextStyle(
                               color: Colors.grey.shade600,
+                              fontSize: 14,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$count membre${count > 1 ? 's' : ''}',
-                              style: TextStyle(
+                          ),
+                        ],
+                      )
+                    else
+                      FutureBuilder<int>(
+                        future: _getTeamMemberCount(team.id),
+                        builder: (context, snapshot) {
+                          final count = snapshot.data ?? 0;
+                          return Row(
+                            children: [
+                              Icon(
+                                Icons.people,
+                                size: 16,
                                 color: Colors.grey.shade600,
-                                fontSize: 14,
                               ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$count membre${count > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),

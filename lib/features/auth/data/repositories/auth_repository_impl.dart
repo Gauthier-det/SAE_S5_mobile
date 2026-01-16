@@ -148,36 +148,31 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Attempt API registration first (offline-first pattern) [web:109][web:112]
     if (_apiDataSource != null && _apiService != null) {
-      try {
-        final apiUser = await _apiDataSource.register(
-          email: email,
-          password: password,
-          firstName: firstName,
-          lastName: lastName,
-          birthDate: birthDate,
-          phoneNumber: phoneNumber,
-          licenceNumber: licenceNumber,
-          gender: gender,
-        );
+      final apiUser = await _apiDataSource.register(
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+        birthDate: birthDate,
+        phoneNumber: phoneNumber,
+        licenceNumber: licenceNumber,
+        gender: gender,
+      );
 
-        // Persist API response locally for offline access [web:109][web:112]
-        final registeredUsers = await _localDataSource.getRegisteredUsers();
-        final updatedUsers = [
-          ...registeredUsers,
-          {...apiUser.toJson(), 'password': password},
-        ];
-        await _localDataSource.saveRegisteredUsers(updatedUsers);
-        await _localDataSource.saveUser(apiUser);
-
-        // Store JWT access token from API for authenticated requests [web:109]
-        if (_apiDataSource.accessToken != null) {
-          await _localDataSource.saveToken(_apiDataSource.accessToken!);
-        }
-
-        return apiUser;
-      } catch (e) {
-        // Silently fall back to local registration [web:109][web:112]
+      // Sauvegarder localement
+      final registeredUsers = await _localDataSource.getRegisteredUsers();
+      final updatedUsers = [
+        ...registeredUsers,
+        {...apiUser.toJson(), 'password': password},
+      ];
+      await _localDataSource.saveRegisteredUsers(updatedUsers);
+      await _localDataSource.saveUser(apiUser);
+      // Stocker le vrai access_token de l'API
+      if (_apiDataSource.accessToken != null) {
+        await _localDataSource.saveToken(_apiDataSource.accessToken!);
       }
+
+      return apiUser;
     }
 
     // Local fallback: Register user offline [web:109][web:112]
@@ -237,9 +232,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }
 
         return apiUser;
-      } catch (e) {
-        // Silently fall back to local authentication [web:109][web:112]
-      }
+      } catch (e) {}
     }
 
     // Local fallback: Authenticate against local user registry [web:109][web:112]
@@ -345,9 +338,7 @@ class AuthRepositoryImpl implements AuthRepository {
         // Persist API response locally [web:109][web:112]
         await _localDataSource.saveUser(apiUser);
         return apiUser;
-      } catch (e) {
-        // Silently fall back to local update [web:109][web:112]
-      }
+      } catch (e) {}
     }
 
     // Local fallback: Update user profile offline [web:109][web:112]

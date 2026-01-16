@@ -30,7 +30,8 @@ class Team {
   final int managerId;
   final String name;
   final String? image;
-  final bool? isValid; // Validation status from SAN_TEAMS_RACES.TER_IS_VALID
+  final bool? isValid; // Pour TER_IS_VALID
+  final int? membersCount;
 
   Team({
     required this.id,
@@ -38,6 +39,7 @@ class Team {
     required this.name,
     this.image,
     this.isValid,
+    this.membersCount,
   });
 
   /// Creates Team from JSON (supports API and DB formats) [web:191].
@@ -55,6 +57,7 @@ class Team {
       name: (json['TEA_NAME'] ?? json['name'] ?? '') as String,
       image: (json['TEA_IMAGE'] ?? json['image']) as String?,
       isValid: isValid,
+      membersCount: (json['members_count']) as int?,
     );
   }
 

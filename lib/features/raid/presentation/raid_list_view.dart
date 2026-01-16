@@ -537,6 +537,8 @@ class _RaidListViewState extends State<RaidListView> {
         (c) => c.responsibleId == userId,
       );
 
+      if (isResponsible) {}
+
       return isResponsible;
     } catch (e) {
       return false;

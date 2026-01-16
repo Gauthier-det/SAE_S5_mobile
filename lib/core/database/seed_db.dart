@@ -12,6 +12,7 @@ class SeedData {
       return;
     }
 
+    // 1. Adresses
     final addresses = [
       {
         'ADD_ID': 1,

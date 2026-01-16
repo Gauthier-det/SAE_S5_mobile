@@ -103,6 +103,7 @@ class AuthApiSources {
     String? licenceNumber,
     String gender = 'Autre',
   }) async {
+
     final response = await client
         .post(
           Uri.parse('$baseUrl/register'),
@@ -170,6 +171,7 @@ class AuthApiSources {
   ///
   /// **Returns:** A [User] object with authentication token and role information
   Future<User> login({required String email, required String password}) async {
+
     final response = await client
         .post(
           Uri.parse('$baseUrl/login'),
@@ -215,16 +217,22 @@ class AuthApiSources {
 
       // Verify admin status via separate API endpoint [web:84]
       try {
+        final user = User.fromJson(userMap);
+
+        // Check if user is admin via separate API call
         final isAdmin = await _checkIsAdmin();
         if (isAdmin) {
-          // Return user with site manager role (role ID: 2)
+          // Return user with site manager role
           return User.fromJson({
             ...userMap,
             'roles': [2],
           });
         }
+
+        return user;
       } catch (e) {
-        // Continue with original roles if admin check fails
+
+        rethrow;
       }
 
       return user;

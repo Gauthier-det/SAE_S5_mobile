@@ -82,7 +82,6 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
   /// Loads race configuration (max team size, gender requirement).
   Future<void> _loadRaceDetails() async {
-    try {
       final details = await widget.repository.getRaceDetails(widget.raceId);
 
       if (mounted && details != null) {
@@ -91,13 +90,6 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
           _requiredGender = details['RAC_GENDER']?.toString();
         });
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
-      }
-    }
   }
 
   /// Loads pre-filtered eligible users (age, gender, conflicts checked).
@@ -152,7 +144,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF52B788).withOpacity(0.1),
+                        color: const Color(0xFF52B788),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFF52B788)),
                       ),

@@ -217,24 +217,55 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       return;
     }
 
-    final availableUsers = await widget.repository.getAvailableUsersForRace(
-      widget.raceId,
-    );
+    try {
+      // 1. Fetch available users
+      final availableUsers = await widget.repository.getAvailableUsersForRace(
+        widget.raceId,
+      );
 
-    if (availableUsers.isEmpty) {
-      _showSnackBar('Aucun utilisateur disponible pour cette course');
-      return;
-    }
+      // 2. Fetch race details to get age limits
+      final raceDetails = await widget.repository.getRaceDetails(widget.raceId);
+      final int minAge = raceDetails?['RAC_AGE_MIN'] ?? 0;
+      final int maxAge = raceDetails?['RAC_AGE_MAX'] ?? 100;
 
-    if (!mounted) return;
+      // 3. Filter users based on age
+      final now = DateTime.now();
+      final filteredUsers = availableUsers.where((user) {
+        // ✅ Use pre-calculated age from API if available
+        int? age = user.userAge;
 
-    final selectedUser = await showDialog<User>(
-      context: context,
-      builder: (context) => AddMemberDialog(availableUsers: availableUsers),
-    );
+        // Fallback to manual calculation if birthdate is present
+        if (age == null && user.birthdate != null) {
+          age =
+              now.year -
+              user.birthdate!.year -
+              ((now.month < user.birthdate!.month ||
+                      (now.month == user.birthdate!.month &&
+                          now.day < user.birthdate!.day))
+                  ? 1
+                  : 0);
+        }
 
-    if (selectedUser != null) {
-      try {
+        if (age == null) return false;
+
+        return age >= minAge && age <= maxAge;
+      }).toList();
+
+      if (filteredUsers.isEmpty) {
+        _showSnackBar(
+          'Aucun utilisateur éligible trouvé pour cette course (limite d\'âge ou indisponibilité)',
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      final selectedUser = await showDialog<User>(
+        context: context,
+        builder: (context) => AddMemberDialog(availableUsers: filteredUsers),
+      );
+
+      if (selectedUser != null) {
         await widget.repository.addTeamMember(
           _team!.id,
           selectedUser.id,
@@ -252,10 +283,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           );
           await _loadTeamDetails();
         }
-      } catch (e) {
-        if (mounted) {
-          _showSnackBar('Erreur : $e');
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
       }
     }
   }
@@ -296,10 +327,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
   /// Deletes team (race manager only) [web:274].
   Future<void> _deleteTeam() async {
-    if (!widget.isRaceManager) {
-      _showSnackBar(
-        'Seul le responsable de la course peut supprimer l\'équipe',
-      );
+    // ✅ Le créateur OU le responsable peut supprimer l'équipe
+    if (!_canManageTeam()) {
+      _showSnackBar('Vous n\'avez pas la permission de supprimer cette équipe');
       return;
     }
 
@@ -335,6 +365,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   ) async {
     if (!_canEditMember(userId)) {
       _showSnackBar('Vous ne pouvez modifier que vos propres informations');
+
       return;
     }
 
@@ -345,6 +376,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     if (hasLicence) {
       _showSnackBar('Ce membre a déjà un numéro de licence');
+
       return;
     }
 
@@ -526,7 +558,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         title: Text(_team?.name ?? 'Équipe'),
         backgroundColor: const Color(0xFF1B3022),
         foregroundColor: Colors.white,
-        actions: widget.isRaceManager
+        actions: _canManageTeam()
             ? [
                 IconButton(
                   icon: const Icon(Icons.delete),

@@ -143,26 +143,23 @@ class RacesRepositoryImpl implements RacesRepository {
 
   @override
   Future<int> getRegisteredTeamsCount(int raceId) async {
-    /// Counts registered teams for a race from local database.
-    ///
-    /// Queries the SAN_TEAMS_RACES junction table to count team registrations.
-    /// This is a local-only operation for performance [web:171].
-    ///
-    /// **Data Source:** Local SQLite only
-    ///
-    /// **Parameters:**
-    /// - [raceId]: The race ID to count registrations for
-    ///
-    /// **Returns:** Number of registered teams (0 if none)
-    ///
-    /// **Example:**
-    /// ```dart
-    /// final count = await raceRepo.getRegisteredTeamsCount(42);
-    /// if (count >= race.maxTeams) {
-    ///   print('Race is full!');
-    /// }
-    /// ```
-    return await localSources.getRegisteredTeamsCount(raceId);
+    try {
+      // 1. Tenter de récupérer depuis l'API via getRaceDetails
+      // L'endpoint details renvoie un objet 'stats' avec 'teams_count'
+      // On ignore l'authentification ici car getRaceDetails est public (ou token géré par apiSources)
+      // Si nécessaire, assurez-vous que apiSources a le token set, mais ici on lit juste.
+      final token = authLocalSources.getToken();
+      apiSources.setAuthToken(token);
+
+      final details = await apiSources.getRaceDetails(raceId);
+      if (details['stats'] != null && details['stats']['teams_count'] != null) {
+        return details['stats']['teams_count'] as int;
+      }
+      return 0;
+    } catch (e) {
+      // 2. Fallback sur le local si pas de réseau
+      return await localSources.getRegisteredTeamsCount(raceId);
+    }
   }
 
   @override
@@ -211,7 +208,7 @@ class RacesRepositoryImpl implements RacesRepository {
 
       return remoteRaces;
     } catch (e) {
-      // Fallback: Return cached data (offline mode) [web:127][web:171]
+      // Fallback sur le cache local
       return await localSources.getRacesByRaidId(raidId);
     }
   }
@@ -334,9 +331,7 @@ class RacesRepositoryImpl implements RacesRepository {
 
       return createdRace.id;
     } catch (e) {
-      // Fallback: Create in local database only (offline mode) [web:171][web:172]
-
-      // Calculate chip requirement based on race type
+      // Fallback: créer en local uniquement
       int racRequired;
       if (race.type == 'Compétitif') {
         racRequired = 1;

@@ -160,16 +160,10 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
                 filled: true,
                 fillColor: Colors.grey.shade50,
               ),
-              onTap: () {
-                print('🖱️ DEBUG TextField cliqué');
-              },
+              onTap: () {},
             );
           },
           optionsViewBuilder: (context, onSelected, options) {
-            print(
-              '👁️ DEBUG optionsViewBuilder: ${options.length} options à afficher',
-            );
-
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
@@ -283,9 +277,6 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
                               ),
                               onTap: isAvailable
                                   ? () {
-                                      print(
-                                        '✅ DEBUG User sélectionné: ${user.fullName}',
-                                      );
                                       onSelected(user);
                                     }
                                   : null,
@@ -297,8 +288,6 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
             );
           },
           onSelected: (User user) {
-            print('🎯 DEBUG onSelected appelé pour: ${user.fullName}');
-
             // Block if not available
             if (!(user.isAvailable ?? true)) {
               ScaffoldMessenger.of(context).showSnackBar(

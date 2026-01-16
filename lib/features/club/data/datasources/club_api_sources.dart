@@ -136,6 +136,7 @@ class ClubApiSources {
       };
 
       final url = '$baseUrl/clubs';
+
       final response = await client.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
@@ -188,11 +189,13 @@ class ClubApiSources {
       };
 
       final url = '$baseUrl/clubs/$id';
+
       final response = await client.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final clubJson = responseData['data'] ?? responseData;
+
         return Club.fromJson(clubJson);
       } else if (response.statusCode == 404) {
         return null;
@@ -239,11 +242,13 @@ class ClubApiSources {
       };
 
       final url = '$baseUrl/clubs/$clubId/users';
+
       final response = await client.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> membersJson = responseData['data'] ?? responseData;
+
         return membersJson.map((json) => User.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -315,6 +320,7 @@ class ClubApiSources {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final clubJson = responseData['data'] ?? responseData;
+
         return Club.fromJson(clubJson);
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -393,6 +399,7 @@ class ClubApiSources {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final clubJson = responseData['data'] ?? responseData;
+
         return Club.fromJson(clubJson);
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié');
@@ -449,8 +456,6 @@ class ClubApiSources {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        // Success - no action needed
-        return;
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié');
       } else if (response.statusCode == 403) {

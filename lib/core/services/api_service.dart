@@ -56,6 +56,10 @@ class ApiService {
     String? logMessage,
   }) async {
     try {
+      if (logMessage != null) {
+      }
+
+      // Vérifier si l'API est disponible avant d'essayer
       final isAvailable = await isApiAvailable();
 
       if (!isAvailable) {

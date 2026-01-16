@@ -63,6 +63,7 @@ class TeamApiSources {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> usersList = responseData['data'];
+
         return usersList.map((json) => User.fromJson(json)).toList();
       } else {
         throw Exception('API Error: ${response.statusCode}');
@@ -95,7 +96,8 @@ class TeamApiSources {
           if (responseData['team_id'] != null) {
             return responseData['team_id'] as int;
           }
-          throw Exception('Team ID missing in response');
+
+          throw Exception('ID d\'équipe manquant dans la réponse');
         }
         return teamId as int;
       } else if (response.statusCode == 401) {
@@ -329,11 +331,15 @@ class TeamApiSources {
     }
   }
 
-  /// Deletes a team.
-  Future<void> deleteTeam(int teamId) async {
+  // ===================================
+  // DELETE TEAM
+  // ===================================
+
+  /// DELETE /races/{raceId}/teams/{teamId}
+  Future<void> deleteTeamFromRace(int teamId, int raceId) async {
     try {
       final response = await client.delete(
-        Uri.parse('$baseUrl/teams/$teamId'),
+        Uri.parse('$baseUrl/races/$raceId/teams/$teamId'),
         headers: _headers,
       );
 

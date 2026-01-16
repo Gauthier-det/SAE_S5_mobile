@@ -86,7 +86,8 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
 
-      // Normalize for API (snake_case)
+      // ✅ CORRECTION: Ne pas utiliser teamData directement s'il vient de toJson()
+      // Au lieu de ça, s'assurer qu'on envoie le bon format
       final apiData = {
         'name': teamData['TEA_NAME'] ?? teamData['name'],
         if (teamData['TEA_IMAGE'] != null || teamData['image'] != null)
@@ -105,6 +106,7 @@ class TeamRepositoryImpl implements TeamRepository {
       await localSources.createTeam(team.toJson());
       return teamId;
     } catch (e) {
+      // Fallback local
       return await localSources.createTeam(teamData);
     }
   }
@@ -237,8 +239,38 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
       final data = await apiSources.getTeamRaceDetails(teamId, raceId);
+
+      // Update local cache in background
       await _syncTeamFromApi(data, raceId);
-      return await localSources.getTeamByIdWithRaceStatus(teamId, raceId);
+
+      // Construct Team object explicitly from API data to ensure fresh data
+      final teamJson = data['team'];
+
+      final isValidVal = teamJson['is_valid'] ?? teamJson['TER_IS_VALID'];
+      final bool isValid = isValidVal == 1 || isValidVal == true;
+
+      final dynamic rawManagerId = teamJson['manager_id'] ?? teamJson['USE_ID'];
+
+      int managerId = (rawManagerId ?? 0) as int;
+
+      // FIX: If managerId is 0 or missing (because API doesn't return it), fetch it separately
+      if (managerId == 0) {
+        try {
+          final fullTeam = await apiSources.getTeamById(teamId);
+          if (fullTeam != null) {
+            managerId = fullTeam.managerId;
+          }
+        } catch (e) {}
+      }
+
+      return Team(
+        id: (teamJson['id'] ?? teamJson['TEA_ID'] ?? 0) as int,
+        managerId: managerId,
+        name: (teamJson['name'] ?? teamJson['TEA_NAME'] ?? '') as String,
+        image: (teamJson['image'] ?? teamJson['TEA_IMAGE']) as String?,
+        isValid: isValid,
+        membersCount: (data['members'] as List?)?.length,
+      );
     } catch (e) {
       return await localSources.getTeamByIdWithRaceStatus(teamId, raceId);
     }
@@ -264,8 +296,12 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
       final data = await apiSources.getTeamRaceDetails(teamId, raceId);
+
+      // Sync in background (fire and forget or await, but don't rely on it for return)
       await _syncTeamFromApi(data, raceId);
-      return await localSources.getTeamMembersWithRaceDetails(teamId, raceId);
+
+      final members = data['members'] as List;
+      return members.map((m) => m as Map<String, dynamic>).toList();
     } catch (e) {
       return await localSources.getTeamMembersWithRaceDetails(teamId, raceId);
     }
@@ -363,6 +399,10 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
+  // ===================================
+  // SYNC QUEUE IMPLEMENTATION
+  // ===================================
+
   @override
   Future<void> removeMemberFromTeam(
     int teamId,
@@ -371,13 +411,12 @@ class TeamRepositoryImpl implements TeamRepository {
   }) async {
     try {
       _setAuthToken();
-
       if (raceId != null) {
         await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
       }
-
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
+      // No offline queueing
       await localSources.removeMemberFromTeam(teamId, userId);
     }
   }
@@ -391,7 +430,6 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
       await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
-
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
       await localSources.removeMemberFromTeam(teamId, userId);
@@ -402,10 +440,14 @@ class TeamRepositoryImpl implements TeamRepository {
   Future<void> deleteTeam(int teamId, int raceId) async {
     try {
       _setAuthToken();
-      await apiSources.deleteTeam(teamId);
 
+      // Fix: Use the race-specific delete endpoint
+      await apiSources.deleteTeamFromRace(teamId, raceId);
+
+      // Local cleanup
       await localSources.deleteTeam(teamId, raceId);
     } catch (e) {
+      // No offline queueing
       await localSources.deleteTeam(teamId, raceId);
     }
   }
@@ -426,9 +468,9 @@ class TeamRepositoryImpl implements TeamRepository {
         null,
         ppsForm,
       );
-
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     } catch (e) {
+      // No offline queueing
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     }
   }

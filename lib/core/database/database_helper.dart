@@ -22,8 +22,10 @@ class DatabaseHelper {
       version: _databaseVersion,
       onCreate: (db, version) async {
         await _createTables(db);
+        // NOTE: No seeder - data comes from API
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        // Pour simplifier, on recrée tout
         await _dropAllTables(db);
         await _createTables(db);
       },
@@ -34,6 +36,7 @@ class DatabaseHelper {
 
   /// Drops all database tables.
   static Future<void> _dropAllTables(Database db) async {
+    await db.execute('DROP TABLE IF EXISTS SYNC_QUEUE'); // Removed feature
     await db.execute('DROP TABLE IF EXISTS SAN_USERS_RACES');
     await db.execute('DROP TABLE IF EXISTS SAN_CATEGORIES_RACES');
     await db.execute('DROP TABLE IF EXISTS SAN_ROLES_USERS');
