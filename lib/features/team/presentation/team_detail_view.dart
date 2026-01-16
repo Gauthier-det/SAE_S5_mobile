@@ -82,6 +82,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     setState(() => _isLoading = true);
 
     try {
+      // 🔄 Sync pending offline actions first
+      await widget.repository.syncPendingActions();
+
       // ✅ Utilise la nouvelle méthode qui récupère le statut de validation
       final team = await widget.repository.getTeamByIdWithRaceStatus(
         widget.teamId,
@@ -189,24 +192,49 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       return;
     }
 
-    final availableUsers = await widget.repository.getAvailableUsersForRace(
-      widget.raceId,
-    );
+    try {
+      // 1. Fetch available users
+      final availableUsers = await widget.repository.getAvailableUsersForRace(
+        widget.raceId,
+      );
 
-    if (availableUsers.isEmpty) {
-      _showSnackBar('Aucun utilisateur disponible pour cette course');
-      return;
-    }
+      // 2. Fetch race details to get age limits
+      final raceDetails = await widget.repository.getRaceDetails(widget.raceId);
+      final int minAge = raceDetails?['RAC_AGE_MIN'] ?? 0;
+      final int maxAge = raceDetails?['RAC_AGE_MAX'] ?? 100;
 
-    if (!mounted) return;
+      // 3. Filter users based on age
+      final now = DateTime.now();
+      final filteredUsers = availableUsers.where((user) {
+        if (user.birthdate == null) return false;
 
-    final selectedUser = await showDialog<User>(
-      context: context,
-      builder: (context) => AddMemberDialog(availableUsers: availableUsers),
-    );
+        final age =
+            now.year -
+            user.birthdate!.year -
+            ((now.month < user.birthdate!.month ||
+                    (now.month == user.birthdate!.month &&
+                        now.day < user.birthdate!.day))
+                ? 1
+                : 0);
 
-    if (selectedUser != null) {
-      try {
+        return age >= minAge && age <= maxAge;
+      }).toList();
+
+      if (filteredUsers.isEmpty) {
+        _showSnackBar(
+          'Aucun utilisateur éligible trouvé pour cette course (limite d\'âge ou indisponibilité)',
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      final selectedUser = await showDialog<User>(
+        context: context,
+        builder: (context) => AddMemberDialog(availableUsers: filteredUsers),
+      );
+
+      if (selectedUser != null) {
         await widget.repository.addTeamMember(
           _team!.id,
           selectedUser.id,
@@ -224,10 +252,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           );
           await _loadTeamDetails();
         }
-      } catch (e) {
-        if (mounted) {
-          _showSnackBar('Erreur : $e');
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Erreur : $e');
       }
     }
   }

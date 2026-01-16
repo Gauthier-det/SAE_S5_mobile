@@ -24,7 +24,24 @@ class RacesRepositoryImpl implements RacesRepository {
 
   @override
   Future<int> getRegisteredTeamsCount(int raceId) async {
-    return await localSources.getRegisteredTeamsCount(raceId);
+    try {
+      // 1. Tenter de récupérer depuis l'API via getRaceDetails
+      // L'endpoint details renvoie un objet 'stats' avec 'teams_count'
+      // On ignore l'authentification ici car getRaceDetails est public (ou token géré par apiSources)
+      // Si nécessaire, assurez-vous que apiSources a le token set, mais ici on lit juste.
+      final token = authLocalSources.getToken();
+      apiSources.setAuthToken(token);
+
+      final details = await apiSources.getRaceDetails(raceId);
+      if (details['stats'] != null && details['stats']['teams_count'] != null) {
+        return details['stats']['teams_count'] as int;
+      }
+      return 0;
+    } catch (e) {
+      print('Erreur récupération count équipes API, fallback local: $e');
+      // 2. Fallback sur le local si pas de réseau
+      return await localSources.getRegisteredTeamsCount(raceId);
+    }
   }
 
   @override

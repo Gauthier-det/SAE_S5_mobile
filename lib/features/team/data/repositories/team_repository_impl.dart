@@ -274,8 +274,12 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
       final data = await apiSources.getTeamRaceDetails(teamId, raceId);
+
+      // Sync in background (fire and forget or await, but don't rely on it for return)
       await _syncTeamFromApi(data, raceId);
-      return await localSources.getTeamMembersWithRaceDetails(teamId, raceId);
+
+      final members = data['members'] as List;
+      return members.map((m) => m as Map<String, dynamic>).toList();
     } catch (e) {
       print('API fetch failed: $e. Falling back to local cache...');
       return await localSources.getTeamMembersWithRaceDetails(teamId, raceId);
@@ -378,6 +382,82 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
+  // ===================================
+  // SYNC QUEUE IMPLEMENTATION
+  // ===================================
+
+  Future<void> syncPendingActions() async {
+    try {
+      _setAuthToken();
+      final pendingActions = await localSources.getPendingSyncActions();
+
+      if (pendingActions.isEmpty) return;
+
+      print('🔄 Syncing ${pendingActions.length} pending actions...');
+
+      for (var action in pendingActions) {
+        final id = action['ID'] as int;
+        final type = action['ACTION_TYPE'] as String;
+        String payloadStr = action['PAYLOAD'] as String;
+
+        print('⏳ Replaying action: $type');
+
+        try {
+          await _replayAction(type, payloadStr);
+          await localSources.deleteSyncAction(id);
+          print('✅ Action $id synced successfully');
+        } catch (e) {
+          print('❌ Failed to sync action $id: $e');
+        }
+      }
+    } catch (e) {
+      print('Sync failed: $e');
+    }
+  }
+
+  Future<void> _replayAction(String type, String payloadStr) async {
+    int? extractInt(String key) {
+      final RegExp regex = RegExp('\$key: (\\d+)');
+      final match = regex.firstMatch(payloadStr);
+      return match != null ? int.parse(match.group(1)!) : null;
+    }
+
+    String? extractString(String key) {
+      final RegExp regex = RegExp('\$key: ([^,}]+)');
+      final match = regex.firstMatch(payloadStr);
+      return match?.group(1)?.trim();
+    }
+
+    final teamId = extractInt('teamId');
+    final userId = extractInt('userId');
+    final raceId = extractInt('raceId');
+
+    switch (type) {
+      case 'REMOVE_MEMBER':
+        if (teamId != null && userId != null && raceId != null) {
+          await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
+        }
+        break;
+      case 'DELETE_TEAM':
+        if (teamId != null) {
+          await apiSources.deleteTeam(teamId);
+        }
+        break;
+      case 'UPDATE_PPS':
+        final pps = extractString('pps');
+        if (userId != null && raceId != null && teamId != null) {
+          await apiSources.updateMemberRaceInfo(
+            teamId,
+            raceId,
+            userId,
+            null,
+            pps,
+          );
+        }
+        break;
+    }
+  }
+
   @override
   Future<void> removeMemberFromTeam(
     int teamId,
@@ -386,21 +466,21 @@ class TeamRepositoryImpl implements TeamRepository {
   }) async {
     try {
       _setAuthToken();
-
       if (raceId != null) {
-        // Use the specific endpoint for removing from team + race
         await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
-      } else {
-        // Local removal or basic API removal if exists
-        // Note: Current API requires raceId, so we might just do local if it's missing
-        // or try the base remove endpoint if one existed.
       }
-
-      // ✅ ALWAYS remove locally after success (or if skipping API)
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
-      // If API fails, we still remove locally (optimistic/offline)
+      print('API sync failed, queuing offline action: $e');
       await localSources.removeMemberFromTeam(teamId, userId);
+
+      if (raceId != null) {
+        await localSources.addSyncAction('REMOVE_MEMBER', {
+          'teamId': teamId,
+          'userId': userId,
+          'raceId': raceId,
+        });
+      }
     }
   }
 
@@ -413,12 +493,9 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
       await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
-
-      // En local, pas besoin de raceId pour cette méthode
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
       print('API sync failed, saving locally: $e');
-
       await localSources.removeMemberFromTeam(teamId, userId);
     }
   }
@@ -427,15 +504,16 @@ class TeamRepositoryImpl implements TeamRepository {
   Future<void> deleteTeam(int teamId, int raceId) async {
     try {
       _setAuthToken();
-      // Appel de la nouvelle route API de suppression
       await apiSources.deleteTeam(teamId);
-
-      // Suppression locale (synchro)
       await localSources.deleteTeam(teamId, raceId);
     } catch (e) {
-      print('API deletion failed (offline?): $e');
-      // On supprime quand même en local
+      print('API deletion failed, queuing offline action: $e');
       await localSources.deleteTeam(teamId, raceId);
+
+      await localSources.addSyncAction('DELETE_TEAM', {
+        'teamId': teamId,
+        'raceId': raceId,
+      });
     }
   }
 
@@ -452,14 +530,20 @@ class TeamRepositoryImpl implements TeamRepository {
         teamId,
         raceId,
         userId,
-        null, // No chip update
+        null,
         ppsForm,
       );
-
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
+      print('API sync failed, queuing offline action: $e');
       await localSources.updateUserPPS(userId, ppsForm, raceId);
+
+      await localSources.addSyncAction('UPDATE_PPS', {
+        'userId': userId,
+        'pps': ppsForm,
+        'raceId': raceId,
+        'teamId': teamId,
+      });
     }
   }
 

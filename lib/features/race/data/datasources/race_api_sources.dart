@@ -150,4 +150,25 @@ class RaceApiSources {
       throw Exception('Network error: $e');
     }
   }
+
+  /// Récupérer les détails d'une course (inclus les stats)
+  Future<Map<String, dynamic>> getRaceDetails(int id) async {
+    try {
+      final response = await client
+          .get(
+            Uri.parse('$baseUrl/races/$id/details'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData['data'] as Map<String, dynamic>;
+      } else {
+        throw Exception('API Error details: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }

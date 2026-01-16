@@ -513,4 +513,28 @@ class TeamLocalSources {
       [userId, raceId, endTime, startTime, startTime, endTime],
     );
   }
+
+  // ===================================
+  // SYNC QUEUE METHODS
+  // ===================================
+
+  Future<void> addSyncAction(String type, Map<String, dynamic> payload) async {
+    final db = await DatabaseHelper.database;
+    await db.insert('SYNC_QUEUE', {
+      'ACTION_TYPE': type,
+      'PAYLOAD': payload.toString(), // Simplified serialization
+      'CREATED_AT': DateTime.now().toIso8601String(),
+    });
+    print('📦 Offline action queued: $type');
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingSyncActions() async {
+    final db = await DatabaseHelper.database;
+    return await db.query('SYNC_QUEUE', orderBy: 'CREATED_AT ASC');
+  }
+
+  Future<void> deleteSyncAction(int id) async {
+    final db = await DatabaseHelper.database;
+    await db.delete('SYNC_QUEUE', where: 'ID = ?', whereArgs: [id]);
+  }
 }

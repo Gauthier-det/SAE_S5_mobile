@@ -4,7 +4,7 @@ import 'package:path/path.dart';
 
 class DatabaseHelper {
   static Database? _database;
-  static const _databaseVersion = 7; // ← Incrémenté: CAR_PRICE integer
+  static const _databaseVersion = 8; // ← Incrémenté: SYNC_QUEUE table added
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -208,6 +208,16 @@ class DatabaseHelper {
         USR_TIME REAL,
         USR_PPS_FORM TEXT,
         PRIMARY KEY (USE_ID, RAC_ID)
+      )
+    ''');
+
+    // 10. SYNC_QUEUE (pour la synchro hors-ligne)
+    await db.execute('''
+      CREATE TABLE SYNC_QUEUE (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        ACTION_TYPE TEXT NOT NULL,
+        PAYLOAD TEXT NOT NULL,
+        CREATED_AT TEXT NOT NULL
       )
     ''');
   }
