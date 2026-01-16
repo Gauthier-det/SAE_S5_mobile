@@ -6,6 +6,7 @@ import '../../../user/domain/user.dart';
 import '../../../user/domain/user_repository.dart';
 import '../../../address/data/datasources/address_local_sources.dart';
 import '../../../address/domain/address.dart';
+import '../../../address/domain/address_repository.dart';
 
 /// Screen for creating or editing a club
 class CreateClubScreen extends StatefulWidget {
@@ -304,92 +305,126 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
                     const SizedBox(height: 20),
 
                     // Address autocomplete field
-                    Autocomplete<Address>(
-                      displayStringForOption: (address) => address.fullAddress,
-                      optionsBuilder: (textEditingValue) {
-                        if (textEditingValue.text.isEmpty) {
-                          return _availableAddresses;
-                        }
-                        return _availableAddresses.where((address) {
-                          return address.fullAddress.toLowerCase().contains(
-                            textEditingValue.text.toLowerCase(),
-                          );
-                        });
-                      },
-                      initialValue: _selectedAddress != null
-                          ? TextEditingValue(
-                              text: _selectedAddress!.fullAddress,
-                            )
-                          : null,
-                      onSelected: (address) {
-                        setState(() => _selectedAddress = address);
-                      },
-                      fieldViewBuilder:
-                          (context, controller, focusNode, onFieldSubmitted) {
-                            return TextFormField(
-                              controller: controller,
-                              focusNode: focusNode,
-                              decoration: InputDecoration(
-                                labelText: 'Adresse du club *',
-                                prefixIcon: const Icon(Icons.location_on),
-                                border: const OutlineInputBorder(),
-                                hintText: 'Tapez pour rechercher...',
-                                suffixIcon: _selectedAddress != null
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        onPressed: () {
-                                          controller.clear();
-                                          setState(
-                                            () => _selectedAddress = null,
-                                          );
-                                        },
-                                      )
-                                    : null,
-                              ),
-                              validator: (value) {
-                                if (_selectedAddress == null) {
-                                  return 'Veuillez sélectionner une adresse';
-                                }
-                                return null;
-                              },
-                            );
-                          },
-                      optionsViewBuilder: (context, onSelected, options) {
-                        return Align(
-                          alignment: Alignment.topLeft,
-                          child: Material(
-                            elevation: 4,
-                            borderRadius: BorderRadius.circular(8),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxHeight: 200),
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                shrinkWrap: true,
-                                itemCount: options.length,
-                                itemBuilder: (context, index) {
-                                  final address = options.elementAt(index);
-                                  return ListTile(
-                                    leading: const CircleAvatar(
-                                      backgroundColor: Color(0xFF1B3D2F),
-                                      child: Icon(
-                                        Icons.location_on,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Autocomplete<Address>(
+                            displayStringForOption: (address) =>
+                                address.fullAddress,
+                            optionsBuilder: (textEditingValue) {
+                              if (textEditingValue.text.isEmpty) {
+                                return _availableAddresses;
+                              }
+                              return _availableAddresses.where((address) {
+                                return address.fullAddress
+                                    .toLowerCase()
+                                    .contains(
+                                      textEditingValue.text.toLowerCase(),
+                                    );
+                              });
+                            },
+                            initialValue: _selectedAddress != null
+                                ? TextEditingValue(
+                                    text: _selectedAddress!.fullAddress,
+                                  )
+                                : null,
+                            onSelected: (address) {
+                              setState(() => _selectedAddress = address);
+                            },
+                            fieldViewBuilder:
+                                (
+                                  context,
+                                  controller,
+                                  focusNode,
+                                  onFieldSubmitted,
+                                ) {
+                                  return TextFormField(
+                                    controller: controller,
+                                    focusNode: focusNode,
+                                    decoration: InputDecoration(
+                                      labelText: 'Adresse du club *',
+                                      prefixIcon: const Icon(Icons.location_on),
+                                      border: const OutlineInputBorder(),
+                                      hintText: 'Tapez pour rechercher...',
+                                      suffixIcon: _selectedAddress != null
+                                          ? IconButton(
+                                              icon: const Icon(Icons.clear),
+                                              onPressed: () {
+                                                controller.clear();
+                                                setState(
+                                                  () => _selectedAddress = null,
+                                                );
+                                              },
+                                            )
+                                          : null,
                                     ),
-                                    title: Text(address.city),
-                                    subtitle: Text(
-                                      '${address.streetNumber} ${address.streetName}',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                    onTap: () => onSelected(address),
+                                    validator: (value) {
+                                      if (_selectedAddress == null) {
+                                        return 'Veuillez sélectionner une adresse';
+                                      }
+                                      return null;
+                                    },
                                   );
                                 },
-                              ),
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 4,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 200,
+                                    ),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (context, index) {
+                                        final address = options.elementAt(
+                                          index,
+                                        );
+                                        return ListTile(
+                                          leading: const CircleAvatar(
+                                            backgroundColor: Color(0xFF1B3D2F),
+                                            child: Icon(
+                                              Icons.location_on,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          title: Text(address.city),
+                                          subtitle: Text(
+                                            '${address.streetNumber} ${address.streetName}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          onTap: () => onSelected(address),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: IconButton.filled(
+                            onPressed: () => _showAddAddressDialog(),
+                            icon: const Icon(Icons.add),
+                            tooltip: 'Ajouter une adresse',
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF1B3D2F),
+                              foregroundColor: Colors.white,
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 40),
@@ -428,5 +463,143 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
               ),
             ),
     );
+  }
+
+  Future<void> _showAddAddressDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final streetNumberController = TextEditingController();
+    final streetNameController = TextEditingController();
+    final postalCodeController = TextEditingController();
+    final cityController = TextEditingController();
+
+    final result = await showDialog<Address>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nouvelle adresse'),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: streetNumberController,
+                  decoration: const InputDecoration(
+                    labelText: 'Numéro *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: streetNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Rue *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: postalCodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Code postal *',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Nombre invalide';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ville *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Obligatoire';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ANNULER'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final addressRepository = context.read<AddressRepository>();
+
+                final newAddress = Address(
+                  postalCode: int.parse(postalCodeController.text),
+                  city: cityController.text,
+                  streetName: streetNameController.text,
+                  streetNumber: streetNumberController.text,
+                );
+
+                try {
+                  final id = await addressRepository.createAddress(newAddress);
+
+                  if (!context.mounted) return;
+
+                  Navigator.pop(
+                    context,
+                    Address(
+                      id: id,
+                      postalCode: newAddress.postalCode,
+                      city: newAddress.city,
+                      streetName: newAddress.streetName,
+                      streetNumber: newAddress.streetNumber,
+                    ),
+                  );
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('CRÉER'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _availableAddresses.add(result);
+        _selectedAddress = result;
+      });
+    }
   }
 }
