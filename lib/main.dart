@@ -38,22 +38,56 @@ import 'features/club/presentation/providers/club_provider.dart';
 import 'features/club/presentation/screens/club_list_screen.dart';
 import 'features/home.dart';
 
-/// Entry point of the Orient'\Action application
+/// Application entry point with async initialization [web:351][web:355][web:358].
+///
+/// Ensures Flutter bindings initialized before creating AuthProvider with
+/// persistent token check. Uses ensureInitialized to allow async operations
+/// before runApp [web:351][web:352].
+///
+/// Example:
+/// ```bash
+/// flutter run -t lib/main.dart
+/// ```
 void main() async {
-  // Ensure Flutter bindings are initialized before using async operations
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize AuthProvider
   final authProvider = await AuthProvider.create();
   runApp(SanglierExplorerApp(authProvider: authProvider));
 }
 
-/// Root widget of the application
+/// Root application widget with dependency injection and localization [web:350][web:354][web:355].
 ///
-/// Configures the MaterialApp with:
-/// - Custom theme
-/// - Provider for state management
-/// - Navigation based on authentication status
+/// Configures MaterialApp with:
+/// - MultiProvider dependency injection for repositories [web:354][web:357]
+/// - FutureBuilder for async repository initialization [web:355][web:358]
+/// - French localization as primary language [web:346]
+/// - Named routes with auth-aware navigation
+/// - Clean architecture repository pattern [web:350]
+///
+/// **Initialization Flow [web:355]:**
+/// 1. FutureBuilder waits for _createRepositories completion
+/// 2. Shows CircularProgressIndicator during async init
+/// 3. Builds MultiProvider tree with all repositories
+/// 4. Launches MaterialApp with MainScreen
+///
+/// **Dependency Injection [web:354][web:357]:**
+/// - Uses Provider for immutable repositories
+/// - ChangeNotifierProvider for stateful providers (Auth, Club)
+/// - All repositories share AuthLocalSources for token injection
+/// - Repositories available via Provider.of<T>(context)
+///
+/// **Architecture [web:350]:**
+/// - Clean architecture with domain/data/presentation layers
+/// - Repository pattern with API/local sources
+/// - Offline-first caching strategy
+/// - Auth-first design (token in all repository calls)
+///
+/// Example:
+/// ```dart
+/// // Access repository in any widget
+/// final raidRepo = Provider.of<RaidRepository>(context);
+/// final raids = await raidRepo.getAllRaids();
+/// ```
 class SanglierExplorerApp extends StatelessWidget {
   final AuthProvider authProvider;
 
@@ -120,6 +154,11 @@ class SanglierExplorerApp extends StatelessWidget {
     );
   }
 
+  /// Initializes all repositories with shared dependencies [web:355].
+  ///
+  /// Creates repositories with API and local data sources. All repositories
+  /// share AuthLocalSources for token injection. Uses concurrent initialization
+  /// via sequential await (could optimize with Future.wait for independent repos).
   Future<Map<String, dynamic>> _createRepositories() async {
     final db = await DatabaseHelper.database;
     final prefs = await SharedPreferences.getInstance();
@@ -158,7 +197,20 @@ class SanglierExplorerApp extends StatelessWidget {
   }
 }
 
-/// Main screen with drawer navigation
+/// Main screen with auth-aware drawer navigation [web:324].
+///
+/// Root scaffold with side drawer menu showing different items based on:
+/// - Authentication status (logged in vs visitor)
+/// - User role (site manager sees Clubs menu)
+///
+/// **Drawer Sections:**
+/// - User header: Avatar, name, email (reactive to auth state)
+/// - Navigation: Home, Raids
+/// - Admin: Clubs (site managers only)
+/// - Auth: Login/Register (visitors) OR Profile/Logout (authenticated)
+///
+/// **Consumer Pattern [web:324]:**
+/// Uses Consumer<AuthProvider> for reactive drawer updates when auth changes.
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
@@ -209,8 +261,8 @@ class MainScreen extends StatelessWidget {
                   },
                 ),
 
-                const Divider(), // Séparateur visuel
-                // Menu Clubs visible uniquement pour les administrateurs de site
+                const Divider(),
+                // Admin menu: Clubs (site managers only)
                 if (isAuthenticated && user != null && user.isSiteManager)
                   ListTile(
                     leading: const Icon(Icons.groups),
@@ -226,6 +278,7 @@ class MainScreen extends StatelessWidget {
                     },
                   ),
                 const Divider(),
+                // Visitor menu
                 if (!isAuthenticated) ...[
                   ListTile(
                     leading: const Icon(Icons.login),
@@ -244,6 +297,7 @@ class MainScreen extends StatelessWidget {
                     },
                   ),
                 ],
+                // Authenticated user menu
                 if (isAuthenticated) ...[
                   ListTile(
                     leading: const Icon(Icons.account_circle),
@@ -277,7 +331,7 @@ class MainScreen extends StatelessWidget {
   }
 }
 
-/// Screen for displaying raids list
+/// Raids list screen with repository dependency injection.
 class RaidsScreen extends StatelessWidget {
   const RaidsScreen({super.key});
 

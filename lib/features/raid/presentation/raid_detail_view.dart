@@ -13,6 +13,29 @@ import '../domain/raid_repository.dart';
 import 'widgets/raid_info_section.dart';
 import '../../race/presentation/widgets/race_list_widget.dart';
 
+/// Raid detail screen with race list and conditional creation FAB.
+///
+/// Displays raid information, embedded race list, and floating action button
+/// for race creation. FAB visibility and state depend on event status, user
+/// permissions, and race count limit [web:138][web:140].
+///
+/// **FAB States:**
+/// - Hidden: Raid finished or user not raid manager
+/// - Badge: Race limit reached (shows "Limite atteinte X/Y")
+/// - Button: Enabled with counter (shows "AJOUTER X/Y")
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (_) => RaidDetailView(
+///       raidId: raid.id,
+///       repository: raidRepo,
+///     ),
+///   ),
+/// );
+/// ```
 class RaidDetailView extends StatefulWidget {
   final int raidId;
   final RaidRepository repository;
@@ -88,6 +111,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
+  /// Builds hero header with image, gradient overlay, and status badge [web:138].
   Widget _buildHeader(Raid raid) {
     return Stack(
       children: [
@@ -146,6 +170,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
+  /// Determines and builds status badge based on raid timing.
   Widget _buildStatusBadge(Raid raid) {
     if (raid.isFinished) {
       return _badge('Terminé', Icons.event_busy, Colors.grey);
@@ -156,6 +181,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     return _badge('À venir', Icons.upcoming, Colors.blue);
   }
 
+  /// Builds colored status badge with icon.
   Widget _badge(String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -181,22 +207,24 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
+  /// Builds conditional FAB with race count limit logic [web:140].
+  ///
+  /// States: Hidden (finished/no permission), Badge (limit reached), Button (enabled).
   Widget _buildFab(BuildContext context, Raid raid) {
-    // Raid terminé → Rien
+    // Hide if raid finished
     if (DateTime.now().isAfter(raid.timeEnd)) {
       return const SizedBox.shrink();
     }
 
-    // ✅ Vérifier la limite de courses
+    // Check user permissions
     return FutureBuilder<bool>(
       future: _canCreateRace(context, raid),
       builder: (context, canCreateSnapshot) {
-        // Pas le droit de créer → Rien
         if (canCreateSnapshot.data != true) {
           return const SizedBox.shrink();
         }
 
-        // ✅ Compter les courses existantes
+        // Check race count limit
         return FutureBuilder<int>(
           future: _getRaceCount(raid.id),
           builder: (context, raceCountSnapshot) {
@@ -204,7 +232,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
             final maxCount = raid.nbRaces;
             final isLimitReached = currentCount >= maxCount;
 
-            // ✅ Limite atteinte → Badge rouge
+            // Show limit badge if reached
             if (isLimitReached) {
               return Container(
                 padding: const EdgeInsets.symmetric(
@@ -234,7 +262,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
               );
             }
 
-            // ✅ Sinon → Bouton normal avec compteur
+            // Show add button with counter
             return FloatingActionButton.extended(
               backgroundColor: const Color(0xFFFF6B00),
               icon: const Icon(Icons.add),
@@ -242,7 +270,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                 'AJOUTER ($currentCount/$maxCount)',
               ),
               onPressed: () async {
-                // ✅ Navigation vers création de course
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -256,7 +283,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
                   ),
                 );
 
-                // ✅ Recharger après création
+                // Reload raid data after creation
                 if (result == true && mounted) {
                   setState(() {
                     _raidFuture = widget.repository.getRaidById(widget.raidId);
@@ -270,7 +297,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     );
   }
 
-  // ✅ Méthode pour compter les courses via Repository (API/Local)
+  /// Fetches current race count for raid.
   Future<int> _getRaceCount(int raidId) async {
     try {
       final raceRepository = Provider.of<RacesRepository>(
@@ -284,6 +311,7 @@ class _RaidDetailViewState extends State<RaidDetailView> {
     }
   }
 
+  /// Checks if current user is raid manager.
   Future<bool> _canCreateRace(BuildContext context, Raid raid) async {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -293,7 +321,6 @@ class _RaidDetailViewState extends State<RaidDetailView> {
       final currentUserId = int.tryParse(user.id);
       if (currentUserId == null) return false;
 
-      // Vérifier si l'utilisateur est le responsable du raid
       return raid.userId == currentUserId;
     } catch (_) {
       return false;

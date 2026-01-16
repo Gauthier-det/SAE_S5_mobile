@@ -2,6 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 
+/// Profile editing form screen with Provider-based state management [web:315][web:321][web:280].
+///
+/// Two-section form (personal info + sports info) with date picker integration
+/// and real-time state updates via AuthProvider. Validates required fields
+/// and handles optimistic updates with error recovery [web:321][web:280].
+///
+/// **Form Sections:**
+/// - Personal: First name*, last name*, phone, birth date
+/// - Sports: Club, licence number, PPS number, chip number
+/// - Email: Display-only (locked field)
+///
+/// **Features [web:320][web:321]:**
+/// - DatePicker integration for birth date [web:320][web:323]
+/// - Required field validation (first/last name)
+/// - Loading state with disabled submit during save
+/// - Success/error feedback via SnackBar
+/// - Auto-navigation on successful save
+///
+/// **State Management [web:321][web:280]:**
+/// - Uses Provider to access AuthProvider.currentUser
+/// - context.read() for actions (load/save)
+/// - context.watch() for reactive UI updates
+/// - TextEditingController per field for form state
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (context) => EditProfileScreen(),
+///   ),
+/// );
+/// ```
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -28,6 +61,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _loadUserData();
   }
 
+  /// Populates form fields from AuthProvider.currentUser [web:321].
   void _loadUserData() {
     final user = context.read<AuthProvider>().currentUser;
     if (user != null) {
@@ -61,6 +95,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  /// Shows DatePicker dialog for birth date selection [web:320][web:323].
   Future<void> _selectBirthDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -75,6 +110,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  /// Validates and submits profile updates via AuthProvider [web:321][web:280].
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -86,25 +122,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       await context.read<AuthProvider>().updateProfile(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneNumberController.text.trim().isEmpty
-            ? null
-            : _phoneNumberController.text.trim(),
-        birthDate: _birthDate?.toIso8601String(),
-        club: _clubController.text.trim().isEmpty
-            ? null
-            : _clubController.text.trim(),
-        licenceNumber: _licenceNumberController.text.trim().isEmpty
-            ? null
-            : _licenceNumberController.text.trim(),
-        ppsNumber: _ppsNumberController.text.trim().isEmpty
-            ? null
-            : _ppsNumberController.text.trim(),
-        chipNumber: _chipNumberController.text.trim().isEmpty
-            ? null
-            : _chipNumberController.text.trim(),
-      );
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            phoneNumber: _phoneNumberController.text.trim().isEmpty
+                ? null
+                : _phoneNumberController.text.trim(),
+            birthDate: _birthDate?.toIso8601String(),
+            club: _clubController.text.trim().isEmpty
+                ? null
+                : _clubController.text.trim(),
+            licenceNumber: _licenceNumberController.text.trim().isEmpty
+                ? null
+                : _licenceNumberController.text.trim(),
+            ppsNumber: _ppsNumberController.text.trim().isEmpty
+                ? null
+                : _ppsNumberController.text.trim(),
+            chipNumber: _chipNumberController.text.trim().isEmpty
+                ? null
+                : _chipNumberController.text.trim(),
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,7 +204,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Email (non modifiable)
+              // Email (read-only, locked)
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.email),
@@ -180,11 +216,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 24),
 
-              // Section Informations personnelles
+              // Section: Personal information
               _buildSectionTitle('Informations personnelles'),
               const SizedBox(height: 8),
 
-              // Nom
+              // Last name (required)
               TextFormField(
                 controller: _lastNameController,
                 decoration: const InputDecoration(
@@ -202,7 +238,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // Prénom
+              // First name (required)
               TextFormField(
                 controller: _firstNameController,
                 decoration: const InputDecoration(
@@ -220,7 +256,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // Téléphone
+              // Phone number (optional)
               TextFormField(
                 controller: _phoneNumberController,
                 keyboardType: TextInputType.phone,
@@ -234,7 +270,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // Date de naissance
+              // Birth date picker [web:320][web:323]
               InkWell(
                 onTap: _selectBirthDate,
                 child: InputDecorator(
@@ -264,11 +300,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 24),
 
-              // Section Informations sportives
+              // Section: Sports information
               _buildSectionTitle('Informations sportives'),
               const SizedBox(height: 8),
 
-              // Club
+              // Club (optional)
               TextFormField(
                 controller: _clubController,
                 decoration: const InputDecoration(
@@ -280,7 +316,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // Numéro de licence
+              // Licence number (optional)
               TextFormField(
                 controller: _licenceNumberController,
                 decoration: const InputDecoration(
@@ -292,7 +328,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 32),
 
-              // Bouton Enregistrer
+              // Save button with loading state
               SizedBox(
                 height: 50,
                 child: ElevatedButton.icon(
@@ -323,6 +359,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  /// Builds section header with consistent styling.
   Widget _buildSectionTitle(String title) {
     return Text(
       title,

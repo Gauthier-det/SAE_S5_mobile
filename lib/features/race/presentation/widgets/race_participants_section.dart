@@ -5,6 +5,15 @@ import '../../../../core/presentation/widgets/common_info_card.dart';
 import '../../domain/race.dart';
 import '../../domain/race_repository.dart';
 
+/// Race participants and capacity section.
+///
+/// Displays team registration count with progress bar, team size, and expected
+/// participant range. Fetches live registration data via [Provider] [web:138].
+///
+/// Example:
+/// ```dart
+/// RaceParticipantsSection(race: selectedRace);
+/// ```
 class RaceParticipantsSection extends StatelessWidget {
   final Race race;
 
@@ -22,6 +31,7 @@ class RaceParticipantsSection extends StatelessWidget {
 
         return Column(
           children: [
+            // Registered teams count with "COMPLET" badge
             CommonInfoCard(
               icon: Icons.group,
               title: 'Équipes inscrites',
@@ -48,6 +58,8 @@ class RaceParticipantsSection extends StatelessWidget {
                   : null,
             ),
             const SizedBox(height: 8),
+
+            // Capacity progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
@@ -60,16 +72,21 @@ class RaceParticipantsSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Team size info
             CommonInfoCard(
               icon: Icons.people,
               title: 'Membres par équipe',
               content: '${race.teamMembers} personnes',
             ),
             const SizedBox(height: 12),
+
+            // Expected participant range
             CommonInfoCard(
               icon: Icons.person,
               title: 'Participants attendus',
-              content: '${race.minParticipants} - ${race.maxParticipants} personnes',
+              content:
+                  '${race.minParticipants} - ${race.maxParticipants} personnes',
             ),
           ],
         );

@@ -2,6 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'auth/presentation/providers/auth_provider.dart';
 
+/// Marketing landing page with responsive sections and conditional CTAs [web:332][web:336][web:339].
+///
+/// Multi-section scrollable page targeting two audiences (clubs/B2B and runners/B2C).
+/// Uses LayoutBuilder for responsive button layouts and Consumer for auth-aware CTAs
+/// [web:324][web:336][web:339].
+///
+/// **Page Structure [web:332]:**
+/// - Header: Sticky navigation with logo
+/// - Hero: Gradient banner with image, headline, CTAs (responsive)
+/// - B2B Section: Club features (validation, dashboard, imports)
+/// - B2C Section: Runner features (history, documents, progress)
+/// - Tutorial: 3-step onboarding guide
+/// - Footer: Copyright and app description
+///
+/// **Responsive Design [web:336][web:339]:**
+/// - LayoutBuilder detects screen width (500px breakpoint)
+/// - Mobile: CTAs stacked vertically (Column)
+/// - Desktop: CTAs side-by-side (Row)
+/// - Tutorial steps constrained to 200px width
+///
+/// **Auth-Aware CTAs [web:324]:**
+/// - Consumer<AuthProvider> hides "S'inscrire" button when authenticated
+/// - Shows only "Voir les Raids" for logged-in users
+///
+/// Example:
+/// ```dart
+/// MaterialApp(
+///   home: Home(),
+///   routes: {
+///     '/raids': (context) => RaidsScreen(),
+///     '/register': (context) => RegisterScreen(),
+///   },
+/// );
+/// ```
 class Home extends StatelessWidget {
   const Home({super.key});
 
@@ -23,34 +57,32 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Header avec navigation
+  /// Header with navigation and branding.
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFF1B4332), // Vert forêt sombre
+        color: Color(0xFF1B4332),
       ),
       child: SafeArea(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Menu hamburger
             IconButton(
               icon: const Icon(Icons.menu, color: Colors.white, size: 28),
               onPressed: () {
                 Scaffold.of(context).openDrawer();
               },
             ),
-            // Logo
             Row(
               children: [
                 const SizedBox(width: 8),
                 Text(
                   'Orient\'Action',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -60,7 +92,7 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Section Hero (Identité)
+  /// Hero section with image, headline, and responsive CTAs [web:332][web:336].
   Widget _buildHeroSection(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -70,14 +102,13 @@ class Home extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xFF2D6A4F), // Vert forêt moyen
-            const Color(0xFF40916C), // Vert plus clair
+            const Color(0xFF2D6A4F),
+            const Color(0xFF40916C),
           ],
         ),
       ),
       child: Column(
         children: [
-          // Illustration
           Container(
             height: 300,
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
@@ -92,23 +123,22 @@ class Home extends StatelessWidget {
           Text(
             'Découvrez la Course d\'Orientation',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
             'Organisez vos raids et courses en toute simplicité',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-            ),
+                  color: Colors.white.withOpacity(0.9),
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          // Dans _buildHeroSection, remplace la Row des boutons par :
 
-          // Boutons responsive
+          // Responsive CTAs with auth-aware visibility [web:324][web:336][web:339]
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               final isAuthenticated = authProvider.isAuthenticated;
@@ -116,7 +146,7 @@ class Home extends StatelessWidget {
               return LayoutBuilder(
                 builder: (context, constraints) {
                   if (constraints.maxWidth < 500) {
-                    // Mobile : boutons empilés verticalement
+                    // Mobile: Stacked buttons
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -169,8 +199,7 @@ class Home extends StatelessWidget {
                       ],
                     );
                   } else {
-                    // Desktop : boutons côte à côte
-                    // Desktop : boutons côte à côte
+                    // Desktop: Side-by-side buttons
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -238,29 +267,29 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Section B2B (Pour les Clubs)
+  /// B2B section targeting race organizers and clubs [web:332].
   Widget _buildB2BSection(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
-      color: const Color(0xFF1B4332), // Fond sombre
+      color: const Color(0xFF1B4332),
       child: Column(
         children: [
           Text(
             'POUR LES CLUBS',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: const Color(0xFF95D5B2),
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: const Color(0xFF95D5B2),
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'Organisez sans Stress',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -294,7 +323,6 @@ class Home extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          // Arguments clés
           _buildFeatureItem(
             icon: Icons.check_circle_outline,
             title: 'Validation le Jour J',
@@ -318,31 +346,31 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Section B2C (Pour les Coureurs)
+  /// B2C section targeting participants and runners [web:332].
   Widget _buildB2CSection(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: const BoxDecoration(
-        color: Color(0xFF40916C), // Vert forêt vif
+        color: Color(0xFF40916C),
       ),
       child: Column(
         children: [
           Text(
             'POUR LES COUREURS',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.white.withOpacity(0.9),
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'Simplicité & Performance',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -368,7 +396,7 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Section Tutoriel
+  /// Tutorial section with 3-step onboarding guide [web:332].
   Widget _buildTutorialSection(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -379,13 +407,13 @@ class Home extends StatelessWidget {
           Text(
             'Comment ça fonctionne ?',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: const Color(0xFF1B4332),
-              fontWeight: FontWeight.bold,
-            ),
+                  color: const Color(0xFF1B4332),
+                  fontWeight: FontWeight.bold,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
-          // UTILISER Column au lieu de Row pour mobile
+          // Vertical layout for mobile-first approach
           Column(
             children: [
               _buildTutorialStep(
@@ -415,7 +443,7 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Footer
+  /// Footer with branding and copyright.
   Widget _buildFooter(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -426,9 +454,9 @@ class Home extends StatelessWidget {
           Text(
             'Orient Action',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -452,7 +480,7 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Widget pour les features B2B
+  /// B2B feature item with icon and description.
   Widget _buildFeatureItem({
     required IconData icon,
     required String title,
@@ -497,7 +525,7 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Widget pour les features B2C
+  /// B2C feature card with icon and description.
   Widget _buildRunnerFeature({
     required IconData icon,
     required String title,
@@ -545,7 +573,7 @@ class Home extends StatelessWidget {
     );
   }
 
-  // Widget pour les étapes du tutoriel
+  /// Tutorial step with numbered icon and description.
   Widget _buildTutorialStep({
     required String number,
     required IconData icon,
@@ -553,7 +581,7 @@ class Home extends StatelessWidget {
     required String description,
   }) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 200), // Limiter la largeur
+      constraints: const BoxConstraints(maxWidth: 200),
       child: Column(
         children: [
           Container(

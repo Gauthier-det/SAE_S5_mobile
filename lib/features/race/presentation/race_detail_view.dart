@@ -17,6 +17,26 @@ import 'widgets/race_ages_section.dart';
 import 'widgets/race_pricing_section.dart';
 import 'widgets/race_detail_section.dart';
 
+/// Race detail screen.
+///
+/// Displays comprehensive race information with collapsible header, quick stats,
+/// and sections for dates, participants, ages, and pricing. Provides navigation
+/// to team list and registration with auto-refresh on return [web:138][web:140].
+///
+/// **Button States:**
+/// - "S'INSCRIRE": Open for registration (before start + spots available)
+/// - "COMPLET": Fully booked (registered >= max teams)
+/// - "FERMÉ": Registration closed (race started)
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (_) => RaceDetailView(raceId: race.id),
+///   ),
+/// );
+/// ```
 class RaceDetailView extends StatefulWidget {
   final int raceId;
 
@@ -69,7 +89,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
 
           return CustomScrollView(
             slivers: [
-              // AppBar simple
+              // Collapsible header [web:140]
               SliverAppBar(
                 expandedHeight: 140,
                 pinned: true,
@@ -80,7 +100,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                   background: RaceHeader(race: race),
                 ),
                 actions: [
-                  // Bouton pour voir les équipes inscrites
+                  // View registered teams
                   IconButton(
                     icon: const Icon(Icons.groups),
                     tooltip: 'Équipes inscrites',
@@ -95,14 +115,14 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                           ),
                         ),
                       ).then((_) {
-                        // Recharger le nombre d'équipes après retour
+                        // Refresh team count on return
                         setState(() {
                           final repository = Provider.of<RacesRepository>(
                             context,
                             listen: false,
                           );
-                          _teamsCountFuture = repository
-                              .getRegisteredTeamsCount(widget.raceId);
+                          _teamsCountFuture =
+                              repository.getRegisteredTeamsCount(widget.raceId);
                         });
                       });
                     },
@@ -110,18 +130,17 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                 ],
               ),
 
-              // Contenu
+              // Content sections
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    // Stats rapides
                     RaceQuickStats(race: race),
 
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          // Section Dates
+                          // Dates section
                           RaceDetailSection(
                             title: 'Dates',
                             icon: Icons.schedule,
@@ -141,7 +160,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                             ),
                           ),
 
-                          // Section Participants
+                          // Participants section
                           RaceDetailSection(
                             title: 'Participants',
                             icon: Icons.groups,
@@ -149,7 +168,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                             child: RaceParticipantsSection(race: race),
                           ),
 
-                          // Section Âges
+                          // Age categories section
                           RaceDetailSection(
                             title: 'Catégories d\'âge',
                             icon: Icons.cake,
@@ -157,7 +176,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                             child: RaceAgesSection(race: race),
                           ),
 
-                          // Section Tarifs
+                          // Pricing section
                           RaceDetailSection(
                             title: 'Tarifs',
                             icon: Icons.euro,
@@ -167,12 +186,12 @@ class _RaceDetailViewState extends State<RaceDetailView> {
 
                           const SizedBox(height: 16),
 
-                          // Bouton voir les équipes
+                          // View teams button
                           _buildTeamsButton(race),
 
                           const SizedBox(height: 12),
 
-                          // Bouton inscription
+                          // Registration button (conditional state)
                           _buildRegistrationButton(race),
 
                           const SizedBox(height: 32),
@@ -205,6 +224,7 @@ class _RaceDetailViewState extends State<RaceDetailView> {
     );
   }
 
+  /// Builds teams list button with live count.
   Widget _buildTeamsButton(Race race) {
     return FutureBuilder<int>(
       future: _teamsCountFuture,
@@ -226,15 +246,12 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                   ),
                 ),
               ).then((_) {
-                // Recharger après retour
+                // Refresh on return
                 setState(() {
-                  final repository = Provider.of<RacesRepository>(
-                    context,
-                    listen: false,
-                  );
-                  _teamsCountFuture = repository.getRegisteredTeamsCount(
-                    widget.raceId,
-                  );
+                  final repository =
+                      Provider.of<RacesRepository>(context, listen: false);
+                  _teamsCountFuture =
+                      repository.getRegisteredTeamsCount(widget.raceId);
                 });
               });
             },
@@ -263,6 +280,9 @@ class _RaceDetailViewState extends State<RaceDetailView> {
     );
   }
 
+  /// Builds registration button with conditional state.
+  ///
+  /// States: S'INSCRIRE (enabled), COMPLET (fully booked), FERMÉ (race started).
   Widget _buildRegistrationButton(Race race) {
     return FutureBuilder<int>(
       future: _teamsCountFuture,
@@ -311,16 +331,15 @@ class _RaceDetailViewState extends State<RaceDetailView> {
                       ),
                     );
 
-                    // Si une inscription a été faite, recharger
+                    // Refresh if registration succeeded
                     if (result == true && mounted) {
                       setState(() {
                         final repository = Provider.of<RacesRepository>(
                           context,
                           listen: false,
                         );
-                        _teamsCountFuture = repository.getRegisteredTeamsCount(
-                          widget.raceId,
-                        );
+                        _teamsCountFuture =
+                            repository.getRegisteredTeamsCount(widget.raceId);
                       });
                     }
                   },
