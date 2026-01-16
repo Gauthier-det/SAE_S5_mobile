@@ -1,6 +1,21 @@
 // lib/features/races/presentation/widgets/race_detail_section.dart
 import 'package:flutter/material.dart';
 
+/// Reusable section card for race detail screens.
+///
+/// Creates a card with colored header, optional subtitle, and custom content.
+/// Used to organize race information into visual sections.
+///
+/// Example:
+/// ```dart
+/// RaceDetailSection(
+///   title: 'Informations',
+///   icon: Icons.info_outline,
+///   color: Colors.blue,
+///   subtitle: 'Détails de la course',
+///   child: Text('Content here...'),
+/// );
+/// ```
 class RaceDetailSection extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -35,7 +50,7 @@ class RaceDetailSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header simple
+          // Header with icon and title
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -55,7 +70,8 @@ class RaceDetailSection extends StatelessWidget {
               ],
             ),
           ),
-          
+
+          // Optional subtitle
           if (subtitle != null)
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
@@ -67,9 +83,10 @@ class RaceDetailSection extends StatelessWidget {
                 ),
               ),
             ),
-          
+
           const Divider(height: 1),
-          
+
+          // Content
           Padding(
             padding: const EdgeInsets.all(16),
             child: child,

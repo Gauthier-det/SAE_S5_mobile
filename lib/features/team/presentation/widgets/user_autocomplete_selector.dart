@@ -2,6 +2,59 @@
 import 'package:flutter/material.dart';
 import '../../../user/domain/user.dart';
 
+/// Multi-select autocomplete for team member selection with availability validation [web:262][web:264][web:267].
+///
+/// Combines Autocomplete widget with Chip display for selected members (max 5).
+/// Shows availability indicators (conflicts, age restrictions, team membership)
+/// and prevents selection of unavailable users [web:262][web:263][web:264].
+///
+/// **Features:**
+/// - Search-as-you-type filtering [web:262][web:264]
+/// - Chip-based selection display (removable via delete icon) [web:267]
+/// - Empty state shows all available users [web:262]
+/// - Custom optionsViewBuilder with availability badges [web:269]
+/// - Disabled state for unavailable users with reason chips
+///
+/// **Availability Flags on User:**
+/// - `isAvailable`: Overall availability (default true)
+/// - `hasOverlappingRace`: Time conflict with other race
+/// - `alreadyInTeam`: Already member of another team
+/// - `isSelf`: Current logged-in user (shown with "Moi" badge)
+/// - `invalidAge`: Below minimum age (12 years)
+///
+/// Example:
+/// ```dart
+/// UserAutocompleteSelector(
+///   availableUsers: [
+///     User(
+///       id: 1,
+///       name: 'John',
+///       lastName: 'Doe',
+///       email: 'john@example.com',
+///       isAvailable: true,
+///       isSelf: false,
+///     ),
+///     User(
+///       id: 2,
+///       name: 'Jane',
+///       lastName: 'Smith',
+///       email: 'jane@example.com',
+///       isAvailable: false,
+///       hasOverlappingRace: true,
+///     ),
+///   ],
+///   selectedMembers: selectedUsers,
+///   onUserSelected: (user) {
+///     setState(() {
+///       if (selectedUsers.contains(user)) {
+///         selectedUsers.remove(user); // Toggle off
+///       } else {
+///         selectedUsers.add(user); // Toggle on
+///       }
+///     });
+///   },
+/// );
+/// ```
 class UserAutocompleteSelector extends StatefulWidget {
   final List<User> availableUsers;
   final List<User> selectedMembers;
@@ -30,7 +83,7 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Membres sélectionnés
+        // Selected members as removable chips [web:267]
         if (widget.selectedMembers.isNotEmpty) ...[
           Text(
             'Membres sélectionnés (${widget.selectedMembers.length}/5)',
@@ -58,10 +111,10 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
           const SizedBox(height: 16),
         ],
 
-        // Autocomplete
+        // Autocomplete search field [web:262][web:264]
         Autocomplete<User>(
           optionsBuilder: (TextEditingValue textEditingValue) {
-            // Si vide, afficher tous les users non sélectionnés
+            // Empty query: show all non-selected users [web:262]
             if (textEditingValue.text.isEmpty) {
               final nonSelected = widget.availableUsers
                   .where(
@@ -73,7 +126,7 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
               return nonSelected;
             }
 
-            // Sinon filtrer
+            // Filter by search query
             final filtered = widget.availableUsers.where((user) {
               final isNotSelected = !widget.selectedMembers.any(
                 (m) => m.id == user.id,
@@ -137,7 +190,7 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
                           itemCount: options.length,
                           itemBuilder: (context, index) {
                             final user = options.elementAt(index);
-                            // Check availability flags
+                            // Extract availability flags [web:251]
                             final isAvailable = user.isAvailable ?? true;
                             final hasOverlappingRace =
                                 user.hasOverlappingRace ?? false;
@@ -257,6 +310,7 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
               return;
             }
 
+            // Enforce max 5 members
             if (widget.selectedMembers.length >= 5) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -279,6 +333,7 @@ class _UserAutocompleteSelectorState extends State<UserAutocompleteSelector> {
     );
   }
 
+  /// Builds unavailability reason chip.
   Widget _buildChip(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

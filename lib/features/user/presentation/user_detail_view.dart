@@ -3,6 +3,39 @@ import 'package:provider/provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import 'edit_profile_screen.dart';
 
+/// Read-only profile screen with reactive updates via Consumer [web:324][web:325][web:327].
+///
+/// Displays user profile information in a card-based layout with avatar,
+/// personal details, and sports info. Auto-rebuilds when AuthProvider.currentUser
+/// changes [web:324][web:325].
+///
+/// **Layout Sections:**
+/// - Header: Avatar (network image with fallback), full name, email
+/// - Profile card: Personal info (name, phone, age, club, licence)
+/// - Account info: Creation date, email (locked)
+/// - Actions: Edit profile button, logout button
+///
+/// **Consumer Pattern [web:324][web:325][web:327]:**
+/// - Uses Consumer<AuthProvider> instead of watch() for granular rebuilds
+/// - Only this widget rebuilds on user changes, not parent widgets
+/// - Builder receives (context, authProvider, child) parameters
+///
+/// **Features:**
+/// - Network image with error fallback for profile picture
+/// - Age calculation from birth date
+/// - Localized date formatting (French)
+/// - Logout action with navigation pop
+/// - Navigation to EditProfileScreen
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (context) => ProfileScreen(),
+///   ),
+/// );
+/// ```
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -42,7 +75,7 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 32),
 
-                // Profile Image
+                // Profile avatar with network image fallback [web:316]
                 CircleAvatar(
                   radius: 60,
                   backgroundColor: theme.colorScheme.primary.withValues(
@@ -75,7 +108,7 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // User Name
+                // User name
                 Text(
                   user.fullName,
                   style: theme.textTheme.headlineMedium?.copyWith(
@@ -95,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
 
-                // Profile Details Card
+                // Profile details card [web:316][web:329]
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Card(
@@ -186,7 +219,7 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Edit Profile Button
+                // Edit profile navigation button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton.icon(
@@ -214,6 +247,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// Formats date in French locale (dd mois yyyy).
   String _formatDate(DateTime date) {
     final months = [
       'janvier',
@@ -232,6 +266,9 @@ class ProfileScreen extends StatelessWidget {
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
+  /// Calculates age from ISO birth date string.
+  ///
+  /// Returns formatted age or 'Non renseigné' if invalid/missing.
   String _calculateAge(String? birthDate) {
     if (birthDate == null || birthDate.isEmpty) {
       return 'Non renseigné';

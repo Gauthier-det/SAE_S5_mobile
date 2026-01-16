@@ -1,21 +1,17 @@
-// lib/core/database/seed_db.dart
 import 'package:sqflite/sqflite.dart';
 
+/// Helper class for seeding the database with initial sample data.
 class SeedData {
+  /// Seeds the database with sample data if not already seeded.
   static Future<void> seedDatabase(Database db) async {
-    // Vérifier si la base contient déjà des données
     final count = Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM SAN_RAIDS'),
     );
 
     if (count != null && count > 0) {
-      print('Database already seeded, skipping...');
       return;
     }
 
-    print('Seeding database with sample data...');
-
-    // 1. Adresses
     final addresses = [
       {
         'ADD_ID': 1,
@@ -127,7 +123,6 @@ class SeedData {
       await db.insert('SAN_ADDRESSES', addr);
     }
 
-    // 2. Catégories
     final categories = [
       {'CAT_ID': 1, 'CAT_LABEL': 'Mineur'},
       {'CAT_ID': 2, 'CAT_LABEL': 'Majeur non licencié'},
@@ -311,7 +306,6 @@ class SeedData {
       await db.insert('SAN_USERS', user);
     }
 
-    // 4. Clubs
     final clubs = [
       {'CLU_ID': 1, 'USE_ID': 2, 'ADD_ID': 1, 'CLU_NAME': 'CO-DE'},
       {'CLU_ID': 2, 'USE_ID': 3, 'ADD_ID': 3, 'CLU_NAME': 'L\'Embuscade'},
@@ -320,13 +314,11 @@ class SeedData {
       await db.insert('SAN_CLUBS', club);
     }
 
-    // 5. Mettre à jour CLU_ID des users
     await db.update('SAN_USERS', {'CLU_ID': 1}, where: 'USE_ID IN (2,4,7,8,9)');
     await db.update('SAN_USERS', {
       'CLU_ID': 2,
     }, where: 'USE_ID IN (3,5,6,10,11)');
 
-    // 6. Roles
     final roles = [
       {'ROL_ID': 1, 'ROL_NAME': 'Coureur'},
       {'ROL_ID': 2, 'ROL_NAME': 'Gestionnaire de site'},
@@ -335,7 +327,6 @@ class SeedData {
       await db.insert('SAN_ROLES', role);
     }
 
-    // 7. Roles_Users
     final rolesUsers = [
       {'USE_ID': 1, 'ROL_ID': 2}, // admin
       {'USE_ID': 2, 'ROL_ID': 1}, {'USE_ID': 3, 'ROL_ID': 1},
@@ -351,7 +342,6 @@ class SeedData {
       await db.insert('SAN_ROLES_USERS', ru);
     }
 
-    // 8. Raids (avec RAI_NB_RACES)
     final raids = [
       {
         'RAI_ID': 1,
@@ -392,7 +382,6 @@ class SeedData {
       await db.insert('SAN_RAIDS', raid);
     }
 
-    // 9. Races (avec RAC_GENDER et RAC_CHIP_MANDATORY)
     final races = [
       {
         'RAC_ID': 1,
@@ -479,7 +468,6 @@ class SeedData {
       await db.insert('SAN_RACES', race);
     }
 
-    // 10. Categories_Races
     final categoriesRaces = [
       {'RAC_ID': 1, 'CAT_ID': 1, 'CAR_PRICE': 8.00},
       {'RAC_ID': 1, 'CAT_ID': 2, 'CAR_PRICE': 12.00},
@@ -498,7 +486,6 @@ class SeedData {
       await db.insert('SAN_CATEGORIES_RACES', cr);
     }
 
-    // 11. Teams
     final teams = [
       {'TEA_ID': 1, 'USE_ID': 2, 'TEA_NAME': 'Lunatic', 'TEA_IMAGE': null},
       {'TEA_ID': 2, 'USE_ID': 7, 'TEA_NAME': 'Arsenik', 'TEA_IMAGE': null},
@@ -514,7 +501,6 @@ class SeedData {
       await db.insert('SAN_TEAMS', team);
     }
 
-    // 12. Users_Teams
     final usersTeams = [
       {'USE_ID': 7, 'TEA_ID': 1},
       {'USE_ID': 8, 'TEA_ID': 1},
@@ -531,7 +517,6 @@ class SeedData {
       await db.insert('SAN_USERS_TEAMS', ut);
     }
 
-    // 13. Teams_Races
     final teamsRaces = [
       {
         'TEA_ID': 1,
@@ -594,7 +579,6 @@ class SeedData {
       await db.insert('SAN_TEAMS_RACES', tr);
     }
 
-    // 14. Users_Races (avec USR_PPS_FORM déplacé ici)
     final usersRaces = [
       {
         'USE_ID': 7,
@@ -741,6 +725,5 @@ class SeedData {
       await db.insert('SAN_USERS_RACES', ur);
     }
 
-    print('Database seeded successfully! 2 raids, 4 races, 12 users, 4 teams.');
   }
 }

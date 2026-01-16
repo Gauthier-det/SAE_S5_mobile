@@ -8,6 +8,44 @@ import 'widgets/team_validation_button.dart';
 import 'widgets/team_members_list.dart';
 import 'widgets/add_member_dialog.dart';
 
+/// Team detail screen with granular role-based permissions [web:273][web:274][web:275].
+///
+/// Manages team viewing, member management, and race validation with three
+/// permission levels: team creator, race manager, and member [web:274][web:277].
+///
+/// **Permission Model [web:273][web:274]:**
+/// - Team Creator: Add/remove members, edit own info
+/// - Race Manager: Validate/invalidate team, delete team, edit all members, add/remove members
+/// - Member: View details, edit own PPS/chip only
+///
+/// **Business Rules:**
+/// - Team can be validated only if all members have licence OR PPS
+/// - PPS not required/editable if member has licence number
+/// - Only race manager can validate/invalidate/delete team
+/// - Validation requires confirmation dialog
+///
+/// **Key Actions:**
+/// - Toggle validation (race manager only)
+/// - Add/remove members (creator or manager)
+/// - Edit PPS form (no licence required, self or manager)
+/// - Edit chip number (self or manager)
+/// - Delete team (race manager only)
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (context) => TeamDetailView(
+///       repository: teamRepository,
+///       teamId: 123,
+///       raceId: 456,
+///       isRaceManager: true,
+///       currentUserId: currentUser.id,
+///     ),
+///   ),
+/// );
+/// ```
 class TeamDetailView extends StatefulWidget {
   final TeamRepository repository;
   final int teamId;
@@ -41,27 +79,28 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     _loadTeamDetails();
   }
 
-  // ✅ Vérifie si l'utilisateur est le créateur de l'équipe
+  /// Checks if current user is team creator [web:274][web:277].
   bool _isTeamCreator() {
     return _team?.managerId == widget.currentUserId;
   }
 
-  // ✅ Vérifie si l'utilisateur peut gérer l'équipe (créateur OU responsable course)
+  /// Checks if user can manage team (creator OR race manager) [web:274].
   bool _canManageTeam() {
     return _isTeamCreator() || widget.isRaceManager;
   }
 
-  // ✅ Vérifie si l'utilisateur peut modifier un membre spécifique
+  /// Checks if user can edit specific member's details [web:274][web:277].
+  ///
+  /// Race manager and team creator can edit anyone.
+  /// Regular members can edit only themselves.
   bool _canEditMember(int memberId) {
-    // Responsable de course ou créateur d'équipe → peut modifier tout le monde
     if (widget.isRaceManager || _isTeamCreator()) {
       return true;
     }
-    // Sinon, peut modifier seulement soi-même
     return memberId == widget.currentUserId;
   }
 
-  // ✅ Vérifie si l'équipe peut être validée (tous les membres ont licence OU PPS)
+  /// Validates team readiness: all members need licence OR PPS.
   bool _canValidateTeam() {
     for (var member in _membersWithDetails) {
       final hasLicence =
@@ -78,11 +117,11 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     return true;
   }
 
+  /// Loads team with validation status, dossard, and member details.
   Future<void> _loadTeamDetails() async {
     setState(() => _isLoading = true);
 
     try {
-      // ✅ Utilise la nouvelle méthode qui récupère le statut de validation
       final team = await widget.repository.getTeamByIdWithRaceStatus(
         widget.teamId,
         widget.raceId,
@@ -96,10 +135,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       final membersWithDetails = await widget.repository
           .getTeamMembersWithRaceDetails(widget.teamId, widget.raceId);
 
-      print('🔍 Team loaded: ${team?.name}, isValid: ${team?.isValid}');
-      print('📊 Dossard: $dossardNumber');
-      print('👥 Members: ${membersWithDetails.length}');
-
       if (mounted) {
         setState(() {
           _team = team;
@@ -109,7 +144,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         });
       }
     } catch (e) {
-      print('❌ Error loading team: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showSnackBar('Erreur : $e');
@@ -117,26 +151,21 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
+  /// Toggles team validation (race manager only) [web:274].
   Future<void> _toggleTeamValidation() async {
-    // ✅ Seul le responsable de course peut valider/invalider
     if (!widget.isRaceManager) {
       _showSnackBar('Seul le responsable de la course peut valider l\'équipe');
       return;
     }
 
-    print('Toggling team validation for team ${widget.teamId}');
-
     final isCurrentlyValid = _team?.isValid ?? false;
     final action = isCurrentlyValid ? 'invalider' : 'valider';
 
-    print('Toggling team validation. Currently valid: $isCurrentlyValid');
-
+    // Check validation requirements before validating
     if (!isCurrentlyValid && !_canValidateTeam()) {
       _showValidationErrorDialog();
       return;
     }
-
-    print('User confirmed to $action the team');
 
     final confirm = await _showConfirmDialog(
       title: '${action[0].toUpperCase()}${action.substring(1)} l\'équipe',
@@ -169,7 +198,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           isSuccess: true,
         );
         await _loadTeamDetails();
-        // Navigator.pop(context, true); // Keep the user on the page to see the status change
       }
     } catch (e) {
       if (mounted) {
@@ -182,8 +210,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
+  /// Shows dialog to add member (creator or manager only) [web:274].
   Future<void> _addMember() async {
-    // ✅ Seuls le créateur et le responsable peuvent ajouter des membres
     if (!_canManageTeam()) {
       _showSnackBar('Vous n\'avez pas la permission d\'ajouter des membres');
       return;
@@ -232,8 +260,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
+  /// Removes member from team (creator or manager only) [web:274].
   Future<void> _removeMember(int userId, String memberName) async {
-    // ✅ Seuls le créateur et le responsable peuvent retirer des membres
     if (!_canManageTeam()) {
       _showSnackBar('Vous n\'avez pas la permission de retirer des membres');
       return;
@@ -266,8 +294,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
+  /// Deletes team (race manager only) [web:274].
   Future<void> _deleteTeam() async {
-    // ✅ Seul le responsable de course peut supprimer l'équipe
     if (!widget.isRaceManager) {
       _showSnackBar(
         'Seul le responsable de la course peut supprimer l\'équipe',
@@ -299,6 +327,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
+  /// Edits member's PPS form (no licence required, self or manager) [web:274].
   Future<void> _editPPSForm(
     int userId,
     String currentPPS,
@@ -306,7 +335,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   ) async {
     if (!_canEditMember(userId)) {
       _showSnackBar('Vous ne pouvez modifier que vos propres informations');
-      print('User $userId cannot edit member');
       return;
     }
 
@@ -317,7 +345,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     if (hasLicence) {
       _showSnackBar('Ce membre a déjà un numéro de licence');
-      print('Member $userId has a licence, cannot edit PPS');
       return;
     }
 
@@ -349,8 +376,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       ),
     );
 
-    print('PPS edit result for user $userId: $result');
-
     if (result == null || result == currentPPS) return;
 
     try {
@@ -368,17 +393,16 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     } catch (e) {
       if (mounted) {
         _showSnackBar('Erreur : $e');
-        print('Error updating PPS: $e');
       }
     }
   }
 
+  /// Edits member's chip number (self or manager) [web:274].
   Future<void> _editChipNumber(
     int userId,
     int? currentChip,
     String memberName,
   ) async {
-    // ✅ Vérifier si l'utilisateur peut modifier ce membre
     if (!_canEditMember(userId)) {
       _showSnackBar('Vous ne pouvez modifier que vos propres informations');
       return;
@@ -445,6 +469,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     );
   }
 
+  /// Shows error dialog when validation requirements not met.
   void _showValidationErrorDialog() {
     showDialog(
       context: context,
@@ -463,6 +488,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     );
   }
 
+  /// Generic confirmation dialog for destructive actions.
   Future<bool?> _showConfirmDialog({
     required String title,
     required String content,
@@ -513,36 +539,36 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _team == null
-          ? const Center(child: Text('Équipe introuvable'))
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TeamHeader(team: _team!, dossardNumber: _dossardNumber),
+              ? const Center(child: Text('Équipe introuvable'))
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TeamHeader(team: _team!, dossardNumber: _dossardNumber),
 
-                  // ✅ Bouton de validation visible UNIQUEMENT pour le responsable
-                  if (widget.isRaceManager)
-                    TeamValidationButton(
-                      isValid: _team!.isValid ?? false,
-                      isValidating: _isValidating,
-                      onPressed: _toggleTeamValidation,
-                    ),
+                      // Validation button (race manager only) [web:274]
+                      if (widget.isRaceManager)
+                        TeamValidationButton(
+                          isValid: _team!.isValid ?? false,
+                          isValidating: _isValidating,
+                          onPressed: _toggleTeamValidation,
+                        ),
 
-                  TeamMembersList(
-                    members: _membersWithDetails,
-                    canManageTeam: _canManageTeam(),
-                    isRaceManager: widget.isRaceManager,
-                    currentUserId: widget.currentUserId, // ✅ AJOUTE
-                    canEditMember: _canEditMember, // ✅ AJOUTE
-                    raceId: widget.raceId,
-                    onAddMember: _addMember,
-                    onRemoveMember: _removeMember,
-                    onEditPPS: _editPPSForm,
-                    onEditChipNumber: _editChipNumber,
+                      TeamMembersList(
+                        members: _membersWithDetails,
+                        canManageTeam: _canManageTeam(),
+                        isRaceManager: widget.isRaceManager,
+                        currentUserId: widget.currentUserId,
+                        canEditMember: _canEditMember,
+                        raceId: widget.raceId,
+                        onAddMember: _addMember,
+                        onRemoveMember: _removeMember,
+                        onEditPPS: _editPPSForm,
+                        onEditChipNumber: _editChipNumber,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 }

@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../../shared/utils/date_formatter.dart';
 import '../../../raid/domain/raid.dart';
 
+/// Raid information banner widget.
+///
+/// Displays raid name and date range in a blue info card. Typically used in
+/// forms or screens to show context about the parent raid event.
+///
+/// Example:
+/// ```dart
+/// RaidInfoBanner(raid: selectedRaid);
+/// ```
 class RaidInfoBanner extends StatelessWidget {
   final Raid raid;
 

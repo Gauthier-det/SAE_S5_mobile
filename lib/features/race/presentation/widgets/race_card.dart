@@ -4,6 +4,18 @@ import 'package:provider/provider.dart';
 import '../../domain/race.dart';
 import '../../domain/race_repository.dart';
 
+/// Race list card widget.
+///
+/// Displays race summary with type badge, difficulty, dates, and team capacity
+/// with live registration count. Shows "COMPLET" badge when fully booked [web:138].
+///
+/// Example:
+/// ```dart
+/// RaceCard(
+///   race: race,
+///   onTap: () => Navigator.push(...),
+/// );
+/// ```
 class RaceCard extends StatelessWidget {
   final Race race;
   final VoidCallback onTap;
@@ -24,7 +36,7 @@ class RaceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header avec type et difficulté
+            // Header: Type badge and difficulty
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -78,13 +90,12 @@ class RaceCard extends StatelessWidget {
               ),
             ),
 
-            // Contenu
+            // Content: Name, date, capacity
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Nom de la course
                   Text(
                     race.name,
                     style: theme.textTheme.titleLarge?.copyWith(
@@ -94,7 +105,7 @@ class RaceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Date et durée
+                  // Date
                   Row(
                     children: [
                       const Icon(Icons.calendar_today, size: 16),
@@ -120,7 +131,7 @@ class RaceCard extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Équipes inscrites / max
+                  // Team capacity with live count [web:138]
                   FutureBuilder<int>(
                     future: repository.getRegisteredTeamsCount(race.id),
                     builder: (context, snapshot) {
@@ -175,8 +186,8 @@ class RaceCard extends StatelessWidget {
                                 isFullyBooked
                                     ? Colors.red
                                     : percentage > 75
-                                    ? Colors.orange
-                                    : const Color(0xFF52B788),
+                                        ? Colors.orange
+                                        : const Color(0xFF52B788),
                               ),
                             ),
                           ),
@@ -187,7 +198,7 @@ class RaceCard extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Membres par équipe
+                  // Team size
                   Row(
                     children: [
                       const Icon(Icons.people, size: 16),
@@ -207,6 +218,7 @@ class RaceCard extends StatelessWidget {
     );
   }
 
+  /// Returns icon for difficulty level.
   IconData _getDifficultyIcon(String difficulty) {
     switch (difficulty.toLowerCase()) {
       case 'facile':
@@ -220,6 +232,7 @@ class RaceCard extends StatelessWidget {
     }
   }
 
+  /// Returns color for difficulty level.
   Color _getDifficultyColor(String difficulty) {
     switch (difficulty.toLowerCase()) {
       case 'facile':
@@ -236,6 +249,7 @@ class RaceCard extends StatelessWidget {
     }
   }
 
+  /// Formats date as "1 jan 2024".
   String _formatDate(DateTime date) {
     final months = [
       'jan',

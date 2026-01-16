@@ -1,26 +1,44 @@
 // lib/features/race/domain/race.dart
 
-/// Modèle de course d'orientation
+/// Race domain entity.
+///
+/// Represents an orienteering race within a raid event. This immutable entity
+/// belongs to the domain layer and contains business logic independent of data
+/// sources [web:176][web:184][web:187].
+///
+/// All fields are final for immutability [web:177][web:184]. To modify, use
+/// [copyWith] to create a new instance [web:185][web:188].
+///
+/// Example:
+/// ```dart
+/// final race = Race(
+///   id: 1,
+///   name: 'Trail 10km',
+///   type: 'Compétitif',
+///   sex: 'Mixte',
+///   // ... other fields
+/// );
+/// ```
 class Race {
   final int id; // RAC_ID
   final String name; // RAC_NAME
-  final int userId; // USE_ID
-  final int raidId; // RAI_ID
+  final int userId; // USE_ID - Race manager/creator
+  final int raidId; // RAI_ID - Parent raid event
   final DateTime startDate; // RAC_TIME_START
   final DateTime endDate; // RAC_TIME_END
-  final String type; // RAC_TYPE
+  final String type; // RAC_TYPE ('Compétitif' or 'Loisir')
   final String difficulty; // RAC_DIFFICULTY
-  final String sex; // RAC_GENDER ← AJOUTE CE CHAMP
+  final String sex; // RAC_GENDER ('Homme', 'Femme', 'Mixte')
   final int minParticipants; // RAC_MIN_PARTICIPANTS
   final int maxParticipants; // RAC_MAX_PARTICIPANTS
   final int minTeams; // RAC_MIN_TEAMS
   final int maxTeams; // RAC_MAX_TEAMS
   final int minTeamMembers; // RAC_MIN_TEAM_MEMBERS
   final int teamMembers; // RAC_MAX_TEAM_MEMBERS
-  final int ageMin; // RAC_AGE_MIN (nullable)
-  final int ageMiddle; // RAC_AGE_MIDDLE (nullable)
-  final int ageMax; // RAC_AGE_MAX (nullable)
-  final int chipMandatory;
+  final int ageMin; // RAC_AGE_MIN
+  final int ageMiddle; // RAC_AGE_MIDDLE
+  final int ageMax; // RAC_AGE_MAX
+  final int chipMandatory; // RAC_CHIP_MANDATORY (0 or 1)
 
   Race({
     required this.id,
@@ -44,10 +62,13 @@ class Race {
     required this.chipMandatory,
   });
 
-  /// Retourne le label de difficulté
+  /// Returns the difficulty label.
   String get difficultyLabel => difficulty;
 
-  /// Conversion depuis JSON (API/Base de données)
+  /// Creates a Race from JSON (API/database).
+  ///
+  /// Handles DateTime parsing and provides safe defaults for missing fields [web:186][web:189].
+  /// Supports both 'RAC_GENDER' field names for compatibility.
   factory Race.fromJson(Map<String, dynamic> json) {
     return Race(
       id: json['RAC_ID'] as int? ?? 0,
@@ -62,9 +83,7 @@ class Race {
           : DateTime.now(),
       type: json['RAC_TYPE'] as String? ?? '',
       difficulty: json['RAC_DIFFICULTY'] as String? ?? '',
-      sex:
-          (json['RAC_GENDER'] ?? json['RAC_GENDER']) as String? ??
-          'Mixte', // Support API (GENDER) et DB (SEX)
+      sex: (json['RAC_GENDER'] ?? json['RAC_GENDER']) as String? ?? 'Mixte',
       minParticipants: json['RAC_MIN_PARTICIPANTS'] as int? ?? 0,
       maxParticipants: json['RAC_MAX_PARTICIPANTS'] as int? ?? 0,
       minTeams: json['RAC_MIN_TEAMS'] as int? ?? 0,
@@ -78,7 +97,9 @@ class Race {
     );
   }
 
-  /// Conversion vers JSON (API/Base de données)
+  /// Converts this Race to JSON (API/database).
+  ///
+  /// Formats DateTime as 'YYYY-MM-DD HH:MM:SS' for database compatibility [web:186].
   Map<String, dynamic> toJson() {
     return {
       'RAC_ID': id,
@@ -91,7 +112,7 @@ class Race {
           "${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')} ${endDate.hour.toString().padLeft(2, '0')}:${endDate.minute.toString().padLeft(2, '0')}:${endDate.second.toString().padLeft(2, '0')}",
       'RAC_TYPE': type,
       'RAC_DIFFICULTY': difficulty,
-      'RAC_GENDER': sex, // ← AJOUTE CE CHAMP
+      'RAC_GENDER': sex,
       'RAC_MIN_PARTICIPANTS': minParticipants,
       'RAC_MAX_PARTICIPANTS': maxParticipants,
       'RAC_MIN_TEAMS': minTeams,
@@ -105,7 +126,18 @@ class Race {
     };
   }
 
-  /// Copie avec modifications
+  /// Creates a copy with modified fields.
+  ///
+  /// Returns a new Race instance with specified fields updated while keeping
+  /// others unchanged [web:185][web:188]. Essential for immutable state management.
+  ///
+  /// Example:
+  /// ```dart
+  /// final updated = race.copyWith(
+  ///   name: 'Trail 15km',
+  ///   maxParticipants: 100,
+  /// );
+  /// ```
   Race copyWith({
     int? id,
     String? name,

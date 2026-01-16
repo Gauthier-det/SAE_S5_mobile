@@ -5,6 +5,25 @@ import '../datasources/raid_api_sources.dart';
 import '../datasources/raid_local_sources.dart';
 import '../../../auth/data/datasources/auth_local_sources.dart';
 
+/// Repository implementation with API-first, local-fallback strategy.
+///
+/// Handles data synchronization between REST API and local SQLite cache.
+/// Uses token-based authentication for write operations [web:138][web:186].
+///
+/// **Data Flow:**
+/// - Read: Try API → cache result → fallback to local on error
+/// - Write: Send to API → cache result → fallback to local-only on error
+/// - Refresh: Clear local → fetch API → cache all
+///
+/// Example:
+/// ```dart
+/// final repository = RaidRepositoryImpl(
+///   apiSources: raidApi,
+///   localSources: raidLocalDb,
+///   authLocalSources: authLocalDb,
+/// );
+/// final raids = await repository.getAllRaids(); // API + cache
+/// ```
 class RaidRepositoryImpl implements RaidRepository {
   final RaidApiSources apiSources;
   final RaidLocalSources localSources;
@@ -19,20 +38,18 @@ class RaidRepositoryImpl implements RaidRepository {
   @override
   Future<Raid?> getRaidById(int id) async {
     try {
-      // Tentative de récupération depuis l'API
+      // Fetch from API
       final remoteRaid = await apiSources.getRaidById(id);
 
       if (remoteRaid != null) {
-        // Sauvegarde en cache local
+        // Cache locally
         await localSources.insertRaid(remoteRaid);
         return remoteRaid;
       }
 
       return null;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
-      // Fallback sur le cache local
+      // Fallback to local cache
       try {
         return await localSources.getRaidById(id);
       } catch (localError) {
@@ -44,18 +61,16 @@ class RaidRepositoryImpl implements RaidRepository {
   @override
   Future<List<Raid>> getAllRaids() async {
     try {
-      // Récupération depuis l'API
+      // Fetch from API
       final remoteRaids = await apiSources.getAllRaids();
 
-      // Mise à jour du cache local
+      // Clear and refresh local cache
       await localSources.clearAllRaids();
       await localSources.insertRaids(remoteRaids);
 
       return remoteRaids;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
-      // Fallback sur le cache local
+      // Fallback to local cache
       try {
         return await localSources.getAllRaids();
       } catch (localError) {
@@ -66,24 +81,25 @@ class RaidRepositoryImpl implements RaidRepository {
 
   @override
   Future<void> createRaid(Raid raid) async {
-    // Envoyer à l'API en priorité
     try {
-      // Récupérer le token d'authentification
+      // Inject auth token [web:138]
       final token = authLocalSources.getToken();
       apiSources.setAuthToken(token);
 
+      // Send to API
       final createdRaid = await apiSources.createRaid(raid);
-      // Sauvegarder le raid créé (avec l'ID de l'API) en local
+      
+      // Cache with server-generated ID
       await localSources.insertRaid(createdRaid);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-      // Fallback: sauvegarder en local uniquement
+      // Fallback: save locally only
       await localSources.insertRaid(raid);
     }
   }
 
   @override
   Future<Raid> updateRaid(int id, Raid raid) async {
+    // Inject auth token [web:138]
     final token = authLocalSources.getToken();
     apiSources.setAuthToken(token);
 
@@ -94,6 +110,7 @@ class RaidRepositoryImpl implements RaidRepository {
 
   @override
   Future<void> deleteRaid(int id) async {
+    // Inject auth token [web:138]
     final token = authLocalSources.getToken();
     apiSources.setAuthToken(token);
 

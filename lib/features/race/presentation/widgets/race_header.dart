@@ -2,6 +2,15 @@
 import 'package:flutter/material.dart';
 import '../../domain/race.dart';
 
+/// Race detail header with gradient background.
+///
+/// Displays race name and badges (type, difficulty) with color-coded gradient.
+/// Orange for competitive, green for leisure races.
+///
+/// Example:
+/// ```dart
+/// RaceHeader(race: selectedRace);
+/// ```
 class RaceHeader extends StatelessWidget {
   final Race race;
 

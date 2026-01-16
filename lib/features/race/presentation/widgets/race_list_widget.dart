@@ -10,6 +10,19 @@ import '../../../raid/domain/raid.dart';
 import '../../../../core/presentation/widgets/common_loading_view.dart';
 import '../../../../core/presentation/widgets/common_empty_view.dart';
 
+/// Filtered race list widget for raid detail screen.
+///
+/// Displays races for a specific raid with filtering by type (Compétitif/Rando)
+/// and minimum age. Uses [FutureBuilder] for async loading and [Provider] for
+/// data access [web:138][web:140].
+///
+/// Example:
+/// ```dart
+/// RaceListWidget(
+///   raid: selectedRaid,
+///   raidId: raidId,
+/// );
+/// ```
 class RaceListWidget extends StatefulWidget {
   final Raid raid;
   final int raidId;
@@ -46,24 +59,26 @@ class _RaceListWidgetState extends State<RaceListWidget> {
     super.dispose();
   }
 
+  /// Applies active filters to race list.
   void _applyFilters() {
     setState(() {
       _filteredRaces = _allRaces.where((race) {
-        // Filtre par type
+        // Type filter
         if (_selectedType != null && race.type != _selectedType) {
           return false;
         }
-        
-        // Filtre par âge minimum
+
+        // Age filter (race.ageMin must be <= user's minimum age)
         if (_filterAgeMin != null) {
           if (race.ageMin > _filterAgeMin!) return false;
         }
-        
+
         return true;
       }).toList();
     });
   }
 
+  /// Resets all filters to default state.
   void _resetFilters() {
     setState(() {
       _selectedType = null;
@@ -80,7 +95,7 @@ class _RaceListWidgetState extends State<RaceListWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Titre de la section
+        // Section header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
@@ -101,14 +116,14 @@ class _RaceListWidgetState extends State<RaceListWidget> {
               Text(
                 'Courses disponibles',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ],
           ),
         ),
 
-        // Barre de filtres
+        // Filter bar
         Container(
           margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           padding: const EdgeInsets.all(16),
@@ -154,8 +169,8 @@ class _RaceListWidgetState extends State<RaceListWidget> {
                 ],
               ),
               const SizedBox(height: 12),
-              
-              // Filtres par type
+
+              // Type filter chips [web:184]
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -167,7 +182,7 @@ class _RaceListWidgetState extends State<RaceListWidget> {
 
               const SizedBox(height: 16),
 
-              // Champ de saisie âge minimum
+              // Age filter input
               Row(
                 children: [
                   const Icon(Icons.cake, size: 20, color: Colors.grey),
@@ -226,22 +241,23 @@ class _RaceListWidgetState extends State<RaceListWidget> {
                   ),
                 ],
               ),
-            ],          
+            ],
           ),
         ),
 
-        // Liste des courses
+        // Race list with FutureBuilder [web:140]
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: FutureBuilder<List<Race>>(
             future: _racesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const CommonLoadingView(message: 'Chargement des courses...');
+                return const CommonLoadingView(
+                    message: 'Chargement des courses...');
               }
 
               _allRaces = snapshot.data ?? [];
-              
+
               if (_filteredRaces.isEmpty && _allRaces.isNotEmpty) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _applyFilters();
@@ -300,9 +316,10 @@ class _RaceListWidgetState extends State<RaceListWidget> {
     );
   }
 
+  /// Builds a type filter chip [web:184].
   Widget _buildTypeFilterChip(String type) {
     final isSelected = _selectedType == type;
-    
+
     return FilterChip(
       label: Text(
         type,

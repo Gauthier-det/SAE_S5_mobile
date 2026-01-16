@@ -4,6 +4,18 @@ import '../../../../shared/utils/date_formatter.dart';
 import '../../../raid/domain/raid.dart';
 import 'raid_status_badges.dart';
 
+/// Raid list card widget.
+///
+/// Displays raid summary with optional image, name, status badges, location,
+/// and date range. Shows placeholder icon if image fails to load [web:138].
+///
+/// Example:
+/// ```dart
+/// RaidCard(
+///   raid: raid,
+///   onTap: () => Navigator.push(...),
+/// );
+/// ```
 class RaidCard extends StatelessWidget {
   final Raid raid;
   final VoidCallback onTap;
@@ -26,7 +38,7 @@ class RaidCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
+            // Image with fallback [web:138]
             if (raid.image != null)
               AspectRatio(
                 aspectRatio: 16 / 9,
@@ -81,6 +93,7 @@ class RaidCard extends StatelessWidget {
     );
   }
 
+  /// Builds info row with icon and text.
   Widget _buildInfoRow(IconData icon, String text, ThemeData theme) {
     return Row(
       children: [

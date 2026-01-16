@@ -2,6 +2,32 @@
 import 'package:flutter/material.dart';
 import '../../domain/team.dart';
 
+/// Hero header displaying team profile with gradient background [web:232][web:236][web:239].
+///
+/// Shows team avatar (image or initial), name, optional dossard badge, and 
+/// validation status. Uses LinearGradient for visual depth and handles network
+/// image loading errors gracefully [web:238][web:241].
+///
+/// **Visual Elements:**
+/// - Gradient background (dark green theme)
+/// - Team avatar (80x80): network image with fallback to initial letter
+/// - Team name: white, bold, centered
+/// - Dossard badge: white badge with number (conditional)
+/// - Status badge: green (validated) or orange (pending)
+///
+/// Example:
+/// ```dart
+/// TeamHeader(
+///   team: Team(
+///     id: 1,
+///     name: 'Les Alpinistes',
+///     managerId: 42,
+///     image: 'https://example.com/team.jpg',
+///     isValid: true,
+///   ),
+///   dossardNumber: 123,
+/// );
+/// ```
 class TeamHeader extends StatelessWidget {
   final Team team;
   final int? dossardNumber;
@@ -39,6 +65,7 @@ class TeamHeader extends StatelessWidget {
     );
   }
 
+  /// Team avatar with network image and fallback [web:238][web:241].
   Widget _buildTeamAvatar() {
     return Container(
       width: 80,
@@ -60,6 +87,7 @@ class TeamHeader extends StatelessWidget {
     );
   }
 
+  /// Fallback icon showing team name's first letter [web:238].
   Widget _buildDefaultIcon() {
     return Center(
       child: Text(
@@ -73,6 +101,7 @@ class TeamHeader extends StatelessWidget {
     );
   }
 
+  /// Team name display.
   Widget _buildTeamName() {
     return Text(
       team.name,
@@ -85,6 +114,7 @@ class TeamHeader extends StatelessWidget {
     );
   }
 
+  /// Dossard number badge (race bib number) [web:237][web:240].
   Widget _buildDossardBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -110,6 +140,7 @@ class TeamHeader extends StatelessWidget {
     );
   }
 
+  /// Validation status badge [web:237][web:240].
   Widget _buildStatusBadge() {
     final isValid = team.isValid ?? false;
     

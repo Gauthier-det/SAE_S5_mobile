@@ -3,6 +3,26 @@ import 'package:flutter/material.dart';
 import '../../../../core/presentation/widgets/common_status_chip.dart';
 import '../../../raid/domain/raid.dart';
 
+/// Raid status badges widget.
+///
+/// Displays two status chips: event status (upcoming/ongoing/finished) and
+/// registration status (upcoming/open/closed). Calculates status dynamically
+/// based on current date vs raid dates.
+///
+/// **Event Status Colors:**
+/// - À VENIR (upcoming): Blue
+/// - EN COURS (ongoing): Green
+/// - TERMINÉ (finished): Grey
+///
+/// **Registration Status Colors:**
+/// - À VENIR (upcoming): Orange
+/// - OUVERTES (open): Green
+/// - CLOSES (closed): Red
+///
+/// Example:
+/// ```dart
+/// RaidStatusBadges(raid: raid);
+/// ```
 class RaidStatusBadges extends StatelessWidget {
   final Raid raid;
 
@@ -31,9 +51,10 @@ class RaidStatusBadges extends StatelessWidget {
     );
   }
 
+  /// Determines event status based on current date.
   _StatusInfo _getRaidStatus(Raid raid) {
     final now = DateTime.now();
-    
+
     if (now.isBefore(raid.timeStart)) {
       return _StatusInfo(label: 'À VENIR', color: Colors.blue);
     } else if (now.isAfter(raid.timeEnd)) {
@@ -43,9 +64,10 @@ class RaidStatusBadges extends StatelessWidget {
     }
   }
 
+  /// Determines registration status based on current date.
   _StatusInfo _getRegistrationStatus(Raid raid) {
     final now = DateTime.now();
-    
+
     if (now.isBefore(raid.registrationStart)) {
       return _StatusInfo(label: 'À VENIR', color: Colors.orange);
     } else if (now.isAfter(raid.registrationEnd)) {
@@ -56,6 +78,7 @@ class RaidStatusBadges extends StatelessWidget {
   }
 }
 
+/// Helper class for status label and color pairing.
 class _StatusInfo {
   final String label;
   final Color color;

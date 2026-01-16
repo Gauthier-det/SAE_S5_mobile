@@ -4,6 +4,16 @@ import 'package:provider/provider.dart';
 import '../../domain/race.dart';
 import '../../domain/race_repository.dart';
 
+/// Race statistics summary card.
+///
+/// Displays team capacity stats (registered/max, spots left, fill percentage)
+/// with gradient background and progress bar. Fetches live data via [Provider] [web:138].
+/// Shows orange warning when <10 spots remain.
+///
+/// Example:
+/// ```dart
+/// RaceQuickStats(race: selectedRace);
+/// ```
 class RaceQuickStats extends StatelessWidget {
   final Race race;
 
@@ -43,6 +53,7 @@ class RaceQuickStats extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // Stats row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -75,6 +86,8 @@ class RaceQuickStats extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
+
+              // Progress bar
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
@@ -93,6 +106,7 @@ class RaceQuickStats extends StatelessWidget {
     );
   }
 
+  /// Builds a stat item with icon, value, and label.
   Widget _buildStatItem({
     required IconData icon,
     required String label,
