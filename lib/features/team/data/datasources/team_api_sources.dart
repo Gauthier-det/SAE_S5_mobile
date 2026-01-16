@@ -385,11 +385,11 @@ class TeamApiSources {
   // DELETE TEAM
   // ===================================
 
-  /// DELETE /teams/{teamId}
-  Future<void> deleteTeam(int teamId) async {
+  /// DELETE /races/{raceId}/teams/{teamId}
+  Future<void> deleteTeamFromRace(int teamId, int raceId) async {
     try {
       final response = await client.delete(
-        Uri.parse('$baseUrl/teams/$teamId'),
+        Uri.parse('$baseUrl/races/$raceId/teams/$teamId'),
         headers: _headers,
       );
 

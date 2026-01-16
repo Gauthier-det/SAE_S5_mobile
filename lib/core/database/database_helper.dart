@@ -37,6 +37,7 @@ class DatabaseHelper {
   }
 
   static Future<void> _dropAllTables(Database db) async {
+    await db.execute('DROP TABLE IF EXISTS SYNC_QUEUE'); // Removed feature
     await db.execute('DROP TABLE IF EXISTS SAN_USERS_RACES');
     await db.execute('DROP TABLE IF EXISTS SAN_CATEGORIES_RACES');
     await db.execute('DROP TABLE IF EXISTS SAN_ROLES_USERS');
@@ -208,16 +209,6 @@ class DatabaseHelper {
         USR_TIME REAL,
         USR_PPS_FORM TEXT,
         PRIMARY KEY (USE_ID, RAC_ID)
-      )
-    ''');
-
-    // 10. SYNC_QUEUE (pour la synchro hors-ligne)
-    await db.execute('''
-      CREATE TABLE SYNC_QUEUE (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        ACTION_TYPE TEXT NOT NULL,
-        PAYLOAD TEXT NOT NULL,
-        CREATED_AT TEXT NOT NULL
       )
     ''');
   }

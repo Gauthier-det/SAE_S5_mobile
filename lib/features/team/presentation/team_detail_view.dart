@@ -82,9 +82,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     setState(() => _isLoading = true);
 
     try {
-      // 🔄 Sync pending offline actions first
-      await widget.repository.syncPendingActions();
-
       // ✅ Utilise la nouvelle méthode qui récupère le statut de validation
       final team = await widget.repository.getTeamByIdWithRaceStatus(
         widget.teamId,
@@ -206,16 +203,22 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       // 3. Filter users based on age
       final now = DateTime.now();
       final filteredUsers = availableUsers.where((user) {
-        if (user.birthdate == null) return false;
+        // ✅ Use pre-calculated age from API if available
+        int? age = user.userAge;
 
-        final age =
-            now.year -
-            user.birthdate!.year -
-            ((now.month < user.birthdate!.month ||
-                    (now.month == user.birthdate!.month &&
-                        now.day < user.birthdate!.day))
-                ? 1
-                : 0);
+        // Fallback to manual calculation if birthdate is present
+        if (age == null && user.birthdate != null) {
+          age =
+              now.year -
+              user.birthdate!.year -
+              ((now.month < user.birthdate!.month ||
+                      (now.month == user.birthdate!.month &&
+                          now.day < user.birthdate!.day))
+                  ? 1
+                  : 0);
+        }
+
+        if (age == null) return false;
 
         return age >= minAge && age <= maxAge;
       }).toList();
@@ -295,11 +298,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   Future<void> _deleteTeam() async {
-    // ✅ Seul le responsable de course peut supprimer l'équipe
-    if (!widget.isRaceManager) {
-      _showSnackBar(
-        'Seul le responsable de la course peut supprimer l\'équipe',
-      );
+    // ✅ Le créateur OU le responsable peut supprimer l'équipe
+    if (!_canManageTeam()) {
+      _showSnackBar('Vous n\'avez pas la permission de supprimer cette équipe');
       return;
     }
 
@@ -528,7 +529,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         title: Text(_team?.name ?? 'Équipe'),
         backgroundColor: const Color(0xFF1B3022),
         foregroundColor: Colors.white,
-        actions: widget.isRaceManager
+        actions: _canManageTeam()
             ? [
                 IconButton(
                   icon: const Icon(Icons.delete),

@@ -49,6 +49,4 @@ abstract class TeamRepository {
     required List<int> memberIds,
     required int raceId,
   });
-
-  Future<void> syncPendingActions();
 }
