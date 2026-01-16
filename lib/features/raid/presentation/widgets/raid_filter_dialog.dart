@@ -1,6 +1,28 @@
 // lib/features/raids/presentation/widgets/raid_filter_dialog.dart
 import 'package:flutter/material.dart';
 
+/// Raid filter dialog widget.
+///
+/// Modal dialog for filtering raids by event status (upcoming/ongoing/finished)
+/// and registration status (upcoming/open/closed). Uses FilterChip widgets for
+/// selection [web:184].
+///
+/// Example:
+/// ```dart
+/// showDialog(
+///   context: context,
+///   builder: (_) => RaidFilterDialog(
+///     selectedStatus: _currentStatus,
+///     selectedRegistrationStatus: _currentRegStatus,
+///     onApply: (status, regStatus) {
+///       setState(() {
+///         _currentStatus = status;
+///         _currentRegStatus = regStatus;
+///       });
+///     },
+///   ),
+/// );
+/// ```
 class RaidFilterDialog extends StatefulWidget {
   final String? selectedStatus;
   final String? selectedRegistrationStatus;
@@ -37,7 +59,7 @@ class _RaidFilterDialogState extends State<RaidFilterDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filtre statut raid
+            // Raid status filter
             const Text(
               'Statut du raid',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -62,7 +84,7 @@ class _RaidFilterDialogState extends State<RaidFilterDialog> {
             ),
             const SizedBox(height: 16),
 
-            // Filtre inscriptions
+            // Registration status filter
             const Text(
               'Inscriptions',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -71,16 +93,20 @@ class _RaidFilterDialogState extends State<RaidFilterDialog> {
             Wrap(
               spacing: 8,
               children: [
-                _buildFilterChip('Toutes', null, _tempRegistrationStatus, (value) {
+                _buildFilterChip('Toutes', null, _tempRegistrationStatus,
+                    (value) {
                   setState(() => _tempRegistrationStatus = value);
                 }),
-                _buildFilterChip('À venir', 'upcoming', _tempRegistrationStatus, (value) {
+                _buildFilterChip('À venir', 'upcoming', _tempRegistrationStatus,
+                    (value) {
                   setState(() => _tempRegistrationStatus = value);
                 }),
-                _buildFilterChip('Ouvertes', 'open', _tempRegistrationStatus, (value) {
+                _buildFilterChip('Ouvertes', 'open', _tempRegistrationStatus,
+                    (value) {
                   setState(() => _tempRegistrationStatus = value);
                 }),
-                _buildFilterChip('Closes', 'closed', _tempRegistrationStatus, (value) {
+                _buildFilterChip('Closes', 'closed', _tempRegistrationStatus,
+                    (value) {
                   setState(() => _tempRegistrationStatus = value);
                 }),
               ],
@@ -104,6 +130,7 @@ class _RaidFilterDialogState extends State<RaidFilterDialog> {
     );
   }
 
+  /// Builds a filter chip with selection state [web:184].
   Widget _buildFilterChip(
     String label,
     String? value,

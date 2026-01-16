@@ -4,6 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:sae5_g13_mobile/features/race/domain/category.dart';
 import '../../domain/race_repository.dart';
 
+/// Race pricing display section.
+///
+/// Shows color-coded pricing cards for each age category. Fetches prices and
+/// categories via [Provider], displaying loading and empty states [web:138][web:140].
+///
+/// Example:
+/// ```dart
+/// RacePricingSection(raceId: race.id);
+/// ```
 class RacePricingSection extends StatelessWidget {
   final int raceId;
 
@@ -57,6 +66,9 @@ class RacePricingSection extends StatelessWidget {
     );
   }
 
+  /// Builds a color-coded price row.
+  /// 
+  /// Colors: Blue (Mineur), Green (Licencié), Orange (others).
   Widget _buildPriceRow(String categoryName, int price) {
     Color color;
 
@@ -86,7 +98,7 @@ class RacePricingSection extends StatelessWidget {
             ),
           ),
           Text(
-            '${price} €',
+            '$price €',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

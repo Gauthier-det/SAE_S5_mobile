@@ -9,7 +9,31 @@ import '../../../../core/presentation/widgets/common_error_view.dart';
 import '../../../../core/presentation/widgets/common_empty_view.dart';
 import '../../../../core/presentation/widgets/common_results_header.dart';
 
-/// Widget de liste de courses SANS Scaffold (pour réutilisation dans d'autres pages)
+/// Reusable race list widget without Scaffold.
+///
+/// Displays filterable, sortable race list with type filter (Compétitif/Rando),
+/// minimum age filter (dialog with preset options), and date sorting. Supports
+/// both all-races and raid-specific modes via optional [raidId] [web:138][web:140].
+///
+/// **Features:**
+/// - Pull-to-refresh
+/// - FilterChips for type selection
+/// - Age dialog with preset values (6-21 years)
+/// - Ascending/descending date sort
+/// - Active filter badge
+///
+/// Example:
+/// ```dart
+/// // All races
+/// RaceListView(repository: raceRepo);
+/// 
+/// // Raid-specific races
+/// RaceListView(
+///   repository: raceRepo,
+///   raidId: raid.id,
+///   raidName: raid.name,
+/// );
+/// ```
 class RaceListView extends StatefulWidget {
   final RacesRepository repository;
   final int? raidId;
@@ -31,7 +55,7 @@ class _RaceListViewState extends State<RaceListView> {
   List<Race> _allRaces = [];
   List<Race> _filteredRaces = [];
 
-  // Filtres
+  // Filter state
   String? _selectedType;
   int? _filterAgeMin;
   bool _sortAscending = true;
@@ -42,25 +66,27 @@ class _RaceListViewState extends State<RaceListView> {
     _loadRaces();
   }
 
+  /// Loads races (all or raid-specific based on [raidId]).
   void _loadRaces() {
     _racesFuture = widget.raidId != null
         ? widget.repository.getRacesByRaidId(widget.raidId!)
         : widget.repository.getRaces();
   }
 
+  /// Applies active filters and sorting to race list.
   void _applyFilters() {
     setState(() {
       _filteredRaces = _allRaces.where((race) {
         if (_selectedType != null && race.type != _selectedType) {
           return false;
         }
-        
+
         if (_filterAgeMin != null) {
           if (race.ageMin > _filterAgeMin!) {
             return false;
           }
         }
-        
+
         return true;
       }).toList();
 
@@ -70,6 +96,7 @@ class _RaceListViewState extends State<RaceListView> {
     });
   }
 
+  /// Shows age selection dialog with preset values.
   Future<void> _selectAgeMin() async {
     final result = await showDialog<int>(
       context: context,
@@ -117,6 +144,7 @@ class _RaceListViewState extends State<RaceListView> {
     }
   }
 
+  /// Resets all filters to default state.
   void _resetFilters() {
     setState(() {
       _selectedType = null;
@@ -163,7 +191,7 @@ class _RaceListViewState extends State<RaceListView> {
 
         return Column(
           children: [
-            // Barre de filtres
+            // Filter bar [web:184]
             Container(
               padding: const EdgeInsets.all(16),
               color: Colors.white,
@@ -208,18 +236,18 @@ class _RaceListViewState extends State<RaceListView> {
                           icon: Icon(
                             Icons.cake,
                             size: 16,
-                            color: _filterAgeMin != null 
-                                ? const Color(0xFFFF6B00) 
+                            color: _filterAgeMin != null
+                                ? const Color(0xFFFF6B00)
                                 : Colors.grey,
                           ),
                           label: Text(
-                            _filterAgeMin != null 
-                                ? 'Âge min: $_filterAgeMin+' 
+                            _filterAgeMin != null
+                                ? 'Âge min: $_filterAgeMin+'
                                 : 'Âge min',
                             style: TextStyle(
                               fontSize: 12,
-                              color: _filterAgeMin != null 
-                                  ? const Color(0xFFFF6B00) 
+                              color: _filterAgeMin != null
+                                  ? const Color(0xFFFF6B00)
                                   : Colors.grey,
                             ),
                           ),
@@ -246,7 +274,7 @@ class _RaceListViewState extends State<RaceListView> {
               ),
             ),
 
-            // Badge filtres actifs
+            // Active filters badge
             if (hasActiveFilters)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -269,6 +297,7 @@ class _RaceListViewState extends State<RaceListView> {
                 ),
               ),
 
+            // Results header with sort toggle
             CommonResultsHeader(
               count: _filteredRaces.length,
               itemName: 'course',
@@ -282,6 +311,7 @@ class _RaceListViewState extends State<RaceListView> {
               },
             ),
 
+            // Race list with pull-to-refresh [web:140]
             Expanded(
               child: _filteredRaces.isEmpty
                   ? CommonEmptyView(
@@ -329,9 +359,10 @@ class _RaceListViewState extends State<RaceListView> {
     );
   }
 
+  /// Builds a type filter chip [web:184].
   Widget _buildTypeFilterChip(String type) {
     final isSelected = _selectedType == type;
-    
+
     return FilterChip(
       label: Text(
         type,

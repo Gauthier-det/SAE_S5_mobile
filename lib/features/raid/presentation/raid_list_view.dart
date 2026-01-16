@@ -16,6 +16,27 @@ import 'raid_creation_view.dart';
 import 'widgets/raid_card.dart';
 import 'widgets/raid_filter_dialog.dart';
 
+/// Raid list screen with multi-criteria filtering and smart sorting.
+///
+/// Comprehensive filtering: search by name, event status, registration status,
+/// and date range. Smart sort prioritizes upcoming raids then sorts by date.
+/// FAB visible only for club managers [web:138][web:140][web:184].
+///
+/// **Filters:**
+/// - Text search (raid name)
+/// - Status: upcoming/ongoing/finished
+/// - Registration: upcoming/open/closed
+/// - Date range: start/end date pickers
+///
+/// **Smart Sort:**
+/// - Upcoming raids first
+/// - Then by start date (upcoming) or end date (others)
+/// - Ascending/descending toggle
+///
+/// Example:
+/// ```dart
+/// RaidListView(repository: raidRepo);
+/// ```
 class RaidListView extends StatefulWidget {
   final RaidRepository repository;
 
@@ -30,34 +51,34 @@ class _RaidListViewState extends State<RaidListView> {
   List<Raid> _allRaids = [];
   List<Raid> _filteredRaids = [];
 
-  // Filtres
+  // Filter state
   String? _selectedStatus;
   String? _selectedRegistrationStatus;
   DateTime? _filterStartDate;
   DateTime? _filterEndDate;
-  final _searchController =
-      TextEditingController(); // ← NOUVEAU: Recherche par nom
+  final _searchController = TextEditingController();
 
-  // Tri
+  // Sort state
   bool _sortAscending = true;
 
   @override
   void initState() {
     super.initState();
     _raidsFuture = widget.repository.getAllRaids();
-    _searchController.addListener(_applyFiltersAndSort); // ← NOUVEAU
+    _searchController.addListener(_applyFiltersAndSort);
   }
 
   @override
   void dispose() {
-    _searchController.dispose(); // ← NOUVEAU
+    _searchController.dispose();
     super.dispose();
   }
 
+  /// Applies all filters and smart sort logic.
   void _applyFiltersAndSort() {
     setState(() {
       _filteredRaids = _allRaids.where((raid) {
-        // ← NOUVEAU: Filtre par nom
+        // Name search filter [web:184]
         if (_searchController.text.isNotEmpty) {
           final searchLower = _searchController.text.toLowerCase();
           if (!raid.name.toLowerCase().contains(searchLower)) {
@@ -65,6 +86,7 @@ class _RaidListViewState extends State<RaidListView> {
           }
         }
 
+        // Status filters
         if (_selectedStatus != null &&
             !_matchesStatus(raid, _selectedStatus!)) {
           return false;
@@ -74,7 +96,7 @@ class _RaidListViewState extends State<RaidListView> {
           return false;
         }
 
-        // Filtres par date
+        // Date range filters
         if (_filterStartDate != null &&
             raid.timeEnd.isBefore(_filterStartDate!)) {
           return false;
@@ -86,7 +108,7 @@ class _RaidListViewState extends State<RaidListView> {
         return true;
       }).toList();
 
-      // Tri intelligent
+      // Smart sort: upcoming first, then by date
       _filteredRaids.sort((a, b) {
         final now = DateTime.now();
         final aIsUpcoming = now.isBefore(a.timeStart);
@@ -94,11 +116,13 @@ class _RaidListViewState extends State<RaidListView> {
         final aIsFinished = now.isAfter(a.timeEnd);
         final bIsFinished = now.isAfter(b.timeEnd);
 
+        // Prioritize upcoming
         if (aIsUpcoming && !bIsUpcoming) return -1;
         if (!aIsUpcoming && bIsUpcoming) return 1;
         if (!aIsFinished && bIsFinished) return -1;
         if (aIsFinished && !bIsFinished) return 1;
 
+        // Sort by date within status groups
         if (aIsUpcoming && bIsUpcoming) {
           return _sortAscending
               ? a.timeStart.compareTo(b.timeStart)
@@ -112,6 +136,7 @@ class _RaidListViewState extends State<RaidListView> {
     });
   }
 
+  /// Checks if raid matches event status filter.
   bool _matchesStatus(Raid raid, String status) {
     final now = DateTime.now();
     switch (status) {
@@ -126,6 +151,7 @@ class _RaidListViewState extends State<RaidListView> {
     }
   }
 
+  /// Checks if raid matches registration status filter.
   bool _matchesRegistrationStatus(Raid raid, String status) {
     final now = DateTime.now();
     switch (status) {
@@ -141,6 +167,7 @@ class _RaidListViewState extends State<RaidListView> {
     }
   }
 
+  /// Shows status filter dialog.
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -158,6 +185,7 @@ class _RaidListViewState extends State<RaidListView> {
     );
   }
 
+  /// Shows start date picker.
   Future<void> _selectStartDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -175,6 +203,7 @@ class _RaidListViewState extends State<RaidListView> {
     }
   }
 
+  /// Shows end date picker.
   Future<void> _selectEndDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -192,25 +221,25 @@ class _RaidListViewState extends State<RaidListView> {
     }
   }
 
+  /// Resets all filters to default state.
   void _resetFilters() {
     setState(() {
       _selectedStatus = null;
       _selectedRegistrationStatus = null;
       _filterStartDate = null;
       _filterEndDate = null;
-      _searchController.clear(); // ← NOUVEAU
+      _searchController.clear();
       _applyFiltersAndSort();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasActiveFilters =
-        _selectedStatus != null ||
+    final hasActiveFilters = _selectedStatus != null ||
         _selectedRegistrationStatus != null ||
         _filterStartDate != null ||
         _filterEndDate != null ||
-        _searchController.text.isNotEmpty; // ← NOUVEAU
+        _searchController.text.isNotEmpty;
 
     return Scaffold(
       appBar: PreferredSize(
@@ -264,7 +293,7 @@ class _RaidListViewState extends State<RaidListView> {
 
           return Column(
             children: [
-              // ← NOUVEAU: Barre de recherche par nom
+              // Search bar [web:184]
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: TextField(
@@ -289,7 +318,7 @@ class _RaidListViewState extends State<RaidListView> {
                 ),
               ),
 
-              // Filtres par date
+              // Active date filter badge
               if (_filterStartDate != null || _filterEndDate != null)
                 Container(
                   margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -312,8 +341,8 @@ class _RaidListViewState extends State<RaidListView> {
                           _filterStartDate != null && _filterEndDate != null
                               ? 'Du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year} au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}'
                               : _filterStartDate != null
-                              ? 'À partir du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year}'
-                              : 'Jusqu\'au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}',
+                                  ? 'À partir du ${_filterStartDate!.day}/${_filterStartDate!.month}/${_filterStartDate!.year}'
+                                  : 'Jusqu\'au ${_filterEndDate!.day}/${_filterEndDate!.month}/${_filterEndDate!.year}',
                           style: const TextStyle(
                             color: Colors.blue,
                             fontWeight: FontWeight.w500,
@@ -336,7 +365,7 @@ class _RaidListViewState extends State<RaidListView> {
                   ),
                 ),
 
-              // Boutons de sélection de dates
+              // Date picker buttons
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -404,6 +433,8 @@ class _RaidListViewState extends State<RaidListView> {
                   });
                 },
               ),
+
+              // Raid list with pull-to-refresh [web:140]
               Expanded(
                 child: _filteredRaids.isEmpty
                     ? CommonEmptyView(
@@ -453,6 +484,7 @@ class _RaidListViewState extends State<RaidListView> {
           );
         },
       ),
+      // FAB for club managers only [web:138]
       floatingActionButton: FutureBuilder<bool>(
         future: _canCreateRaid(),
         builder: (context, snapshot) {
@@ -481,6 +513,7 @@ class _RaidListViewState extends State<RaidListView> {
     );
   }
 
+  /// Checks if current user is club manager (can create raids) [web:138].
   Future<bool> _canCreateRaid() async {
     try {
       if (!mounted) return false;
@@ -493,11 +526,9 @@ class _RaidListViewState extends State<RaidListView> {
       final userId = int.tryParse(currentUser.id);
       if (userId == null) return false;
 
-      // Check if user is responsible for any club using ClubProvider (public data)
-      // This avoids the 403 Forbidden error on /users/{id}
+      // Check via ClubProvider to avoid 403 on /users/{id}
       final clubProvider = Provider.of<ClubProvider>(context, listen: false);
 
-      // Ensure data is loaded
       if (clubProvider.clubs.isEmpty && !clubProvider.isLoading) {
         await clubProvider.loadClubs();
       }

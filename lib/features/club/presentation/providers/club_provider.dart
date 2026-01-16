@@ -28,7 +28,6 @@ class ClubProvider extends ChangeNotifier {
       _clubs = await _repository.getAllClubs();
     } catch (e) {
       _errorMessage = 'Erreur lors du chargement des clubs: $e';
-      debugPrint('Error loading clubs: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -63,7 +62,6 @@ class ClubProvider extends ChangeNotifier {
       return newClub;
     } catch (e) {
       _errorMessage = 'Erreur lors de la création du club: $e';
-      debugPrint('Error creating club: $e');
       rethrow;
     } finally {
       _isLoading = false;

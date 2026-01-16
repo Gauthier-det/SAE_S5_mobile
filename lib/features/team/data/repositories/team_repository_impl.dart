@@ -1,4 +1,28 @@
-// lib/features/team/data/repositories/team_repository_impl.dart
+/// Repository implementation for team data operations.
+///
+/// Manages team CRUD, membership, race registration with API-first,
+/// local-fallback strategy. Handles bidirectional sync and data normalization
+/// between API (snake_case) and DB (UPPERCASE_UNDERSCORE) formats [web:138][web:186].
+///
+/// **Key Features:**
+/// - Token-based authentication for all API calls
+/// - Automatic local cache after successful API operations
+/// - Complex sync with validation state and member details
+/// - Atomic team creation with race registration
+///
+/// Example:
+/// ```dart
+/// final repo = TeamRepositoryImpl(
+///   apiSources: teamApi,
+///   localSources: teamLocalDb,
+///   authLocalSources: authDb,
+/// );
+/// await repo.createTeamAndRegisterToRace(
+///   team: team,
+///   memberIds:,[1][2][3]
+///   raceId: raceId,
+/// );
+/// ```
 import '../../domain/team.dart';
 import '../../domain/team_repository.dart';
 import '../../../user/domain/user.dart';
@@ -17,6 +41,7 @@ class TeamRepositoryImpl implements TeamRepository {
     required this.authLocalSources,
   });
 
+  /// Injects auth token into API client [web:138].
   void _setAuthToken() {
     final token = authLocalSources.getToken();
     apiSources.setAuthToken(token);
@@ -71,7 +96,7 @@ class TeamRepositoryImpl implements TeamRepository {
 
       final teamId = await apiSources.createTeam(apiData);
 
-      // Sauvegarder en local avec le bon format
+      // Cache locally with DB format
       final team = Team.fromJson({
         'TEA_ID': teamId,
         'TEA_NAME': apiData['name'],
@@ -97,7 +122,6 @@ class TeamRepositoryImpl implements TeamRepository {
           'race_id': raceId,
         });
       } else {
-        // Fallback or error if raceId is required by API
         await apiSources.addMemberToTeam({
           'team_id': teamId,
           'user_id': userId,
@@ -111,16 +135,13 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
-  /// Nouvelle méthode avec race_id (utilisée par l'interface)
+  /// Adds member to team for specific race (with local sync).
   Future<void> addMemberToTeam(Map<String, dynamic> data) async {
     try {
       _setAuthToken();
       await apiSources.addMemberToTeam(data);
 
-      // Sauvegarder en local (note: la méthode locale ne prend pas race_id)
       await localSources.addTeamMember(data['team_id'], data['user_id']);
-
-      // Inscrire aussi l'utilisateur à la course en local
       await localSources.registerUserToRace(data['user_id'], data['race_id']);
     } catch (e) {
       await localSources.addTeamMember(data['team_id'], data['user_id']);
@@ -134,7 +155,6 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       await apiSources.registerTeamToRace(teamId, raceId);
 
-      // Sauvegarder en local
       await localSources.registerTeamToRace(teamId, raceId);
     } catch (e) {
       await localSources.registerTeamToRace(teamId, raceId);
@@ -145,8 +165,6 @@ class TeamRepositoryImpl implements TeamRepository {
   Future<void> registerUserToRace(int userId, int raceId) async {
     try {
       _setAuthToken();
-      // L'API gère ça via addMemberToTeam
-      // Mais en local on a une méthode dédiée
       await localSources.registerUserToRace(userId, raceId);
     } catch (e) {
       await localSources.registerUserToRace(userId, raceId);
@@ -159,7 +177,7 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       final remoteUsers = await apiSources.getAvailableUsersForRace(raceId);
 
-      // Sync users locally to ensure joins work for team display
+      // Sync users locally for JOIN operations
       for (var user in remoteUsers) {
         await localSources.upsertUser(user.toJson());
       }
@@ -191,7 +209,6 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       await apiSources.validateTeamForRace(teamId, raceId);
 
-      // Mettre à jour en local
       await localSources.validateTeamForRace(teamId, raceId);
     } catch (e) {
       await localSources.validateTeamForRace(teamId, raceId);
@@ -209,7 +226,6 @@ class TeamRepositoryImpl implements TeamRepository {
       await apiSources.getTeamRaceDetails(teamId, raceId);
       return true;
     } catch (e) {
-      // Vérifier en local
       return await localSources.canAccessTeamDetail(
         teamId: teamId,
         raceId: raceId,
@@ -291,6 +307,10 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
+  /// Syncs API team data to local DB with format normalization [web:186].
+  ///
+  /// Normalizes API (snake_case) → DB (UPPERCASE_UNDERSCORE), syncs team,
+  /// members, validation state, PPS forms, and chip numbers.
   Future<void> _syncTeamFromApi(
     Map<String, dynamic> apiData,
     int raceId,
@@ -298,7 +318,7 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       final teamJson = apiData['team'];
       if (teamJson != null) {
-        // Normalize JSON keys for Team parsing if necessary
+        // Normalize API format → DB format
         final Map<String, dynamic> normalizedTeamJson =
             Map<String, dynamic>.from(teamJson);
         if (!normalizedTeamJson.containsKey('TEA_ID'))
@@ -310,13 +330,10 @@ class TeamRepositoryImpl implements TeamRepository {
         if (!normalizedTeamJson.containsKey('TEA_IMAGE'))
           normalizedTeamJson['TEA_IMAGE'] = teamJson['image'];
 
-        // Creates Team object to standardise, then saves to DB using DB columns
-        // NOTE: We strip race-specific fields (is_valid, race_number) because SAN_TEAMS doesn't have them
-        // They are handled separately via registerTeamToRace or validateTeamForRace
         final team = Team.fromJson(normalizedTeamJson);
         await localSources.createTeam(team.toJson());
 
-        // Sync Validation Status
+        // Sync validation status
         bool isValid = false;
         if (teamJson['is_valid'] == true || teamJson['is_valid'] == 1)
           isValid = true;
@@ -324,16 +341,15 @@ class TeamRepositoryImpl implements TeamRepository {
         if (isValid) {
           await localSources.validateTeamForRace(team.id, raceId);
         } else {
-          // Si non validé, on l'invalide (ou on ne fait rien si c'est déjà 0 par défaut)
           await localSources.invalidateTeamForRace(team.id, raceId);
         }
 
-        // Sync Members
+        // Sync members with PPS and chip data
         final members = apiData['members'] as List?;
         if (members != null) {
           for (var m in members) {
             final Map<String, dynamic> normM = Map<String, dynamic>.from(m);
-            // Normalize User keys for User.fromJson (DB Format expected)
+            // Normalize User keys for DB format
             if (!normM.containsKey('USE_ID')) normM['USE_ID'] = m['id'];
             if (!normM.containsKey('USE_NAME'))
               normM['USE_NAME'] = m['name'] ?? m['first_name'];
@@ -348,13 +364,13 @@ class TeamRepositoryImpl implements TeamRepository {
             await localSources.addTeamMember(team.id, user.id);
             await localSources.registerUserToRace(user.id, raceId);
 
-            // Sync PPS
+            // Sync PPS form
             final pps = m['pps_form'] ?? m['USR_PPS_FORM'];
             if (pps != null) {
               await localSources.updateUserPPS(user.id, pps, raceId);
             }
 
-            // Sync Chip
+            // Sync chip number
             final chip = m['chip_number'] ?? m['USR_CHIP_NUMBER'];
             int? chipInt;
             if (chip is int) {
@@ -405,7 +421,7 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
-  /// Méthode avec raceId pour l'API
+  /// Removes member from team for specific race.
   Future<void> removeMemberFromTeamRace(
     int teamId,
     int raceId,
@@ -473,7 +489,7 @@ class TeamRepositoryImpl implements TeamRepository {
         raceId,
         userId,
         chipNumber?.toString(),
-        null, // No pps update
+        null,
       );
 
       await localSources.updateUserChipNumber(userId, raceId, chipNumber);
@@ -482,7 +498,7 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
-  /// Méthode combinée pour l'API
+  /// Combined update for PPS form and chip number.
   Future<void> updateMemberRaceInfo(
     int teamId,
     int raceId,
@@ -500,7 +516,7 @@ class TeamRepositoryImpl implements TeamRepository {
         ppsForm,
       );
 
-      // Mettre à jour en local
+      // Sync locally
       if (chipNumber != null && chipNumber.isNotEmpty) {
         await localSources.updateUserChipNumber(
           userId,
@@ -541,7 +557,6 @@ class TeamRepositoryImpl implements TeamRepository {
     int raceId,
   ) async {
     try {
-      // Pas d'API pour ça, utiliser directement le local
       return await localSources.getUserConflictingRaces(userId, raceId);
     } catch (e) {
       return [];
@@ -557,10 +572,10 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
 
-      // 1. Créer l'équipe
+      // 1. Create team
       final teamId = await createTeam(team.toJson());
 
-      // 2. Ajouter les membres
+      // 2. Add members
       for (final userId in memberIds) {
         await addMemberToTeam({
           'user_id': userId,
@@ -569,10 +584,10 @@ class TeamRepositoryImpl implements TeamRepository {
         });
       }
 
-      // 3. Inscrire l'équipe à la course
+      // 3. Register team to race
       await registerTeamToRace(teamId, raceId);
     } catch (e) {
-      // Fallback complet en local
+      // Complete local fallback (atomic transaction)
       await localSources.createTeamAndRegisterToRace(
         team: team,
         memberIds: memberIds,
@@ -581,7 +596,7 @@ class TeamRepositoryImpl implements TeamRepository {
     }
   }
 
-  /// Méthode pour getTeamRaceDetails (complète)
+  /// Fetches complete team-race details with members.
   Future<Map<String, dynamic>> getTeamRaceDetails(
     int teamId,
     int raceId,
@@ -590,7 +605,7 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       return await apiSources.getTeamRaceDetails(teamId, raceId);
     } catch (e) {
-      // Construire les détails depuis le local
+      // Build details from local sources
       final team = await localSources.getTeamByIdWithRaceStatus(teamId, raceId);
       final members = await localSources.getTeamMembersWithRaceDetails(
         teamId,

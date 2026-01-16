@@ -2,6 +2,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Participants and teams capacity form section.
+///
+/// Provides inputs for participant counts, team counts, and team size limits.
+/// Team members must be between 1-5 per team [web:150].
+///
+/// Example:
+/// ```dart
+/// RaceFormParticipantsSection(
+///   minParticipantsController: _minParticipantsCtrl,
+///   maxParticipantsController: _maxParticipantsCtrl,
+///   minTeamsController: _minTeamsCtrl,
+///   maxTeamsController: _maxTeamsCtrl,
+///   minTeamMembersController: _minMembersCtrl,
+///   maxTeamMembersController: _maxMembersCtrl,
+/// );
+/// ```
 class RaceFormParticipantsSection extends StatelessWidget {
   final TextEditingController minParticipantsController;
   final TextEditingController maxParticipantsController;
@@ -25,11 +41,13 @@ class RaceFormParticipantsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Participants section
         Text(
           'Participants',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Row(
@@ -60,11 +78,14 @@ class RaceFormParticipantsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
+
+        // Teams section
         Text(
           'Équipes',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Row(
@@ -95,6 +116,8 @@ class RaceFormParticipantsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
+
+        // Team size limits (validated: 1-5 members) [web:150]
         Row(
           children: [
             Expanded(

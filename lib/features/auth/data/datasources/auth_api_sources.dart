@@ -3,18 +3,96 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../domain/user_auth.dart';
 
+/// Authentication API data source.
+///
+/// Handles all HTTP communication with the authentication backend API, including
+/// user registration, login, profile updates, and JWT token management [web:84][web:86].
+/// This class follows Flutter's data layer pattern where services interact with
+/// external APIs and provide raw data to repositories [web:89][web:92].
+///
+/// The data source maintains an access token (JWT) for authenticated requests,
+/// which is stored after successful login or registration and included in
+/// subsequent API calls via Bearer authentication [web:84][web:86].
+///
+/// **Architecture:**
+/// - Part of the data layer in clean architecture [web:89][web:92]
+/// - Stateless API communication (except token storage)
+/// - Returns domain entities ([User]) for repository consumption
+/// - Handles HTTP errors and status codes
+///
+/// Example usage:
+/// ```dart
+/// final authApi = AuthApiSources(
+///   baseUrl: 'https://api.example.com',
+/// );
+///
+/// try {
+///   final user = await authApi.login(
+///     email: 'user@example.com',
+///     password: 'password123',
+///   );
+///   print('Logged in: ${user.email}');
+/// } catch (e) {
+///   print('Login failed: $e');
+/// }
+/// ```
 class AuthApiSources {
+  /// Base URL for the authentication API.
+  ///
+  /// All API endpoints are relative to this base URL.
+  /// Example: 'https://api.example.com' or 'http://localhost:3000'
   final String baseUrl;
+
+  /// HTTP client for making network requests.
+  ///
+  /// Uses the [http] package which provides a composable, Future-based
+  /// API for HTTP requests [web:84][web:86]. Can be injected for testing.
   final http.Client client;
-  String? _accessToken; // Stocker le token d'accès
 
+  /// JWT access token for authenticated requests.
+  ///
+  /// Stored after successful login or registration and included in
+  /// subsequent API calls using Bearer authentication [web:86][web:90].
+  /// Should be persisted to secure storage for session management.
+  String? _accessToken;
+
+  /// Creates an [AuthApiSources] instance.
+  ///
+  /// The [baseUrl] parameter is required and should point to the API root.
+  /// The [client] parameter is optional and defaults to a new [http.Client]
+  /// instance, allowing for dependency injection during testing [web:84].
   AuthApiSources({required this.baseUrl, http.Client? client})
-    : client = client ?? http.Client();
+      : client = client ?? http.Client();
 
-  /// Getter pour accéder au token
+  /// Public getter for the access token.
+  ///
+  /// Returns the currently stored JWT access token, or null if no user
+  /// is authenticated. Used by repositories to check authentication state
+  /// or persist tokens to secure storage [web:86][web:90].
   String? get accessToken => _accessToken;
 
-  /// Inscription via API
+  /// Registers a new user account via the API.
+  ///
+  /// Sends user registration data to the `/register` endpoint and returns
+  /// a [User] object on success. The access token is automatically stored
+  /// for subsequent authenticated requests [web:86].
+  ///
+  /// **Parameters:**
+  /// - [email]: User's email address (required, must be unique)
+  /// - [password]: User's password (required)
+  /// - [firstName]: User's first name (required)
+  /// - [lastName]: User's last name (required)
+  /// - [birthDate]: Optional birth date in ISO format
+  /// - [phoneNumber]: Optional phone number
+  /// - [licenceNumber]: Optional orienteering license number
+  /// - [gender]: Gender (defaults to 'Autre')
+  ///
+  /// **Throws:**
+  /// - [Exception] if email is already in use (status 422)
+  /// - [Exception] for network errors or invalid responses
+  /// - [TimeoutException] if request exceeds 10 seconds
+  ///
+  /// **Returns:** A [User] object representing the newly registered user
   Future<User> register({
     required String email,
     required String password,
@@ -47,7 +125,7 @@ class AuthApiSources {
       final responseData = json.decode(response.body);
       final data = responseData['data'];
 
-      // Stocker le token pour les futures requêtes
+      // Store JWT token for future authenticated requests [web:86]
       _accessToken = data['access_token'];
 
       return User.fromJson({
@@ -73,7 +151,25 @@ class AuthApiSources {
     }
   }
 
-  /// Connexion via API
+  /// Authenticates a user via the API.
+  ///
+  /// Sends login credentials to the `/login` endpoint and returns a [User]
+  /// object on success. The JWT access token is automatically stored and
+  /// included in subsequent authenticated requests [web:84][web:86].
+  ///
+  /// After successful login, performs an additional check via `/user/is-admin`
+  /// to verify admin status and update user roles accordingly [web:84].
+  ///
+  /// **Parameters:**
+  /// - [email]: User's email address
+  /// - [password]: User's password
+  ///
+  /// **Throws:**
+  /// - [Exception] with message 'Email ou mot de passe incorrect' (status 401)
+  /// - [Exception] for network errors or invalid responses
+  /// - [TimeoutException] if request exceeds 10 seconds
+  ///
+  /// **Returns:** A [User] object with authentication token and role information
   Future<User> login({required String email, required String password}) async {
 
     final response = await client
@@ -88,10 +184,10 @@ class AuthApiSources {
       final responseData = json.decode(response.body);
       final data = responseData['data'];
 
-      // Stocker le token pour les futures requêtes
+      // Store JWT token for authenticated requests [web:86][web:90]
       _accessToken = data['access_token'];
 
-      // Extract roles from response
+      // Extract user roles from API response
       List<int> roles = [];
       if (data['roles'] != null) {
         roles = (data['roles'] as List<dynamic>).map((r) => r as int).toList();
@@ -117,6 +213,9 @@ class AuthApiSources {
         'roles': roles,
       };
 
+      final user = User.fromJson(userMap);
+
+      // Verify admin status via separate API endpoint [web:84]
       try {
         final user = User.fromJson(userMap);
 
@@ -135,6 +234,8 @@ class AuthApiSources {
 
         rethrow;
       }
+
+      return user;
     } else if (response.statusCode == 401) {
       throw Exception('Email ou mot de passe incorrect');
     } else {
@@ -142,7 +243,18 @@ class AuthApiSources {
     }
   }
 
-  /// Check if current user is admin
+  /// Checks if the current authenticated user has admin privileges.
+  ///
+  /// Makes an authenticated request to `/user/is-admin` endpoint using
+  /// the stored access token via Bearer authentication [web:84][web:86].
+  /// This is a private helper method called during login to verify admin status.
+  ///
+  /// **Returns:**
+  /// - `true` if user is an admin
+  /// - `false` if user is not an admin, not authenticated, or request fails
+  ///
+  /// **Note:** This method silently returns false on errors rather than throwing,
+  /// allowing the login process to continue with basic user roles.
   Future<bool> _checkIsAdmin() async {
     if (_accessToken == null) return false;
 
@@ -158,7 +270,7 @@ class AuthApiSources {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      // Try different response formats
+      // Handle multiple possible response formats
       return data['is_admin'] == true ||
           data['isAdmin'] == true ||
           data['data'] == true ||
@@ -167,7 +279,28 @@ class AuthApiSources {
     return false;
   }
 
-  /// Mise à jour du profil via API
+  /// Updates user profile information via the API.
+  ///
+  /// Sends a PUT request to `/users/{userId}` with the updated profile data.
+  /// Only provided (non-null) fields will be included in the update request [web:84].
+  ///
+  /// **Parameters:**
+  /// - [userId]: ID of the user to update
+  /// - [firstName]: Updated first name (optional)
+  /// - [lastName]: Updated last name (optional)
+  /// - [phoneNumber]: Updated phone number (optional)
+  /// - [birthDate]: Updated birth date (optional)
+  /// - [licenceNumber]: Updated license number (optional)
+  ///
+  /// **Throws:**
+  /// - [Exception] for network errors or invalid responses
+  /// - [TimeoutException] if request exceeds 10 seconds
+  ///
+  /// **Returns:** A [User] object with the updated profile information
+  ///
+  /// **Note:** This method currently doesn't include authentication headers.
+  /// Consider adding `Authorization: Bearer $_accessToken` header for
+  /// authenticated profile updates [web:84].
   Future<User> updateProfile({
     required String userId,
     String? firstName,

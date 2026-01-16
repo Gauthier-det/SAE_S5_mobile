@@ -3,7 +3,27 @@ import 'package:sae5_g13_mobile/features/team/domain/team.dart';
 import '../../../../core/database/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
+/// SQLite data source for team operations.
+///
+/// Handles team CRUD, member management, race registration, and validation.
+/// Enforces business rules: age ≥12, gender matching, time conflict detection
+/// [web:186][web:189][web:200].
+///
+/// **Key Features:**
+/// - Team-race registration with auto-generated dossard numbers
+/// - Member availability filtering (age, gender, conflicts)
+/// - Validation state management (TER_IS_VALID)
+/// - Access control checks (member/creator/manager)
+/// - PPS form and chip number tracking
+///
+/// Example:
+/// ```dart
+/// final localSource = TeamLocalSources();
+/// final teams = await localSource.getRaceTeams(raceId);
+/// await localSource.validateTeamForRace(teamId, raceId);
+/// ```
 class TeamLocalSources {
+  /// Upserts user data into SAN_USERS table.
   Future<void> upsertUser(Map<String, dynamic> userData) async {
     final db = await DatabaseHelper.database;
     await db.insert(
@@ -13,6 +33,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Fetches teams registered to a race with validation status [web:186].
   Future<List<Map<String, dynamic>>> getRaceTeams(int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -28,6 +49,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Fetches single team by ID.
   Future<Map<String, dynamic>?> getTeamById(int teamId) async {
     final db = await DatabaseHelper.database;
     final result = await db.query(
@@ -40,9 +62,10 @@ class TeamLocalSources {
     return result.isEmpty ? null : result.first;
   }
 
+  /// Creates new team. Strips race-specific fields before insert.
   Future<int> createTeam(Map<String, dynamic> teamData) async {
     final db = await DatabaseHelper.database;
-    // Nettoyer les données pour ne garder que les colonnes de SAN_TEAMS
+    // Clean data to keep only SAN_TEAMS columns
     final dataToInsert = Map<String, dynamic>.from(teamData);
     dataToInsert.remove('TER_IS_VALID');
     dataToInsert.remove('race_number');
@@ -54,6 +77,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Adds user to team via SAN_USERS_TEAMS junction table.
   Future<void> addTeamMember(int teamId, int userId) async {
     final db = await DatabaseHelper.database;
     await db.insert('SAN_USERS_TEAMS', {
@@ -62,6 +86,7 @@ class TeamLocalSources {
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
+  /// Registers team to race with auto-generated dossard number [web:200].
   Future<void> registerTeamToRace(int teamId, int raceId) async {
     final db = await DatabaseHelper.database;
     final result = await db.rawQuery(
@@ -86,10 +111,10 @@ class TeamLocalSources {
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
+  /// Registers user to race individually (via SAN_USERS_RACES).
   Future<void> registerUserToRace(int userId, int raceId) async {
     final db = await DatabaseHelper.database;
 
-    // Vérifier si l'utilisateur n'est pas déjà inscrit
     final existing = await db.query(
       'SAN_USERS_RACES',
       where: 'USE_ID = ? AND RAC_ID = ?',
@@ -101,13 +126,19 @@ class TeamLocalSources {
     }
   }
 
-  // Remplace getAvailableUsersForRace par cette version améliorée
+  /// Fetches users eligible for race with filters [web:189][web:200].
+  ///
+  /// Filters:
+  /// - Age ≥ 12 years
+  /// - Not already registered
+  /// - Gender match (if not Mixte)
+  /// - No time conflicts with other races
   Future<List<Map<String, dynamic>>> getAvailableUsersForRace(
     int raceId,
   ) async {
     final db = await DatabaseHelper.database;
 
-    // Récupérer les infos de la course
+    // Fetch race details
     final raceInfo = await db.query(
       'SAN_RACES',
       where: 'RAC_ID = ?',
@@ -122,14 +153,14 @@ class TeamLocalSources {
     final raceStart = race['RAC_TIME_START'] as String;
     final raceEnd = race['RAC_TIME_END'] as String;
 
-    // Construire la clause WHERE pour le genre
+    // Build gender filter clause
     String genderFilter = '';
     if (raceSex == 'Homme') {
       genderFilter = "AND USE_GENDER = 'Homme'";
     } else if (raceSex == 'Femme') {
       genderFilter = "AND USE_GENDER = 'Femme'";
     }
-    // Si Mixte ou autre, pas de filtre (tous les genres acceptés)
+    // If Mixte, no gender filter
 
     return await db.rawQuery(
       '''
@@ -145,20 +176,20 @@ class TeamLocalSources {
         USE_LICENCE_NUMBER
       FROM SAN_USERS
       WHERE 
-        -- Au moins 12 ans
+        -- At least 12 years old
         (julianday('now') - julianday(USE_BIRTHDATE)) / 365.25 >= 12
         
-        -- Pas déjà inscrit à cette course
+        -- Not already registered
         AND USE_ID NOT IN (
           SELECT USE_ID 
           FROM SAN_USERS_RACES 
           WHERE RAC_ID = ?
         )
         
-        -- Filtre de genre
+        -- Gender filter
         $genderFilter
         
-        -- Pas de conflit horaire avec d'autres courses
+        -- No time conflict
         AND USE_ID NOT IN (
           SELECT DISTINCT ur.USE_ID
           FROM SAN_USERS_RACES ur
@@ -176,6 +207,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Fetches team members with basic user details.
   Future<List<Map<String, dynamic>>> getTeamMembers(int teamId) async {
     final db = await DatabaseHelper.database;
 
@@ -192,6 +224,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Marks team as validated for race (TER_IS_VALID = 1) [web:186].
   Future<void> validateTeamForRace(int teamId, int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -203,6 +236,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Checks if user can access team details (member/creator/race manager).
   Future<bool> canAccessTeamDetail({
     required int teamId,
     required int raceId,
@@ -210,7 +244,7 @@ class TeamLocalSources {
   }) async {
     final db = await DatabaseHelper.database;
 
-    // Vérifier si l'utilisateur est membre de l'équipe
+    // Check if user is team member
     final isMember = await db.query(
       'SAN_USERS_TEAMS',
       where: 'TEA_ID = ? AND USE_ID = ?',
@@ -219,7 +253,7 @@ class TeamLocalSources {
 
     if (isMember.isNotEmpty) return true;
 
-    // Vérifier si l'utilisateur est le créateur
+    // Check if user is team creator
     final team = await db.query(
       'SAN_TEAMS',
       where: 'TEA_ID = ? AND USE_ID = ?',
@@ -228,7 +262,7 @@ class TeamLocalSources {
 
     if (team.isNotEmpty) return true;
 
-    // Vérifier si l'utilisateur est responsable de la course
+    // Check if user is race manager
     final isRaceManager = await db.query(
       'SAN_RACES',
       where: 'RAC_ID = ? AND USE_ID = ?',
@@ -238,6 +272,7 @@ class TeamLocalSources {
     return isRaceManager.isNotEmpty;
   }
 
+  /// Fetches team's dossard number for specific race [web:200].
   Future<int?> getTeamDossardNumber(int teamId, int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -252,6 +287,7 @@ class TeamLocalSources {
     return result.first['TER_RACE_NUMBER'] as int?;
   }
 
+  /// Fetches team members with race-specific details (PPS, chip).
   Future<List<Map<String, dynamic>>> getTeamMembersWithRaceDetails(
     int teamId,
     int raceId,
@@ -274,6 +310,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Marks team as invalidated for race (TER_IS_VALID = 0).
   Future<void> invalidateTeamForRace(int teamId, int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -285,6 +322,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Removes member from team and their race registrations.
   Future<void> removeMemberFromTeam(int teamId, int userId) async {
     final db = await DatabaseHelper.database;
 
@@ -302,10 +340,11 @@ class TeamLocalSources {
     );
   }
 
+  /// Deletes team and all associations (race registrations, members).
   Future<void> deleteTeam(int teamId, int raceId) async {
     final db = await DatabaseHelper.database;
 
-    // Supprimer de la course
+    // Remove from race
     await db.delete(
       'SAN_TEAMS_RACES',
       where: 'TEA_ID = ? AND RAC_ID = ?',
@@ -319,17 +358,18 @@ class TeamLocalSources {
       whereArgs: [teamId, raceId],
     );
 
-    // Supprimer les membres
+    // Remove members
     await db.delete(
       'SAN_USERS_TEAMS',
       where: 'TEA_ID = ?',
       whereArgs: [teamId],
     );
 
-    // Supprimer l'équipe
+    // Remove team
     await db.delete('SAN_TEAMS', where: 'TEA_ID = ?', whereArgs: [teamId]);
   }
 
+  /// Updates user's PPS form status for race.
   Future<void> updateUserPPS(int userId, String? ppsForm, int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -341,6 +381,7 @@ class TeamLocalSources {
     );
   }
 
+  /// Updates user's chip number for race (upserts if needed).
   Future<void> updateUserChipNumber(
     int userId,
     int raceId,
@@ -348,7 +389,6 @@ class TeamLocalSources {
   ) async {
     final db = await DatabaseHelper.database;
 
-    // Vérifier si l'utilisateur est déjà inscrit à la course
     final existing = await db.query(
       'SAN_USERS_RACES',
       where: 'USE_ID = ? AND RAC_ID = ?',
@@ -356,14 +396,12 @@ class TeamLocalSources {
     );
 
     if (existing.isEmpty) {
-      // Créer l'inscription
       await db.insert('SAN_USERS_RACES', {
         'USE_ID': userId,
         'RAC_ID': raceId,
         'USR_CHIP_NUMBER': chipNumber,
       });
     } else {
-      // Mettre à jour
       await db.update(
         'SAN_USERS_RACES',
         {'USR_CHIP_NUMBER': chipNumber},
@@ -373,6 +411,9 @@ class TeamLocalSources {
     }
   }
 
+  /// Atomic transaction: creates team and registers to race [web:200].
+  ///
+  /// Steps: Creates team → Adds members → Generates dossard → Registers to race → Registers members individually.
   Future<void> createTeamAndRegisterToRace({
     required Team team,
     required List<int> memberIds,
@@ -380,7 +421,7 @@ class TeamLocalSources {
   }) async {
     final db = await DatabaseHelper.database;
 
-    // 1. Créer l'équipe
+    // 1. Create team
     final teamId = await db.insert('SAN_TEAMS', {
       'TEA_ID': team.id,
       'USE_ID': team.managerId,
@@ -388,12 +429,12 @@ class TeamLocalSources {
       'TEA_IMAGE': team.image,
     });
 
-    // 2. Ajouter les membres à l'équipe
+    // 2. Add members to team
     for (final userId in memberIds) {
       await db.insert('SAN_USERS_TEAMS', {'TEA_ID': teamId, 'USE_ID': userId});
     }
 
-    // 3. Générer le numéro de dossard
+    // 3. Generate dossard number
     final result = await db.rawQuery(
       '''
       SELECT COALESCE(MAX(TER_RACE_NUMBER), 0) + 1 as next_number
@@ -405,7 +446,7 @@ class TeamLocalSources {
 
     final nextDossardNumber = result.first['next_number'] as int;
 
-    // 4. Inscrire l'équipe à la course
+    // 4. Register team to race
     await db.insert('SAN_TEAMS_RACES', {
       'TEA_ID': teamId,
       'RAC_ID': raceId,
@@ -414,7 +455,7 @@ class TeamLocalSources {
       'TER_TIME': null,
     });
 
-    // 5. Inscrire tous les membres à la course individuellement
+    // 5. Register all members to race individually
     for (final userId in memberIds) {
       final existing = await db.query(
         'SAN_USERS_RACES',
@@ -431,7 +472,7 @@ class TeamLocalSources {
     }
   }
 
-  // ✅ NOUVELLE MÉTHODE : Récupère l'équipe avec son statut pour une course
+  /// Fetches team with validation status for specific race [web:186].
   Future<Team?> getTeamByIdWithRaceStatus(int teamId, int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -453,15 +494,15 @@ class TeamLocalSources {
 
     final teamData = result.first;
 
-    // ✅ Créer l'équipe avec le statut de validation
     return Team(
       id: teamData['TEA_ID'] as int,
       name: teamData['TEA_NAME'] as String,
       managerId: teamData['USE_ID'] as int,
-      isValid: teamData['isValid'] == 1, // ✅ Récupéré depuis SAN_TEAMS_RACES
+      isValid: teamData['isValid'] == 1,
     );
   }
 
+  /// Fetches race details by ID.
   Future<Map<String, dynamic>?> getRaceDetails(int raceId) async {
     final db = await DatabaseHelper.database;
 
@@ -475,13 +516,14 @@ class TeamLocalSources {
     return result.isEmpty ? null : result.first;
   }
 
+  /// Fetches user's races that conflict with target race timing.
   Future<List<Map<String, dynamic>>> getUserConflictingRaces(
     int userId,
     int raceId,
   ) async {
     final db = await DatabaseHelper.database;
 
-    // Récupérer les horaires de la course cible
+    // Fetch target race timing
     final targetRace = await db.query(
       'SAN_RACES',
       where: 'RAC_ID = ?',
@@ -494,7 +536,7 @@ class TeamLocalSources {
     final startTime = targetRace.first['RAC_START_TIME'] as String;
     final endTime = targetRace.first['RAC_END_TIME'] as String;
 
-    // Trouver les courses où l'utilisateur est inscrit qui se chevauchent
+    // Find overlapping races where user is registered
     return await db.rawQuery(
       '''
       SELECT r.RAC_ID, r.RAC_NAME, r.RAC_START_TIME, r.RAC_END_TIME
@@ -503,7 +545,7 @@ class TeamLocalSources {
       WHERE ur.USE_ID = ?
         AND r.RAC_ID != ?
         AND (
-          -- La course chevauche
+          -- Overlapping races
           (r.RAC_START_TIME < ? AND r.RAC_END_TIME > ?)
           OR (r.RAC_START_TIME >= ? AND r.RAC_START_TIME < ?)
         )

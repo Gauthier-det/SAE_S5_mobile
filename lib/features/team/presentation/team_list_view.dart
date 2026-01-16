@@ -8,6 +8,42 @@ import '../domain/team.dart';
 import '../domain/team_repository.dart';
 import 'team_detail_view.dart';
 
+/// Screen displaying teams registered to a specific race [web:281][web:283][web:287].
+///
+/// Shows team list with validation badges, member counts, and race info header.
+/// Implements multiple UI states (loading, error, empty, loaded) and access
+/// control before navigation [web:281][web:285][web:288].
+///
+/// **UI States [web:281][web:283]:**
+/// - Loading: CircularProgressIndicator
+/// - Error: Error message with retry button
+/// - Empty: Empty state with illustration
+/// - Loaded: List with pull-to-refresh [web:284][web:287]
+///
+/// **Features:**
+/// - Access control check before opening team details [web:285][web:288]
+/// - Race manager detection via DB query
+/// - Network image with fallback to initials
+/// - Async member count loading per team
+/// - FAB to register new team
+///
+/// **Permission Checks:**
+/// - Determines if user is race manager (for detail view actions)
+/// - Checks canAccessTeamDetail before navigation [web:285]
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (context) => TeamRaceListView(
+///       repository: teamRepository,
+///       raceId: 123,
+///       raceName: 'Trail des Montagnes',
+///     ),
+///   ),
+/// );
+/// ```
 class TeamRaceListView extends StatefulWidget {
   final TeamRepository repository;
   final int raceId;
@@ -37,6 +73,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
     _loadTeams();
   }
 
+  /// Loads teams and determines user's race manager status [web:281].
   Future<void> _loadTeams() async {
     setState(() {
       _isLoading = true;
@@ -51,13 +88,11 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
         throw Exception('Utilisateur non connecté');
       }
 
-      // Récupérer l'ID de l'utilisateur
-      final db = await DatabaseHelper.database;
-
-      // Use ID directly from Auth Provider instead of querying local DB (which might be empty)
+      // Get user ID from auth provider
       _currentUserId = int.parse(currentUser.id);
 
-      // Vérifier si l'utilisateur est responsable de la course
+      // Check if user is race manager via DB query
+      final db = await DatabaseHelper.database;
       final race = await db.query(
         'SAN_RACES',
         where: 'RAC_ID = ? AND USE_ID = ?',
@@ -66,7 +101,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
 
       _isRaceManager = race.isNotEmpty;
 
-      // Charger les équipes
+      // Load teams
       final teams = await widget.repository.getRaceTeams(widget.raceId);
 
       if (mounted) {
@@ -118,6 +153,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
     );
   }
 
+  /// Builds body with state-based rendering [web:281][web:283].
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -183,7 +219,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
       onRefresh: _loadTeams,
       child: Column(
         children: [
-          // Info course
+          // Race info header with team count
           Container(
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.all(16),
@@ -226,7 +262,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
             ),
           ),
 
-          // Liste des équipes
+          // Team list [web:284][web:287]
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -242,6 +278,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
     );
   }
 
+  /// Builds team card with access control on tap [web:285][web:288].
   Widget _buildTeamCard(Team team) {
     final isValid = team.isValid ?? false;
 
@@ -251,7 +288,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () async {
-          // Vérifier si l'utilisateur peut accéder au détail
+          // Check access before navigation [web:285][web:288]
           final canAccess = await widget.repository.canAccessTeamDetail(
             teamId: team.id,
             raceId: widget.raceId,
@@ -294,7 +331,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Avatar de l'équipe
+              // Team avatar
               Container(
                 width: 60,
                 height: 60,
@@ -318,7 +355,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
 
               const SizedBox(width: 16),
 
-              // Infos de l'équipe
+              // Team info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +371,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
                             ),
                           ),
                         ),
-                        // Badge de validation
+                        // Validation badge
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -421,7 +458,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
                 ),
               ),
 
-              // Icône chevron
+              // Chevron icon
               Icon(Icons.chevron_right, color: Colors.grey.shade400),
             ],
           ),
@@ -430,6 +467,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
     );
   }
 
+  /// Fallback team avatar showing first letter.
   Widget _buildDefaultTeamIcon(String teamName) {
     return Center(
       child: Text(
@@ -443,6 +481,7 @@ class _TeamRaceListViewState extends State<TeamRaceListView> {
     );
   }
 
+  /// Async loads member count for team card.
   Future<int> _getTeamMemberCount(int teamId) async {
     try {
       final members = await widget.repository.getTeamMembers(teamId);

@@ -2,14 +2,23 @@
 import 'package:flutter/material.dart';
 import '../../domain/race.dart';
 
+/// Race age recommendations display section.
+///
+/// Shows color-coded age chips (min, middle, max) for race participation
+/// recommendations. Only displays non-zero age values.
+///
+/// Example:
+/// ```dart
+/// RaceAgesSection(race: selectedRace);
+/// ```
 class RaceAgesSection extends StatelessWidget {
+  /// The race entity containing age recommendations.
   final Race race;
 
   const RaceAgesSection({super.key, required this.race});
 
   @override
   Widget build(BuildContext context) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -21,6 +30,8 @@ class RaceAgesSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        
+        // Display age chips conditionally (only non-zero values)
         Row(
           children: [
             if (race.ageMin != 0)
@@ -57,9 +68,10 @@ class RaceAgesSection extends StatelessWidget {
     );
   }
 
+  /// Builds a colored age chip with label and age value.
   Widget _buildAgeChip({
     required String label,
-    required int age, // Non-nullable ici car on vérifie avant
+    required int age,
     required Color color,
   }) {
     return Container(

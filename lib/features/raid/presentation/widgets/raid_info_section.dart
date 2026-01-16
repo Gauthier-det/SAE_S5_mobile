@@ -4,6 +4,22 @@ import '../../../../core/presentation/widgets/common_info_card.dart';
 import '../../../../shared/utils/date_formatter.dart';
 import '../../../raid/domain/raid.dart';
 
+/// Raid detailed information section.
+///
+/// Displays organized raid information in four sections: dates (event + registration),
+/// location, contact (email/phone/website), and organization (manager). Contact and
+/// manager sections render conditionally based on data availability.
+///
+/// **Color Coding:**
+/// - Event dates: Orange (#FF6B00)
+/// - Registration dates: Green (#52B788)
+/// - Location: Red
+/// - Manager: Dark green (#1B3022)
+///
+/// Example:
+/// ```dart
+/// RaidInfoSection(raid: selectedRaid);
+/// ```
 class RaidInfoSection extends StatelessWidget {
   final Raid raid;
 
@@ -14,10 +30,10 @@ class RaidInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Dates (plus importante)
+        // Dates section
         _buildSectionTitle(context, 'Dates importantes', Icons.event),
         const SizedBox(height: 12),
-        
+
         Row(
           children: [
             Expanded(
@@ -25,7 +41,8 @@ class RaidInfoSection extends StatelessWidget {
                 context,
                 icon: Icons.calendar_today,
                 label: 'Événement',
-                value: '${DateFormatter.formatDate(raid.timeStart)} - ${DateFormatter.formatDate(raid.timeEnd)}',
+                value:
+                    '${DateFormatter.formatDate(raid.timeStart)} - ${DateFormatter.formatDate(raid.timeEnd)}',
                 color: const Color(0xFFFF6B00),
               ),
             ),
@@ -35,7 +52,8 @@ class RaidInfoSection extends StatelessWidget {
                 context,
                 icon: Icons.app_registration,
                 label: 'Inscriptions',
-                value: '${DateFormatter.formatDate(raid.registrationStart)} - ${DateFormatter.formatDate(raid.registrationEnd)}',
+                value:
+                    '${DateFormatter.formatDate(raid.registrationStart)} - ${DateFormatter.formatDate(raid.registrationEnd)}',
                 color: const Color(0xFF52B788),
               ),
             ),
@@ -44,7 +62,7 @@ class RaidInfoSection extends StatelessWidget {
 
         const SizedBox(height: 24),
 
-        // Section Lieu
+        // Location section
         _buildSectionTitle(context, 'Localisation', Icons.place),
         const SizedBox(height: 12),
         CommonInfoCard(
@@ -56,24 +74,28 @@ class RaidInfoSection extends StatelessWidget {
 
         const SizedBox(height: 24),
 
-        // Section Contact
-        if (raid.email != null || raid.phoneNumber != null || raid.website != null) ...[
+        // Contact section (conditional)
+        if (raid.email != null ||
+            raid.phoneNumber != null ||
+            raid.website != null) ...[
           _buildSectionTitle(context, 'Contact', Icons.contact_mail),
           const SizedBox(height: 12),
-          
+
           if (raid.email != null)
             _buildContactRow(context, Icons.email, 'Email', raid.email!),
-          
+
           if (raid.phoneNumber != null)
-            _buildContactRow(context, Icons.phone, 'Téléphone', raid.phoneNumber!),
-          
+            _buildContactRow(
+                context, Icons.phone, 'Téléphone', raid.phoneNumber!),
+
           if (raid.website != null)
-            _buildContactRow(context, Icons.language, 'Site web', raid.website!),
-          
+            _buildContactRow(
+                context, Icons.language, 'Site web', raid.website!),
+
           const SizedBox(height: 24),
         ],
 
-        // Section Responsable (en dernier)
+        // Organization section (conditional)
         if (raid.manager != null) ...[
           _buildSectionTitle(context, 'Organisation', Icons.people),
           const SizedBox(height: 12),
@@ -88,7 +110,9 @@ class RaidInfoSection extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
+  /// Builds section title with icon.
+  Widget _buildSectionTitle(
+      BuildContext context, String title, IconData icon) {
     return Row(
       children: [
         Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
@@ -104,6 +128,7 @@ class RaidInfoSection extends StatelessWidget {
     );
   }
 
+  /// Builds compact color-coded card for date ranges.
   Widget _buildCompactCard(
     BuildContext context, {
     required IconData icon,
@@ -151,7 +176,9 @@ class RaidInfoSection extends StatelessWidget {
     );
   }
 
-  Widget _buildContactRow(BuildContext context, IconData icon, String label, String value) {
+  /// Builds contact info row with icon.
+  Widget _buildContactRow(
+      BuildContext context, IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(

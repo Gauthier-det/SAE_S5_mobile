@@ -3,9 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sae5_g13_mobile/features/race/domain/category.dart';
 
+/// Category price selector widget.
+///
+/// A form widget for setting race registration prices per age category with
+/// built-in validation rules. Prices are in euros and must follow business logic:
+/// - Licensed price ≤ Minor price
+/// - Non-licensed price ≥ Minor price
+///
+/// Example:
+/// ```dart
+/// CategoryPriceSelector(
+///   categories: [minorCat, adultCat, licensedCat],
+///   initialPrices: {1: 20, 2: 25, 3: 18},
+///   onChanged: (prices) => setState(() => _prices = prices),
+/// );
+/// ```
 class CategoryPriceSelector extends StatefulWidget {
+  /// Available age categories to price.
   final List<Category> categories;
+
+  /// Initial prices map (category ID → price in euros).
   final Map<int, int> initialPrices;
+
+  /// Callback when prices change. Returns updated price map.
   final ValueChanged<Map<int, int>> onChanged;
 
   const CategoryPriceSelector({
@@ -20,8 +40,13 @@ class CategoryPriceSelector extends StatefulWidget {
 }
 
 class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
+  /// Text controllers for each category price input [web:150].
   late Map<int, TextEditingController> _controllers;
+
+  /// Current price values (category ID → price in euros).
   late Map<int, int> _prices;
+
+  /// Validation errors (category ID → error message).
   final Map<int, String?> _errors = {};
 
   @override
@@ -30,6 +55,7 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
     _prices = Map.from(widget.initialPrices);
     _controllers = {};
 
+    // Initialize text controllers with initial prices
     for (var category in widget.categories) {
       _controllers[category.id] = TextEditingController(
         text: _prices[category.id]?.toString() ?? '',
@@ -39,12 +65,14 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
 
   @override
   void dispose() {
+    // Dispose controllers to prevent memory leaks [web:150]
     for (var controller in _controllers.values) {
       controller.dispose();
     }
     super.dispose();
   }
 
+  /// Updates price for a category and triggers validation.
   void _updatePrice(int categoryId, String value) {
     final price = int.tryParse(value);
     setState(() {
@@ -59,10 +87,15 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
     });
   }
 
+  /// Validates pricing rules across categories.
+  ///
+  /// Business rules:
+  /// 1. Licensed price must be ≤ Minor price
+  /// 2. Non-licensed price must be ≥ Minor price
   void _validatePrices() {
     _errors.clear();
 
-    // Trouver les catégories par leur label
+    // Find categories by label
     final mineurCat = widget.categories.firstWhere(
       (c) => c.label == 'Mineur',
       orElse: () => widget.categories.first,
@@ -80,14 +113,14 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
     final prixLicencie = _prices[licencieCat.id];
     final prixNonLicencie = _prices[nonLicencieCat.id];
 
-    // Validation 1 : Prix licencié <= Prix mineur
+    // Rule 1: Licensed ≤ Minor
     if (prixLicencie != null &&
         prixMineur != null &&
         prixLicencie > prixMineur) {
       _errors[licencieCat.id] = 'Doit être ≤ au prix Mineur (${prixMineur}€)';
     }
 
-    // Validation 2 : Prix non licencié >= Prix mineur
+    // Rule 2: Non-licensed ≥ Minor
     if (prixNonLicencie != null &&
         prixMineur != null &&
         prixNonLicencie < prixMineur) {
@@ -96,6 +129,7 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
     }
   }
 
+  /// Returns true if validation errors exist.
   bool hasErrors() => _errors.isNotEmpty;
 
   @override
@@ -103,19 +137,23 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header with info icon
         Row(
           children: [
             Text(
               'Prix par catégorie (€)',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Icon(Icons.info_outline, size: 18, color: Colors.grey.shade600),
           ],
         ),
         const SizedBox(height: 8),
+
+        // Pricing rules info box
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -146,6 +184,8 @@ class _CategoryPriceSelectorState extends State<CategoryPriceSelector> {
           ),
         ),
         const SizedBox(height: 16),
+
+        // Price input fields for each category [web:150]
         ...widget.categories.map((category) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),

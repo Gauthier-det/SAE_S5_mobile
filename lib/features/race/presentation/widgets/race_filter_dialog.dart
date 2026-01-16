@@ -1,6 +1,27 @@
 // lib/features/races/presentation/widgets/race_filter_dialog.dart
 import 'package:flutter/material.dart';
 
+/// Race filter dialog widget.
+///
+/// Modal dialog for filtering races by type (Compétitif/Rando) and difficulty
+/// level. Uses FilterChip widgets for selection [web:184].
+///
+/// Example:
+/// ```dart
+/// showDialog(
+///   context: context,
+///   builder: (_) => RaceFilterDialog(
+///     selectedType: _currentType,
+///     selectedDifficulty: _currentDifficulty,
+///     onApply: (type, difficulty) {
+///       setState(() {
+///         _currentType = type;
+///         _currentDifficulty = difficulty;
+///       });
+///     },
+///   ),
+/// );
+/// ```
 class RaceFilterDialog extends StatefulWidget {
   final String? selectedType;
   final String? selectedDifficulty;
@@ -37,7 +58,7 @@ class _RaceFilterDialogState extends State<RaceFilterDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filtre type
+            // Type filter
             const Text(
               'Type de course',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -52,14 +73,15 @@ class _RaceFilterDialogState extends State<RaceFilterDialog> {
                 _buildFilterChip('Compétitif', 'Compétitif', _tempType, (value) {
                   setState(() => _tempType = value);
                 }),
-                _buildFilterChip('Rando/Loisirs', 'Rando/Loisirs', _tempType, (value) {
+                _buildFilterChip('Rando/Loisirs', 'Rando/Loisirs', _tempType,
+                    (value) {
                   setState(() => _tempType = value);
                 }),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Filtre difficulté
+            // Difficulty filter
             const Text(
               'Difficulté',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -71,8 +93,15 @@ class _RaceFilterDialogState extends State<RaceFilterDialog> {
                 _buildFilterChip('Toutes', null, _tempDifficulty, (value) {
                   setState(() => _tempDifficulty = value);
                 }),
-                for (var difficulty in ['Facile', 'Moyen', 'Difficile', 'Expert', 'Très Expert'])
-                  _buildFilterChip(difficulty, difficulty, _tempDifficulty, (value) {
+                for (var difficulty in [
+                  'Facile',
+                  'Moyen',
+                  'Difficile',
+                  'Expert',
+                  'Très Expert'
+                ])
+                  _buildFilterChip(difficulty, difficulty, _tempDifficulty,
+                      (value) {
                     setState(() => _tempDifficulty = value);
                   }),
               ],
@@ -96,6 +125,7 @@ class _RaceFilterDialogState extends State<RaceFilterDialog> {
     );
   }
 
+  /// Builds a filter chip with selection state [web:184].
   Widget _buildFilterChip(
     String label,
     String? value,

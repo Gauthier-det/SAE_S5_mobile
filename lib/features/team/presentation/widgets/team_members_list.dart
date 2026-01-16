@@ -1,14 +1,52 @@
 // lib/features/teams/presentation/widgets/team_members_list.dart
-// ... (début inchangé)
-
 import 'package:flutter/material.dart';
 
+/// List of team members with granular permission-based actions [web:243][web:249][web:251].
+///
+/// Displays members with licence/PPS/chip info and conditional edit/remove
+/// actions. Uses two permission levels: canManageTeam (add/remove) and
+/// canEditMember (edit PPS/chip per member) [web:228][web:231][web:250].
+///
+/// **Permission Model:**
+/// - canManageTeam: Add members, remove any member
+/// - canEditMember(userId): Edit specific member's PPS/chip (race managers)
+/// - Separate permissions allow team creator != race manager scenarios
+///
+/// **Business Rules:**
+/// - If member has licence → PPS not shown/editable
+/// - If no licence → PPS shown with edit button (if canEditMember)
+/// - Chip number always editable by race managers
+///
+/// Example:
+/// ```dart
+/// TeamMembersList(
+///   members: [
+///     {
+///       'USE_ID': 1,
+///       'USE_NAME': 'John',
+///       'USE_LAST_NAME': 'Doe',
+///       'USE_LICENCE_NUMBER': 12345,
+///       'USR_PPS_FORM': null,
+///       'USR_CHIP_NUMBER': 42,
+///     },
+///   ],
+///   canManageTeam: isTeamCreator,
+///   isRaceManager: isManager,
+///   currentUserId: userId,
+///   canEditMember: (userId) => isManager || isTeamCreator,
+///   raceId: raceId,
+///   onAddMember: () => _showAddDialog(),
+///   onRemoveMember: (id, name) => _confirmRemove(id),
+///   onEditPPS: (id, pps, name) => _showPPSDialog(id, pps),
+///   onEditChipNumber: (id, chip, name) => _showChipDialog(id, chip),
+/// );
+/// ```
 class TeamMembersList extends StatelessWidget {
   final List<Map<String, dynamic>> members;
   final bool canManageTeam;
   final bool isRaceManager;
-  final int currentUserId; 
-  final bool Function(int userId) canEditMember; 
+  final int currentUserId;
+  final bool Function(int userId) canEditMember;
   final int raceId;
   final VoidCallback onAddMember;
   final Function(int userId, String memberName) onRemoveMember;
@@ -20,8 +58,8 @@ class TeamMembersList extends StatelessWidget {
     required this.members,
     required this.canManageTeam,
     required this.isRaceManager,
-    required this.currentUserId, 
-    required this.canEditMember, 
+    required this.currentUserId,
+    required this.canEditMember,
     required this.raceId,
     required this.onAddMember,
     required this.onRemoveMember,
@@ -59,12 +97,12 @@ class TeamMembersList extends StatelessWidget {
             final userId = member['USE_ID'] as int;
             final memberName = '${member['USE_NAME']} ${member['USE_LAST_NAME']}';
             final hasLicence = member['USE_LICENCE_NUMBER'] != null &&
-                (member['USE_LICENCE_NUMBER']) != null ;
+                (member['USE_LICENCE_NUMBER']) != null;
             final hasPPS = member['USR_PPS_FORM'] != null &&
                 (member['USR_PPS_FORM'] as String).isNotEmpty;
             final chipNumber = member['USR_CHIP_NUMBER'] as int?;
             
-            // ✅ Vérifier si on peut éditer CE membre
+            // Check if current user can edit this specific member [web:250]
             final canEdit = canEditMember(userId);
 
             return Card(
@@ -81,7 +119,7 @@ class TeamMembersList extends StatelessWidget {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Licence ou PPS
+                    // Licence or PPS (mutually exclusive)
                     if (hasLicence)
                       Row(
                         children: [
@@ -107,7 +145,7 @@ class TeamMembersList extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          // ✅ Modifier PPS seulement si canEdit
+                          // Edit PPS only if no licence and user can edit [web:228][web:231]
                           if (canEdit && !hasLicence)
                             IconButton(
                               icon: const Icon(Icons.edit, size: 16),
@@ -120,7 +158,7 @@ class TeamMembersList extends StatelessWidget {
                         ],
                       ),
                     
-                    // Puce
+                    // Chip number (always shown)
                     Row(
                       children: [
                         const Icon(Icons.credit_card, size: 16, color: Colors.grey),
@@ -132,7 +170,7 @@ class TeamMembersList extends StatelessWidget {
                                 : 'Puce non attribuée',
                           ),
                         ),
-                        // ✅ Modifier puce seulement si canEdit
+                        // Edit chip if user can edit this member [web:250]
                         if (canEdit)
                           IconButton(
                             icon: const Icon(Icons.edit, size: 16),
@@ -146,7 +184,7 @@ class TeamMembersList extends StatelessWidget {
                     ),
                   ],
                 ),
-                // ✅ Retirer seulement si peut gérer l'équipe
+                // Remove only if can manage team [web:228]
                 trailing: canManageTeam
                     ? IconButton(
                         icon: const Icon(Icons.remove_circle, color: Colors.red),

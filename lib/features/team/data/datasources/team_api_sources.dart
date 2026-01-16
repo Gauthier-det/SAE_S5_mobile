@@ -1,21 +1,25 @@
-// lib/features/team/data/datasources/team_api_sources.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../team/domain/team.dart';
 import '../../../user/domain/user.dart';
 
+/// Data source for team API operations.
+/// Handles all HTTP requests related to team management, registration, and race interactions.
 class TeamApiSources {
   final String baseUrl;
   final http.Client client;
   String? _authToken;
 
+  /// Creates a TeamApiSources instance.
   TeamApiSources({required this.baseUrl, http.Client? client})
     : client = client ?? http.Client();
 
+  /// Sets the authentication token for API requests.
   void setAuthToken(String? token) {
     _authToken = token;
   }
 
+  /// Returns the HTTP headers with authentication token if available.
   Map<String, String> get _headers {
     final headers = {
       'Content-Type': 'application/json',
@@ -27,12 +31,7 @@ class TeamApiSources {
     return headers;
   }
 
-  // ============================================================================
-  // TEAM REGISTRATION (TeamRegistration.tsx)
-  // ============================================================================
-
-  /// GET /races/{raceId} - Récupérer détails d'une course
-  /// Utilisé dans: TeamRegistration (getRaceDetails)
+  /// Retrieves race details for the given race ID.
   Future<Map<String, dynamic>> getRaceDetails(int raceId) async {
     try {
       final response = await client.get(
@@ -53,8 +52,7 @@ class TeamApiSources {
     }
   }
 
-  /// GET /races/{raceId}/available-users - Utilisateurs disponibles pour une course
-  /// Utilisé dans: TeamRegistration + TeamRaceManagement
+  /// Retrieves available users for a given race.
   Future<List<User>> getAvailableUsersForRace(int raceId) async {
     try {
       final response = await client.get(
@@ -68,41 +66,33 @@ class TeamApiSources {
 
         return usersList.map((json) => User.fromJson(json)).toList();
       } else {
-        throw Exception('Erreur API: ${response.statusCode}');
+        throw Exception('API Error: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  /// POST /teams - Créer une nouvelle équipe
-  /// Body: { name: string, image?: string }
-  /// Returns: team_id
+  /// Creates a new team with the provided team data.
+  /// Returns the ID of the newly created team.
   Future<int> createTeam(Map<String, dynamic> teamData) async {
     try {
-      // ✅ LOG: Vérifier le token et les données
-
       final response = await client.post(
         Uri.parse('$baseUrl/teams'),
         headers: _headers,
         body: json.encode(teamData),
       );
 
-      // ✅ LOG: Voir la réponse complète
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['data'] == null) {
-          throw Exception('Réponse API invalide: champ "data" manquant');
+          throw Exception('Invalid API response: "data" field missing');
         }
 
         final data = responseData['data'];
-
-        // La réponse API est {"data": {"team_id": 11, "team_name": "...", ...}}
         final teamId = data is Map ? (data['team_id'] ?? data['id']) : null;
 
         if (teamId == null) {
-          // Fallback au cas où le format serait différent (ex: {"team_id": 11})
           if (responseData['team_id'] != null) {
             return responseData['team_id'] as int;
           }
@@ -111,32 +101,29 @@ class TeamApiSources {
         }
         return teamId as int;
       } else if (response.statusCode == 401) {
-        throw Exception('Non authentifié - Token invalide ou manquant');
+        throw Exception('Unauthorized: Invalid or missing token');
       } else if (response.statusCode == 422) {
-        // ✅ Mieux gérer l'erreur de validation
         try {
           final errorData = json.decode(response.body);
           final errors =
               errorData['errors'] ?? errorData['message'] ?? response.body;
-          throw Exception('Validation: $errors');
+          throw Exception('Validation error: $errors');
         } catch (e) {
-          // Si le body n'est pas du JSON valide
           throw Exception(
-            'Erreur de validation (HTML reçu): ${response.body.substring(0, 100)}',
+            'Validation error: ${response.body.substring(0, 100)}',
           );
         }
       } else {
-        // ✅ Afficher le début du body pour déboguer
         throw Exception(
-          'Erreur API ${response.statusCode}: ${response.body.substring(0, 100)}',
+          'API Error ${response.statusCode}: ${response.body.substring(0, 100)}',
         );
       }
     } catch (e) {
-      throw Exception('Erreur lors de la création de l\'équipe: $e');
+      throw Exception('Error creating team: $e');
     }
   }
 
-  /// POST /teams/addMember - Ajouter un membre
+  /// Adds a member to a team.
   Future<void> addMemberToTeam(Map<String, dynamic> data) async {
     try {
       final response = await client.post(
@@ -146,23 +133,21 @@ class TeamApiSources {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        // ✅ Gérer le HTML
         try {
           final errorData = json.decode(response.body);
           throw Exception(
-            errorData['message'] ?? 'Erreur lors de l\'ajout du membre',
+            errorData['message'] ?? 'Error adding member',
           );
         } catch (e) {
-          throw Exception('Erreur ${response.statusCode} (HTML reçu)');
+          throw Exception('Error ${response.statusCode}');
         }
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  /// POST /teams/{teamId}/register-race - Inscrire une équipe à une course
-  /// Body: { race_id: number } ou peut-être vide si race_id dans l'URL suffit
+  /// Registers a team for a race.
   Future<void> registerTeamToRace(int teamId, int raceId) async {
     try {
       final response = await client.post(
@@ -174,20 +159,15 @@ class TeamApiSources {
       if (response.statusCode != 200 && response.statusCode != 201) {
         final errorData = json.decode(response.body);
         throw Exception(
-          errorData['message'] ?? 'Erreur lors de l\'inscription de l\'équipe',
+          errorData['message'] ?? 'Error registering team for race',
         );
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  // ============================================================================
-  // TEAM MANAGEMENT (TeamRaceManagement.tsx)
-  // ============================================================================
-
-  /// GET /teams/{teamId}/races/{raceId} - Détails complets équipe pour une course
-  /// Returns: TeamRaceDetails (team info + members + race info)
+  /// Retrieves complete team and race details.
   Future<Map<String, dynamic>> getTeamRaceDetails(
     int teamId,
     int raceId,
@@ -200,22 +180,20 @@ class TeamApiSources {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        // Backend returns direct object {team:..., race:..., members:...}
         return responseData as Map<String, dynamic>;
       } else if (response.statusCode == 404) {
-        throw Exception('Équipe ou course non trouvée');
+        throw Exception('Team or race not found');
       } else if (response.statusCode == 403) {
-        throw Exception('Vous n\'avez pas accès à cette équipe');
+        throw Exception('Access denied to this team');
       } else {
-        throw Exception('Erreur API: ${response.statusCode}');
+        throw Exception('API Error: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  /// POST /teams/{teamId}/races/{raceId}/remove-member - Retirer un membre
-  /// Body: { user_id: number }
+  /// Removes a member from a team for a specific race.
   Future<void> removeMemberFromTeamRace(
     int teamId,
     int raceId,
@@ -235,16 +213,15 @@ class TeamApiSources {
       if (response.statusCode != 200 && response.statusCode != 204) {
         final errorData = json.decode(response.body);
         throw Exception(
-          errorData['message'] ?? 'Erreur lors de la suppression du membre',
+          errorData['message'] ?? 'Error removing member',
         );
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  /// POST /teams/{teamId}/races/{raceId}/update-member - Mettre à jour infos membre
-  /// Body: { user_id: number, chip_number?: string, pps_form?: string }
+  /// Updates member information for a race (chip number, PPS form).
   Future<void> updateMemberRaceInfo(
     int teamId,
     int raceId,
@@ -269,15 +246,15 @@ class TeamApiSources {
       if (response.statusCode != 200) {
         final errorData = json.decode(response.body);
         throw Exception(
-          errorData['message'] ?? 'Erreur lors de la mise à jour',
+          errorData['message'] ?? 'Error updating member',
         );
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  /// POST /teams/{teamId}/races/{raceId}/validate - Valider l'équipe
+  /// Validates a team for a race.
   Future<void> validateTeamForRace(int teamId, int raceId) async {
     try {
       final response = await client.post(
@@ -288,14 +265,14 @@ class TeamApiSources {
 
       if (response.statusCode != 200) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Erreur lors de la validation');
+        throw Exception(errorData['message'] ?? 'Error validating team');
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  /// POST /teams/{teamId}/races/{raceId}/unvalidate - Dévalider l'équipe
+  /// Invalidates a team for a race.
   Future<void> unvalidateTeamForRace(int teamId, int raceId) async {
     try {
       final response = await client.post(
@@ -307,24 +284,18 @@ class TeamApiSources {
       if (response.statusCode != 200) {
         final errorData = json.decode(response.body);
         throw Exception(
-          errorData['message'] ?? 'Erreur lors de la dévalidation',
+          errorData['message'] ?? 'Error invalidating team',
         );
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 
-  // ============================================================================
-  // MÉTHODES ADDITIONNELLES (utilisées par le repository)
-  // ============================================================================
-
-  /// GET /races/{raceId}/teams - Liste des équipes d'une course
-  /// Modified: Uses /races/{raceId}/details instead to get validation status (is_valid)
+  /// Retrieves teams for a specific race.
   Future<List<Team>> getRaceTeams(int raceId) async {
     try {
       final response = await client.get(
-        // Utiliser l'endpoint details car il contient le statut 'is_valid'
         Uri.parse('$baseUrl/races/$raceId/details'),
         headers: _headers,
       );
@@ -332,13 +303,10 @@ class TeamApiSources {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
 
-        // La structure est data -> teams_list
         if (responseData['data'] != null &&
             responseData['data']['teams_list'] != null) {
           final List<dynamic> teamsList = responseData['data']['teams_list'];
           return teamsList.map((teamJson) {
-            // Adapter: 'responsible' -> 'manager_id'
-            // L'endpoint details renvoie un objet 'responsible', mais Team attend 'manager_id' ou 'USE_ID'
             if (teamJson['responsible'] != null &&
                 teamJson['responsible'] is Map) {
               teamJson['manager_id'] = teamJson['responsible']['id'];
@@ -347,7 +315,6 @@ class TeamApiSources {
           }).toList();
         }
 
-        // Fallback: si teams_list n'existe pas, essayer structure classique (peu probable pour cet endpoint)
         if (responseData['data'] is List) {
           final List<dynamic> list = responseData['data'];
           return list.map((json) => Team.fromJson(json)).toList();
@@ -357,10 +324,10 @@ class TeamApiSources {
       } else if (response.statusCode == 404) {
         return [];
       } else {
-        throw Exception('Erreur API: ${response.statusCode}');
+        throw Exception('API Error: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Erreur réseau: $e');
+      throw Exception('Network error: $e');
     }
   }
 

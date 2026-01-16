@@ -3,16 +3,47 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sae5_g13_mobile/features/race/domain/category.dart';
 import 'package:sae5_g13_mobile/features/race/domain/race.dart';
-import 'package:sae5_g13_mobile/features/race/presentation/widgets/race_form_age_section.dart';
+import 'package:sae5_g13_mobile/features/race/presentation/widgets/form/race_form_age_section.dart';
 import 'package:sae5_g13_mobile/features/raid/presentation/widgets/raid_info_banner.dart';
 import 'package:sae5_g13_mobile/features/raid/domain/raid.dart';
 import '../domain/race_repository.dart';
 import '../../user/domain/user.dart';
 import '../../club/domain/club_repository.dart';
 import 'widgets/category_price_selector.dart';
-import 'widgets/race_form_date_field.dart';
-import 'widgets/race_form_participants_section.dart';
+import 'widgets/form/race_form_date_field.dart';
+import 'widgets/form/race_form_participants_section.dart';
 
+/// Race creation form screen.
+///
+/// Comprehensive form for creating races within a raid. Fetches club members
+/// and categories, validates inputs, and handles chip mandatory logic based on
+/// race type (always mandatory for Compétitif) [web:138][web:150].
+///
+/// **Key Features:**
+/// - Manager selection (requires licence number)
+/// - Date/time pickers constrained to raid dates
+/// - Type-based chip requirement (auto for Compétitif, optional for Rando)
+/// - Category pricing with validation rules
+/// - Team capacity configuration
+///
+/// **Validation Rules:**
+/// - Licensed price ≤ Minor price
+/// - Non-licensed price ≥ Minor price
+/// - End date > Start date
+/// - All prices must be defined
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (_) => RaceCreationView(
+///       raid: selectedRaid,
+///       repository: raceRepo,
+///     ),
+///   ),
+/// );
+/// ```
 class RaceCreationView extends StatefulWidget {
   final Raid raid;
   final RacesRepository repository;
@@ -30,6 +61,7 @@ class RaceCreationView extends StatefulWidget {
 class _RaceCreationViewState extends State<RaceCreationView> {
   final _formKey = GlobalKey<FormState>();
 
+  // Text controllers [web:150]
   final _nameController = TextEditingController();
   final _minParticipantsController = TextEditingController(text: '1');
   final _maxParticipantsController = TextEditingController(text: '200');
@@ -42,6 +74,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   final _ageMaxController = TextEditingController();
   final _difficultyController = TextEditingController();
 
+  // Form state
   User? _selectedManager;
   String? _selectedType;
   DateTime? _startDate;
@@ -65,6 +98,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     _loadData();
   }
 
+  /// Loads club members and categories via Provider [web:138].
   Future<void> _loadData() async {
     try {
       final clubRepository = Provider.of<ClubRepository>(
@@ -72,8 +106,6 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         listen: false,
       );
 
-      // Use clubId from the raid passed as widget parameter
-      // instead of querying local DB which may be empty
       final clubId = widget.raid.clubId;
 
       final results = await Future.wait([
@@ -91,9 +123,8 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingData = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erreur : $e')));
         Navigator.pop(context);
       }
     }
@@ -101,6 +132,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
   @override
   void dispose() {
+    // Dispose all controllers [web:150]
     _nameController.dispose();
     _minParticipantsController.dispose();
     _maxParticipantsController.dispose();
@@ -135,7 +167,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     RaidInfoBanner(raid: widget.raid),
                     const SizedBox(height: 24),
 
-                    // Nom de la course
+                    // Race name
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -152,7 +184,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Gestionnaire (only show members with licence)
+                    // Manager (only licensed members)
                     DropdownButtonFormField<User>(
                       initialValue: _selectedManager,
                       decoration: const InputDecoration(
@@ -191,9 +223,10 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     // Dates
                     Text(
                       'Dates de la course',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
 
@@ -211,7 +244,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Type et Difficulté
+                    // Type and difficulty
                     Row(
                       children: [
                         Expanded(
@@ -222,17 +255,13 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                               border: OutlineInputBorder(),
                             ),
                             items: _types
-                                .map(
-                                  (t) => DropdownMenuItem(
-                                    value: t,
-                                    child: Text(t),
-                                  ),
-                                )
+                                .map((t) =>
+                                    DropdownMenuItem(value: t, child: Text(t)))
                                 .toList(),
                             onChanged: (value) {
                               setState(() {
                                 _selectedType = value;
-                                // Si Compétitif, forcer la puce obligatoire
+                                // Force chip mandatory for Compétitif
                                 if (value == 'Compétitif') {
                                   _chipMandatory = true;
                                 }
@@ -263,7 +292,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Puce obligatoire - Switch pour Rando/Loisirs
+                    // Chip mandatory switch (Rando only)
                     if (_selectedType == 'Rando/Loisirs')
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -274,12 +303,15 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.sd_card, color: Color(0xFFFF6B00)),
+                            const Icon(Icons.sd_card,
+                                color: Color(0xFFFF6B00)),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Puce électronique obligatoire ?',
-                                style: Theme.of(context).textTheme.bodyMedium
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w500),
                               ),
                             ),
@@ -294,7 +326,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                         ),
                       ),
 
-                    // Indicateur pour Compétitif
+                    // Info banner for Compétitif
                     if (_selectedType == 'Compétitif')
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -310,7 +342,9 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                             Expanded(
                               child: Text(
                                 'Puce électronique obligatoire pour les courses compétitives',
-                                style: Theme.of(context).textTheme.bodySmall
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
                                     ?.copyWith(color: Colors.blue.shade800),
                               ),
                             ),
@@ -320,7 +354,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
 
                     const SizedBox(height: 24),
 
-                    // Sexe
+                    // Gender
                     DropdownButtonFormField<String>(
                       initialValue: _selectedSex,
                       decoration: const InputDecoration(
@@ -329,18 +363,14 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                         prefixIcon: Icon(Icons.people),
                       ),
                       items: _sexes
-                          .map(
-                            (s) => DropdownMenuItem(value: s, child: Text(s)),
-                          )
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
-                      onChanged: (value) =>
-                          setState(() => _selectedSex = value),
-                      validator: (value) =>
-                          value == null ? 'Obligatoire' : null,
+                      onChanged: (value) => setState(() => _selectedSex = value),
+                      validator: (value) => value == null ? 'Obligatoire' : null,
                     ),
                     const SizedBox(height: 24),
 
-                    // Participants et équipes
+                    // Participants and teams
                     RaceFormParticipantsSection(
                       minParticipantsController: _minParticipantsController,
                       maxParticipantsController: _maxParticipantsController,
@@ -351,7 +381,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Âges (optionnels)
+                    // Ages
                     RaceFormAgesSection(
                       ageMinController: _ageMinController,
                       ageMiddleController: _ageMiddleController,
@@ -359,7 +389,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Prix par catégorie
+                    // Category pricing
                     CategoryPriceSelector(
                       categories: _categories,
                       initialPrices: _categoryPrices,
@@ -368,7 +398,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Bouton créer
+                    // Submit button
                     ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
@@ -391,11 +421,12 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     );
   }
 
+  /// Shows date and time pickers constrained to raid dates.
   Future<void> _selectDate({required bool isStart}) async {
     final initialDate = isStart
         ? (widget.raid.timeStart.isAfter(DateTime.now())
-              ? widget.raid.timeStart
-              : DateTime.now())
+            ? widget.raid.timeStart
+            : DateTime.now())
         : (_startDate ?? widget.raid.timeStart);
 
     final pickedDate = await showDatePicker(
@@ -433,14 +464,13 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     });
   }
 
+  /// Validates and submits race creation form.
   Future<void> _submitForm() async {
-    // Validation du formulaire
     if (!_formKey.currentState!.validate()) {
       _showSnackBar('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    // Validation des dates
     if (_startDate == null || _endDate == null) {
       _showSnackBar('Les dates sont obligatoires');
       return;
@@ -451,19 +481,16 @@ class _RaceCreationViewState extends State<RaceCreationView> {
       return;
     }
 
-    // Validation du gestionnaire
     if (_selectedManager == null) {
       _showSnackBar('Veuillez sélectionner un gestionnaire');
       return;
     }
 
-    // Validation du type
     if (_selectedType == null) {
       _showSnackBar('Veuillez sélectionner un type de course');
       return;
     }
 
-    // Validation des prix
     if (_categoryPrices.isEmpty) {
       _showSnackBar('Veuillez définir au moins un prix');
       return;
@@ -482,10 +509,9 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     setState(() => _isLoading = true);
 
     try {
-      // Calculer chipMandatory : toujours 1 si Compétitif, sinon selon le switch
-      final chipMandatory = _selectedType == 'Compétitif'
-          ? 1
-          : (_chipMandatory ? 1 : 0);
+      // Calculate chip mandatory: always 1 for Compétitif
+      final chipMandatory =
+          _selectedType == 'Compétitif' ? 1 : (_chipMandatory ? 1 : 0);
 
       final race = Race(
         id: 0,
@@ -531,6 +557,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     }
   }
 
+  /// Validates category pricing business rules.
   bool _validateCategoryPrices() {
     final mineurCat = _categories.firstWhere(
       (c) => c.label == 'Mineur',
@@ -549,17 +576,17 @@ class _RaceCreationViewState extends State<RaceCreationView> {
     final prixLicencie = _categoryPrices[licencieCat.id];
     final prixNonLicencie = _categoryPrices[nonLicencieCat.id];
 
-    // Tous les prix doivent être définis
+    // All prices must be defined
     if (prixMineur == null || prixLicencie == null || prixNonLicencie == null) {
       return false;
     }
 
-    // Prix licencié <= Prix mineur
+    // Licensed ≤ Minor
     if (prixLicencie > prixMineur) {
       return false;
     }
 
-    // Prix non licencié >= Prix mineur
+    // Non-licensed ≥ Minor
     if (prixNonLicencie < prixMineur) {
       return false;
     }
@@ -568,8 +595,7 @@ class _RaceCreationViewState extends State<RaceCreationView> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }

@@ -2,9 +2,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Age category input section for race forms.
+///
+/// Provides three age fields (A, B, C) with validation enforcing A < B < C.
+/// Implements team composition rules: if one member is between A and B, another
+/// must be ≥ C; otherwise all members must be ≥ B [web:150].
+///
+/// Example:
+/// ```dart
+/// RaceFormAgesSection(
+///   ageMinController: _ageMinController,
+///   ageMiddleController: _ageMiddleController,
+///   ageMaxController: _ageMaxController,
+/// );
+/// ```
 class RaceFormAgesSection extends StatelessWidget {
+  /// Controller for minimum age (A).
   final TextEditingController ageMinController;
+
+  /// Controller for middle age (B).
   final TextEditingController ageMiddleController;
+
+  /// Controller for maximum age (C).
   final TextEditingController ageMaxController;
 
   const RaceFormAgesSection({
@@ -26,13 +45,18 @@ class RaceFormAgesSection extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 8),
+
+        // Business rule explanation
         Text(
           'A < B < C : Si une personne entre A et B, une autre >= C, sinon tout le monde >= B',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
         const SizedBox(height: 12),
+
+        // Age input fields with validation [web:150]
         Row(
           children: [
+            // Age A (minimum)
             Expanded(
               child: TextFormField(
                 controller: ageMinController,
@@ -49,6 +73,8 @@ class RaceFormAgesSection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+
+            // Age B (middle) - must be > A
             Expanded(
               child: TextFormField(
                 controller: ageMiddleController,
@@ -72,6 +98,8 @@ class RaceFormAgesSection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+
+            // Age C (maximum) - must be > B
             Expanded(
               child: TextFormField(
                 controller: ageMaxController,

@@ -1,11 +1,13 @@
-// lib/core/database/database_helper.dart
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+/// Helper class for managing local SQLite database operations.
+/// Handles database initialization, table creation, and schema management.
 class DatabaseHelper {
   static Database? _database;
-  static const _databaseVersion = 8; // ← Incrémenté: SYNC_QUEUE table added
+  static const _databaseVersion = 7;
 
+  /// Gets the database instance, initializing it if necessary.
   static Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -26,13 +28,13 @@ class DatabaseHelper {
         // Pour simplifier, on recrée tout
         await _dropAllTables(db);
         await _createTables(db);
-        // NOTE: No seeder - data comes from API
       },
     );
 
     return db;
   }
 
+  /// Drops all database tables.
   static Future<void> _dropAllTables(Database db) async {
     await db.execute('DROP TABLE IF EXISTS SYNC_QUEUE'); // Removed feature
     await db.execute('DROP TABLE IF EXISTS SAN_USERS_RACES');
@@ -50,8 +52,8 @@ class DatabaseHelper {
     await db.execute('DROP TABLE IF EXISTS SAN_ADDRESSES');
   }
 
+  /// Creates all database tables in the correct dependency order.
   static Future<void> _createTables(Database db) async {
-    // 1. SAN_ADDRESSES (pas de dépendances)
     await db.execute('''
       CREATE TABLE SAN_ADDRESSES (
         ADD_ID INTEGER PRIMARY KEY,
@@ -62,7 +64,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 2. SAN_CATEGORIES (pas de dépendances)
     await db.execute('''
       CREATE TABLE SAN_CATEGORIES (
         CAT_ID INTEGER PRIMARY KEY,
@@ -70,7 +71,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 3. SAN_ROLES (pas de dépendances)
     await db.execute('''
       CREATE TABLE SAN_ROLES (
         ROL_ID INTEGER PRIMARY KEY,
@@ -78,7 +78,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 4. SAN_USERS (dépend de ADD_ID, CLU_ID sera ajouté après)
     await db.execute('''
       CREATE TABLE SAN_USERS (
         USE_ID INTEGER PRIMARY KEY,
@@ -96,7 +95,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 5. SAN_CLUBS (dépend de USE_ID et ADD_ID)
     await db.execute('''
       CREATE TABLE SAN_CLUBS (
         CLU_ID INTEGER PRIMARY KEY,
@@ -106,7 +104,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 6. SAN_RAIDS (dépend de CLU_ID, ADD_ID, USE_ID)
     await db.execute('''
       CREATE TABLE SAN_RAIDS (
         RAI_ID INTEGER PRIMARY KEY,
@@ -126,7 +123,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 7. SAN_RACES (dépend de USE_ID, RAI_ID)
     await db.execute('''
       CREATE TABLE SAN_RACES (
         RAC_ID INTEGER PRIMARY KEY,
@@ -151,7 +147,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 8. SAN_TEAMS (dépend de USE_ID)
     await db.execute('''
       CREATE TABLE SAN_TEAMS (
         TEA_ID INTEGER PRIMARY KEY,
@@ -161,7 +156,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 9. Tables de liaison
     await db.execute('''
       CREATE TABLE SAN_USERS_TEAMS (
         USE_ID INTEGER NOT NULL,
@@ -210,6 +204,7 @@ class DatabaseHelper {
     ''');
   }
 
+  /// Closes the database connection.
   static Future<void> closeDatabase() async {
     if (_database != null) {
       await _database!.close();
@@ -217,6 +212,7 @@ class DatabaseHelper {
     }
   }
 
+  /// Resets the database by deleting it and forcing recreation on next access.
   static Future<void> resetDatabase() async {
     String path = join(await getDatabasesPath(), 'g13_db.db');
     await deleteDatabase(path);

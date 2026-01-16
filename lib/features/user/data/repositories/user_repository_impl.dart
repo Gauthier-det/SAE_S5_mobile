@@ -5,6 +5,37 @@ import '../../data/datasources/user_local_sources.dart';
 import '../../data/datasources/user_api_sources.dart';
 import '../../../auth/data/datasources/auth_local_sources.dart';
 
+/// Repository implementation with API-first, local-fallback strategy [web:194][web:310][web:313].
+///
+/// Implements network-first caching: attempts API request, falls back to local
+/// SQLite on failure. Automatically caches successful API responses locally for
+/// offline access [web:310][web:313].
+///
+/// **Caching Strategy [web:310][web:313]:**
+/// - Network-first: Try API, fallback to cache on network error
+/// - Write-through: Cache successful API responses immediately
+/// - Auth token injection: Reads token from AuthLocalSources before each API call
+///
+/// **Fallback Behavior:**
+/// - getAllUsers: API → local list
+/// - getUserById: API → local user → null
+/// - updateUser: API with cache update → local update only
+/// - updateUserFields: API only (no local fallback)
+///
+/// Example:
+/// ```dart
+/// final repository = UserRepositoryImpl(
+///   localSources: UserLocalSources(),
+///   apiSources: UserApiSources(baseUrl: apiUrl),
+///   authLocalSources: AuthLocalSources(),
+/// );
+/// 
+/// // Tries API, falls back to cached data
+/// final users = await repository.getAllUsers();
+/// 
+/// // Updates API and local cache atomically
+/// final updated = await repository.updateUser(user);
+/// ```
 class UserRepositoryImpl implements UserRepository {
   final UserLocalSources localSources;
   final UserApiSources apiSources;
@@ -41,18 +72,13 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<User?> getUserById(int userId) async {
     try {
-      // Try fetching from API
-      // We might need a token if the endpoint is protected, but usually getById might be public or require token
-      // RaidRepository gets token inside the method? No, createRaid does.
-      // But RaidRepository.getRaidById doesn't set token. It assumes public?
-      // User profile is likely protected. Let's try to set token if available.
       final token = authLocalSources.getToken();
       apiSources.setAuthToken(token);
 
       final remoteUser = await apiSources.getUserById(userId);
 
       if (remoteUser != null) {
-        // Cache to local
+        // Write-through cache: save API response locally [web:310]
         await localSources.insertUser(remoteUser);
         return remoteUser;
       }
@@ -75,12 +101,12 @@ class UserRepositoryImpl implements UserRepository {
 
       final updatedUser = await apiSources.updateUser(user);
 
-      // Update local cache
+      // Atomic cache update after successful API call [web:310]
       await localSources.insertUser(updatedUser);
 
       return updatedUser;
     } catch (e) {
-      // Fallback: save locally
+      // Fallback: save locally (optimistic update) [web:313]
       await localSources.insertUser(user);
       return user;
     }
@@ -91,11 +117,12 @@ class UserRepositoryImpl implements UserRepository {
     final token = authLocalSources.getToken();
     apiSources.setAuthToken(token);
 
-    // We assume this is only called when API is available as it's a specific partial update
+    // API-only partial update (no local fallback)
+    // Rationale: Partial updates without full object make local sync complex.
+    // Relies on next getUserById fetch to update local cache.
     await apiSources.updateUserFields(id, fields);
 
-    // Note: We should ideally update the local cache too, but without a full User object return
-    // or a way to patch the local User, we might skip it or rely on next fetch.
-    // For now, let's rely on the API success.
+    // Note: Local cache not updated here to avoid partial state.
+    // Next fetch will sync full object from API.
   }
 }

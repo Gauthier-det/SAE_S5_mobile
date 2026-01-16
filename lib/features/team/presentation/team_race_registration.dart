@@ -7,6 +7,43 @@ import '../domain/team_repository.dart';
 import '../../user/domain/user.dart';
 import 'widgets/user_autocomplete_selector.dart';
 
+/// Form screen for creating and registering a team to a race [web:289][web:290][web:296].
+///
+/// Two-part form: team name input + multi-select member autocomplete.
+/// Validates business rules (team size, age, gender, conflicts) and performs
+/// atomic team creation + race registration [web:298].
+///
+/// **Business Rules (enforced via filtered user list):**
+/// - Max team size (configurable per race, default 5)
+/// - Members must be ≥12 years old
+/// - Gender matching if race requires specific gender (not Mixte)
+/// - No time conflicts with other races
+/// - Users already in teams excluded
+///
+/// **Form Validation [web:289][web:290]:**
+/// - Team name: Required, min 3 characters
+/// - Members: At least 1 member required
+/// - Real-time feedback on member count vs max size
+///
+/// **Atomic Operation [web:298]:**
+/// - Creates team
+/// - Registers team to race (generates dossard)
+/// - Registers all members individually
+/// - All steps succeed or all fail together
+///
+/// Example:
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (context) => TeamRaceRegistrationView(
+///       repository: teamRepository,
+///       raceId: 123,
+///       raceName: 'Trail des Montagnes',
+///     ),
+///   ),
+/// );
+/// ```
 class TeamRaceRegistrationView extends StatefulWidget {
   final TeamRepository repository;
   final int raceId;
@@ -43,6 +80,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
     _loadUsers();
   }
 
+  /// Loads race configuration (max team size, gender requirement).
   Future<void> _loadRaceDetails() async {
       final details = await widget.repository.getRaceDetails(widget.raceId);
 
@@ -54,11 +92,11 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
       }
   }
 
+  /// Loads pre-filtered eligible users (age, gender, conflicts checked).
   Future<void> _loadUsers() async {
     setState(() => _isLoadingUsers = true);
 
     try {
-      // ✅ Maintenant cette méthode retourne déjà les users filtrés !
       final users = await widget.repository.getAvailableUsersForRace(
         widget.raceId,
       );
@@ -102,7 +140,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Info course
+                    // Race info card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -158,7 +196,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
                     const SizedBox(height: 24),
 
-                    // Info équipe
+                    // Team requirements info card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -202,7 +240,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
                     const SizedBox(height: 24),
 
-                    // Nom de l'équipe
+                    // Team name field [web:289][web:290]
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -224,12 +262,12 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
                     const SizedBox(height: 24),
 
-                    // Sélection des membres
+                    // Member selection section
                     Text(
                       'Membres de l\'équipe * (${_selectedMembers.length}/$_maxTeamSize)',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 12),
 
@@ -239,12 +277,12 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                       onUserSelected: (user) {
                         setState(() {
                           if (_selectedMembers.any((m) => m.id == user.id)) {
-                            // Retirer
+                            // Remove member
                             _selectedMembers.removeWhere(
                               (m) => m.id == user.id,
                             );
                           } else {
-                            // ✅ Vérifier uniquement la limite de taille
+                            // Check team size limit
                             if (_selectedMembers.length >= _maxTeamSize) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -256,7 +294,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                               );
                               return;
                             }
-                            // Ajouter
+                            // Add member
                             _selectedMembers.add(user);
                           }
                         });
@@ -265,7 +303,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
                     const SizedBox(height: 32),
 
-                    // Bouton créer et s'inscrire
+                    // Submit button with loading state [web:289]
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
@@ -297,6 +335,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
     );
   }
 
+  /// Validates and submits form with atomic team creation [web:289][web:298].
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -320,8 +359,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
         throw Exception('Utilisateur non connecté');
       }
 
-      // Use userId from authProvider directly (API-first strategy)
-      // Conversion explicite car AuthUser.id est String mais Team.managerId est int
+      // Parse userId from auth provider (String → int)
       final userId = int.tryParse(currentUser.id);
 
       if (userId == null || userId == 0) {
@@ -336,6 +374,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
 
       final memberIds = _selectedMembers.map((m) => m.id).toList();
 
+      // Atomic operation: create team + register to race + register members [web:298]
       await widget.repository.createTeamAndRegisterToRace(
         team: team,
         memberIds: memberIds,

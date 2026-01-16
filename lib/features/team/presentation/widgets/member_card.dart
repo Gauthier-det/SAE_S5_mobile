@@ -2,6 +2,42 @@
 import 'package:flutter/material.dart';
 import 'member_info_row.dart';
 
+/// Card displaying team member details with editable race info [web:217][web:220][web:222].
+///
+/// Shows member profile (name, email, avatar) and race-specific data (licence,
+/// PPS form, chip number). Provides edit/remove actions via callbacks to parent
+/// widget [web:218][web:221].
+///
+/// **Business Logic:**
+/// - If member has licence number → PPS form hidden (not required)
+/// - If no licence → PPS form shown as editable field
+/// - Chip number always editable by race managers
+/// - Remove button only shown when canRemove = true
+///
+/// **Visual States:**
+/// - Complete info: green checkmark indicator
+/// - Missing info: grey icon with "Non renseigné/Non fourni"
+/// - Editable fields: pencil icon when isRaceManager = true
+///
+/// Example:
+/// ```dart
+/// MemberCard(
+///   member: {
+///     'USE_ID': 1,
+///     'USE_NAME': 'John',
+///     'USE_LAST_NAME': 'Doe',
+///     'USE_MAIL': 'john@example.com',
+///     'USE_LICENCE_NUMBER': null,
+///     'USR_PPS_FORM': 'provided',
+///     'USR_CHIP_NUMBER': 42,
+///   },
+///   canRemove: isTeamCreator,
+///   isRaceManager: isManager,
+///   onRemove: (userId, name) => _removeMember(userId),
+///   onEditPPS: (userId, currentPPS, name) => _showPPSDialog(userId, currentPPS),
+///   onEditChipNumber: (userId, currentChip, name) => _showChipDialog(userId, currentChip),
+/// );
+/// ```
 class MemberCard extends StatelessWidget {
   final Map<String, dynamic> member;
   final bool canRemove;
@@ -60,6 +96,7 @@ class MemberCard extends StatelessWidget {
     );
   }
 
+  /// Header with avatar, name, email, and optional remove button [web:220].
   Widget _buildHeader(String fullName, String email, int userId, BuildContext context) {
     return Row(
       children: [
@@ -107,6 +144,10 @@ class MemberCard extends StatelessWidget {
     );
   }
 
+  /// Race info section with licence, PPS, and chip number [web:218].
+  ///
+  /// PPS form only shown if no licence number (business rule).
+  /// Edit buttons shown only to race managers.
   Widget _buildInfoSection(
     int? licenceNumber,
     String? ppsForm,
