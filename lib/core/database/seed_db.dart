@@ -9,11 +9,8 @@ class SeedData {
     );
 
     if (count != null && count > 0) {
-      print('Database already seeded, skipping...');
       return;
     }
-
-    print('Seeding database with sample data...');
 
     // 1. Adresses
     final addresses = [
@@ -741,6 +738,5 @@ class SeedData {
       await db.insert('SAN_USERS_RACES', ur);
     }
 
-    print('Database seeded successfully! 2 raids, 4 races, 12 users, 4 teams.');
   }
 }

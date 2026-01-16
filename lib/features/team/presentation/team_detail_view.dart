@@ -96,10 +96,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       final membersWithDetails = await widget.repository
           .getTeamMembersWithRaceDetails(widget.teamId, widget.raceId);
 
-      print('🔍 Team loaded: ${team?.name}, isValid: ${team?.isValid}');
-      print('📊 Dossard: $dossardNumber');
-      print('👥 Members: ${membersWithDetails.length}');
-
       if (mounted) {
         setState(() {
           _team = team;
@@ -109,7 +105,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         });
       }
     } catch (e) {
-      print('❌ Error loading team: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showSnackBar('Erreur : $e');
@@ -124,19 +119,13 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       return;
     }
 
-    print('Toggling team validation for team ${widget.teamId}');
-
     final isCurrentlyValid = _team?.isValid ?? false;
     final action = isCurrentlyValid ? 'invalider' : 'valider';
-
-    print('Toggling team validation. Currently valid: $isCurrentlyValid');
 
     if (!isCurrentlyValid && !_canValidateTeam()) {
       _showValidationErrorDialog();
       return;
     }
-
-    print('User confirmed to $action the team');
 
     final confirm = await _showConfirmDialog(
       title: '${action[0].toUpperCase()}${action.substring(1)} l\'équipe',
@@ -335,7 +324,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   ) async {
     if (!_canEditMember(userId)) {
       _showSnackBar('Vous ne pouvez modifier que vos propres informations');
-      print('User $userId cannot edit member');
+
       return;
     }
 
@@ -346,7 +335,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
     if (hasLicence) {
       _showSnackBar('Ce membre a déjà un numéro de licence');
-      print('Member $userId has a licence, cannot edit PPS');
+
       return;
     }
 
@@ -378,8 +367,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       ),
     );
 
-    print('PPS edit result for user $userId: $result');
-
     if (result == null || result == currentPPS) return;
 
     try {
@@ -397,7 +384,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     } catch (e) {
       if (mounted) {
         _showSnackBar('Erreur : $e');
-        print('Error updating PPS: $e');
       }
     }
   }

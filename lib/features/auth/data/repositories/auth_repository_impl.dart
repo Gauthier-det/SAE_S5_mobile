@@ -56,35 +56,31 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Tentative d'inscription via API si disponible
     if (_apiDataSource != null && _apiService != null) {
-      try {
-        final apiUser = await _apiDataSource.register(
-          email: email,
-          password: password,
-          firstName: firstName,
-          lastName: lastName,
-          birthDate: birthDate,
-          phoneNumber: phoneNumber,
-          licenceNumber: licenceNumber,
-          gender: gender,
-        );
+      final apiUser = await _apiDataSource.register(
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+        birthDate: birthDate,
+        phoneNumber: phoneNumber,
+        licenceNumber: licenceNumber,
+        gender: gender,
+      );
 
-        // Sauvegarder localement
-        final registeredUsers = await _localDataSource.getRegisteredUsers();
-        final updatedUsers = [
-          ...registeredUsers,
-          {...apiUser.toJson(), 'password': password},
-        ];
-        await _localDataSource.saveRegisteredUsers(updatedUsers);
-        await _localDataSource.saveUser(apiUser);
-        // Stocker le vrai access_token de l'API
-        if (_apiDataSource.accessToken != null) {
-          await _localDataSource.saveToken(_apiDataSource.accessToken!);
-        }
-
-        return apiUser;
-      } catch (e) {
-        print('API non disponible pour l\'inscription, utilisation locale: $e');
+      // Sauvegarder localement
+      final registeredUsers = await _localDataSource.getRegisteredUsers();
+      final updatedUsers = [
+        ...registeredUsers,
+        {...apiUser.toJson(), 'password': password},
+      ];
+      await _localDataSource.saveRegisteredUsers(updatedUsers);
+      await _localDataSource.saveUser(apiUser);
+      // Stocker le vrai access_token de l'API
+      if (_apiDataSource.accessToken != null) {
+        await _localDataSource.saveToken(_apiDataSource.accessToken!);
       }
+
+      return apiUser;
     }
 
     // Fallback: Inscription locale
@@ -142,9 +138,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }
 
         return apiUser;
-      } catch (e) {
-        print('API non disponible pour la connexion, utilisation locale: $e');
-      }
+      } catch (e) {}
     }
 
     // Fallback: Connexion locale
@@ -213,9 +207,7 @@ class AuthRepositoryImpl implements AuthRepository {
         // Sauvegarder localement
         await _localDataSource.saveUser(apiUser);
         return apiUser;
-      } catch (e) {
-        print('API non disponible pour la mise à jour, utilisation locale: $e');
-      }
+      } catch (e) {}
     }
 
     // Fallback: Mise à jour locale

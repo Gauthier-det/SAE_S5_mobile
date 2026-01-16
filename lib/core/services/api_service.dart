@@ -37,7 +37,6 @@ class ApiService {
       _lastCheckTime = DateTime.now();
       return _lastApiStatus!;
     } catch (e) {
-      print('❌ API non disponible: $e');
       _lastApiStatus = false;
       _lastCheckTime = DateTime.now();
       return false;
@@ -58,21 +57,17 @@ class ApiService {
   }) async {
     try {
       if (logMessage != null) {
-        print('🔍 $logMessage');
       }
 
       // Vérifier si l'API est disponible avant d'essayer
       final isAvailable = await isApiAvailable();
 
       if (!isAvailable) {
-        print('API non disponible, utilisation du cache local');
         return await fallbackCall();
       }
 
       return await apiCall();
     } catch (e) {
-      print('❌ Error: $e');
-      print('API non disponible, utilisation du cache local: $e');
       return await fallbackCall();
     }
   }

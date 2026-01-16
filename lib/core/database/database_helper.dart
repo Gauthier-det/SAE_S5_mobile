@@ -19,13 +19,10 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: (db, version) async {
-        print('Creating database tables for local cache...');
         await _createTables(db);
-        print('Tables created successfully - Data will be fetched from API');
         // NOTE: No seeder - data comes from API
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        print('Upgrading database from version $oldVersion to $newVersion');
         // Pour simplifier, on recrée tout
         await _dropAllTables(db);
         await _createTables(db);
@@ -224,7 +221,6 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'g13_db.db');
     await deleteDatabase(path);
     _database = null;
-    print('Database deleted, will be recreated on next access');
     await database;
   }
 }

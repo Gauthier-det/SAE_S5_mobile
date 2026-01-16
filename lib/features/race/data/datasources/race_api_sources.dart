@@ -115,9 +115,6 @@ class RaceApiSources {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
       };
 
-      print('🏁 CreateRaceWithPrices - Token présent: ${_authToken != null}');
-      print('🏁 CreateRaceWithPrices - Body: $body');
-
       final response = await client
           .post(
             Uri.parse('$baseUrl/races/with-prices'),

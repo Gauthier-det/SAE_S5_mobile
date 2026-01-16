@@ -6,7 +6,6 @@ import 'package:sae5_g13_mobile/features/race/domain/race.dart';
 import 'package:sae5_g13_mobile/features/race/presentation/widgets/race_form_age_section.dart';
 import 'package:sae5_g13_mobile/features/raid/presentation/widgets/raid_info_banner.dart';
 import 'package:sae5_g13_mobile/features/raid/domain/raid.dart';
-import '../../../core/database/database_helper.dart';
 import '../domain/race_repository.dart';
 import '../../user/domain/user.dart';
 import '../../club/domain/club_repository.dart';
@@ -76,18 +75,11 @@ class _RaceCreationViewState extends State<RaceCreationView> {
       // Use clubId from the raid passed as widget parameter
       // instead of querying local DB which may be empty
       final clubId = widget.raid.clubId;
-      print(
-        '🏁 RaceCreationView._loadData - Using clubId: $clubId from raid: ${widget.raid.name}',
-      );
 
       final results = await Future.wait([
         clubRepository.getClubMembers(clubId),
         widget.repository.getCategories(),
       ]);
-
-      print(
-        '🏁 RaceCreationView._loadData - Got ${(results[0] as List).length} club members',
-      );
 
       if (mounted) {
         setState(() {
@@ -97,7 +89,6 @@ class _RaceCreationViewState extends State<RaceCreationView> {
         });
       }
     } catch (e) {
-      print('❌ RaceCreationView._loadData - Error: $e');
       if (mounted) {
         setState(() => _isLoadingData = false);
         ScaffoldMessenger.of(

@@ -57,20 +57,15 @@ class TeamApiSources {
   /// Utilisé dans: TeamRegistration + TeamRaceManagement
   Future<List<User>> getAvailableUsersForRace(int raceId) async {
     try {
-      print('🔍 GetAvailableUsers - Requesting users for race $raceId');
       final response = await client.get(
         Uri.parse('$baseUrl/races/$raceId/available-users'),
         headers: _headers,
       );
 
-      print('🔍 GetAvailableUsers - Status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> usersList = responseData['data'];
-        print('🔍 GetAvailableUsers - Found ${usersList.length} users');
-        if (usersList.isNotEmpty) {
-          print('🔍 GetAvailableUsers - First user: ${usersList.first}');
-        }
+
         return usersList.map((json) => User.fromJson(json)).toList();
       } else {
         throw Exception('Erreur API: ${response.statusCode}');
@@ -86,8 +81,6 @@ class TeamApiSources {
   Future<int> createTeam(Map<String, dynamic> teamData) async {
     try {
       // ✅ LOG: Vérifier le token et les données
-      print('🔑 CreateTeam - Token présent: ${_authToken != null}');
-      print('📦 CreateTeam - Data: $teamData');
 
       final response = await client.post(
         Uri.parse('$baseUrl/teams'),
@@ -96,8 +89,6 @@ class TeamApiSources {
       );
 
       // ✅ LOG: Voir la réponse complète
-      print('📡 CreateTeam - Status: ${response.statusCode}');
-      print('📡 CreateTeam - Response: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -115,7 +106,7 @@ class TeamApiSources {
           if (responseData['team_id'] != null) {
             return responseData['team_id'] as int;
           }
-          print('❌ CreateTeam - Structure reçue: $responseData');
+
           throw Exception('ID d\'équipe manquant dans la réponse');
         }
         return teamId as int;
@@ -148,18 +139,10 @@ class TeamApiSources {
   /// POST /teams/addMember - Ajouter un membre
   Future<void> addMemberToTeam(Map<String, dynamic> data) async {
     try {
-      print('🔑 AddMember - Token présent: ${_authToken != null}');
-      print('📦 AddMember - Data: $data');
-
       final response = await client.post(
         Uri.parse('$baseUrl/teams/addMember'),
         headers: _headers,
         body: json.encode(data),
-      );
-
-      print('📡 AddMember - Status: ${response.statusCode}');
-      print(
-        '📡 AddMember - Response: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {

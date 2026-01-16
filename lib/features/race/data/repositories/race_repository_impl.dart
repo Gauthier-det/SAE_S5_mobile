@@ -38,7 +38,6 @@ class RacesRepositoryImpl implements RacesRepository {
       }
       return 0;
     } catch (e) {
-      print('Erreur récupération count équipes API, fallback local: $e');
       // 2. Fallback sur le local si pas de réseau
       return await localSources.getRegisteredTeamsCount(raceId);
     }
@@ -58,8 +57,6 @@ class RacesRepositoryImpl implements RacesRepository {
 
       return remoteRaces;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       // Fallback sur le cache local
       return await localSources.getRacesByRaidId(raidId);
     }
@@ -96,8 +93,6 @@ class RacesRepositoryImpl implements RacesRepository {
 
       return createdRace.id;
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       // Fallback: créer en local uniquement
       int racRequired;
       if (race.type == 'Compétitif') {

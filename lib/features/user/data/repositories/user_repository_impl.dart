@@ -18,27 +18,17 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<List<User>> getAllUsers() async {
-    print('👥 UserRepositoryImpl.getAllUsers - Start');
     try {
       final token = authLocalSources.getToken();
-      print(
-        '👥 UserRepositoryImpl.getAllUsers - Token: ${token != null ? "present" : "null"}',
-      );
+
       apiSources.setAuthToken(token);
 
       final users = await apiSources.getAllUsers();
-      print(
-        '👥 UserRepositoryImpl.getAllUsers - Got ${users.length} users from API',
-      );
+
       return users;
     } catch (e) {
-      print(
-        '❌ UserRepositoryImpl.getAllUsers - API failed: $e. Falling back to local...',
-      );
       final localUsers = await localSources.getAllUsers();
-      print(
-        '👥 UserRepositoryImpl.getAllUsers - Got ${localUsers.length} users from local',
-      );
+
       return localUsers;
     }
   }
@@ -69,7 +59,6 @@ class UserRepositoryImpl implements UserRepository {
 
       return null;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
       try {
         return await localSources.getUserById(userId);
       } catch (localError) {
@@ -91,7 +80,6 @@ class UserRepositoryImpl implements UserRepository {
 
       return updatedUser;
     } catch (e) {
-      print('API update failed: $e. Saving locally...');
       // Fallback: save locally
       await localSources.insertUser(user);
       return user;

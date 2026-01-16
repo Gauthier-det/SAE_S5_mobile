@@ -1,7 +1,6 @@
 // lib/features/teams/presentation/team_race_registration_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/database/database_helper.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../domain/team.dart';
 import '../domain/team_repository.dart';
@@ -34,7 +33,6 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
   bool _isLoading = false;
   bool _isLoadingUsers = true;
 
-  Map<String, dynamic>? _raceDetails;
   int _maxTeamSize = 5;
   String? _requiredGender;
 
@@ -46,19 +44,14 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
   }
 
   Future<void> _loadRaceDetails() async {
-    try {
       final details = await widget.repository.getRaceDetails(widget.raceId);
 
       if (mounted && details != null) {
         setState(() {
-          _raceDetails = details;
           _maxTeamSize = details['RAC_MAX_TEAM_MEMBERS'] as int? ?? 5;
           _requiredGender = details['RAC_GENDER']?.toString();
         });
       }
-    } catch (e) {
-      print('Error loading race details: $e');
-    }
   }
 
   Future<void> _loadUsers() async {
@@ -113,7 +106,7 @@ class _TeamRaceRegistrationViewState extends State<TeamRaceRegistrationView> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF52B788).withOpacity(0.1),
+                        color: const Color(0xFF52B788),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFF52B788)),
                       ),

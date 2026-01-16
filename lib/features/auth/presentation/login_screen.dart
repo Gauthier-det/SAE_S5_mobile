@@ -38,9 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await context.read<AuthProvider>().login(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
@@ -64,15 +64,14 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          color: Color(0xFF1B3D2F),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF1B3D2F)),
         child: SafeArea(
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height -
+                minHeight:
+                    MediaQuery.of(context).size.height -
                     MediaQuery.of(context).padding.top -
                     MediaQuery.of(context).padding.bottom,
               ),
@@ -87,18 +86,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         onTap: () {
                           Navigator.of(context).pushReplacementNamed('/home');
                         },
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.image,
-                            size: 60,
-                            color: Colors.grey,
-                          ),
+                        child: Image.asset(
+                          'lib/core/theme/logo-color.png',
+                          height: 100,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
@@ -233,7 +224,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               Center(
                                 child: TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).pushNamed('/register');
+                                    Navigator.of(
+                                      context,
+                                    ).pushNamed('/register');
                                   },
                                   child: const Text(
                                     's\'inscrire',
@@ -276,10 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black54,
-          ),
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
         ),
         TextFormField(
           controller: controller,
@@ -288,10 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: Colors.black38,
-              fontSize: 16,
-            ),
+            hintStyle: const TextStyle(color: Colors.black38, fontSize: 16),
             contentPadding: const EdgeInsets.symmetric(vertical: 8),
             border: const UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.grey),
@@ -306,10 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
               borderSide: BorderSide(color: Colors.red),
             ),
           ),
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.black87,
-          ),
+          style: const TextStyle(fontSize: 16, color: Colors.black87),
         ),
       ],
     );

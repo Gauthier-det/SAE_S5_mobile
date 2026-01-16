@@ -98,18 +98,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onTap: () {
                           Navigator.of(context).pushReplacementNamed('/home');
                         },
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.image,
-                            size: 60,
-                            color: Colors.grey,
-                          ),
+                        child: Image.asset(
+                          'lib/core/theme/logo-color.png',
+                          height: 100,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),

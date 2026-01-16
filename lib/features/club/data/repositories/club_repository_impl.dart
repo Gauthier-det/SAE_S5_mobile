@@ -32,7 +32,6 @@ class ClubRepositoryImpl implements ClubRepository {
 
       return clubs;
     } catch (e) {
-      print('🏢 API getAllClubs failed: $e. Falling back to local...');
       // Fallback to local
       return await localSources.getAllClubs();
     }
@@ -48,7 +47,6 @@ class ClubRepositoryImpl implements ClubRepository {
       // Try API first
       return await apiSources.getClubMembers(clubId);
     } catch (e) {
-      print('🏢 API getClubMembers failed: $e. Falling back to local...');
       // Fallback to local
       return await localSources.getClubMembers(clubId);
     }
@@ -71,7 +69,6 @@ class ClubRepositoryImpl implements ClubRepository {
 
       return club;
     } catch (e) {
-      print('🏢 API getClubById failed: $e. Falling back to local...');
       // Fallback to local
       return await localSources.getClubById(clubId);
     }

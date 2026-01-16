@@ -69,9 +69,6 @@ class RaidApiSources {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
       };
 
-      print('🔑 CreateRaid - Token présent: ${_authToken != null}');
-      print('🔑 CreateRaid - Headers: $headers');
-
       // 3. Envoyer une requête POST
       final response = await client.post(
         Uri.parse('$baseUrl/raids'), // Endpoint API

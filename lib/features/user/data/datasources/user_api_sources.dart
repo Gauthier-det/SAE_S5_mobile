@@ -18,8 +18,6 @@ class UserApiSources {
 
   /// Gets all users from API
   Future<List<User>> getAllUsers() async {
-    print('👥 UserApiSources.getAllUsers - Start');
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -31,14 +29,10 @@ class UserApiSources {
         headers: headers,
       );
 
-      print(
-        '👥 UserApiSources.getAllUsers - Response status: ${response.statusCode}',
-      );
-
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> usersJson = responseData['data'] ?? responseData;
-        print('✅ UserApiSources.getAllUsers - Found ${usersJson.length} users');
+
         return usersJson.map((json) => User.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -46,7 +40,6 @@ class UserApiSources {
         throw Exception('Failed to fetch users: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ UserApiSources.getAllUsers - Error: $e');
       throw Exception('Network error: $e');
     }
   }
@@ -124,13 +117,6 @@ class UserApiSources {
     int id,
     Map<String, dynamic> fields,
   ) async {
-    print('🔄 UserApiSources.updateUserFields - Start');
-    print('🔄 UserApiSources.updateUserFields - User ID: $id');
-    print('🔄 UserApiSources.updateUserFields - Fields: $fields');
-    print(
-      '🔄 UserApiSources.updateUserFields - Token présent: ${_authToken != null}',
-    );
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -138,11 +124,6 @@ class UserApiSources {
       };
 
       final url = '$baseUrl/users/$id';
-      print('🔄 UserApiSources.updateUserFields - URL: $url');
-      print('🔄 UserApiSources.updateUserFields - Headers: $headers');
-      print(
-        '🔄 UserApiSources.updateUserFields - Body: ${json.encode(fields)}',
-      );
 
       final response = await client.put(
         Uri.parse(url),
@@ -150,16 +131,9 @@ class UserApiSources {
         body: json.encode(fields),
       );
 
-      print(
-        '🔄 UserApiSources.updateUserFields - Response status: ${response.statusCode}',
-      );
-      print(
-        '🔄 UserApiSources.updateUserFields - Response body: ${response.body}',
-      );
-
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print('✅ UserApiSources.updateUserFields - Success');
+
         return responseData['data'] ?? {};
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -174,7 +148,6 @@ class UserApiSources {
         throw Exception('Failed to update user: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ UserApiSources.updateUserFields - Error: $e');
       throw Exception('Network error: $e');
     }
   }

@@ -25,7 +25,6 @@ class AuthApiSources {
     String? licenceNumber,
     String gender = 'Autre',
   }) async {
-    print('🔐 Attempting API register to: $baseUrl/register');
 
     final response = await client
         .post(
@@ -43,9 +42,6 @@ class AuthApiSources {
           }),
         )
         .timeout(const Duration(seconds: 10));
-
-    print('🔐 Register response status: ${response.statusCode}');
-    print('🔐 Register response body: ${response.body}');
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -79,8 +75,6 @@ class AuthApiSources {
 
   /// Connexion via API
   Future<User> login({required String email, required String password}) async {
-    print('🔐 Attempting API login to: $baseUrl/login');
-    print('🔐 Request body: {mail: $email, password: ***}');
 
     final response = await client
         .post(
@@ -89,9 +83,6 @@ class AuthApiSources {
           body: json.encode({'mail': email, 'password': password}),
         )
         .timeout(const Duration(seconds: 10));
-
-    print('🔐 Login response status: ${response.statusCode}');
-    print('🔐 Login response body: ${response.body}');
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -110,10 +101,6 @@ class AuthApiSources {
             .toList();
       }
 
-      print('🔐 User roles from API: $roles');
-      print('🔐 Is Site Manager (role 2): ${roles.contains(2)}');
-
-      print('🔐 Mapping user data for fromJson...');
       final userMap = {
         'id': data['user_id'].toString(),
         'email': data['user_mail'] ?? '',
@@ -129,32 +116,23 @@ class AuthApiSources {
         'createdAt': DateTime.now().toIso8601String(),
         'roles': roles,
       };
-      print('🔐 User map: $userMap');
 
       try {
         final user = User.fromJson(userMap);
-        print('🔐 User créé avec succès: ${user.email}');
 
         // Check if user is admin via separate API call
-        try {
-          final isAdmin = await _checkIsAdmin();
-          print('🔐 User isAdmin from /user/is-admin: $isAdmin');
-          if (isAdmin) {
-            // Return user with site manager role
-            return User.fromJson({
-              ...userMap,
-              'roles': [2],
-            });
-          }
-        } catch (e) {
-          print('🔐 Could not check admin status: $e');
+        final isAdmin = await _checkIsAdmin();
+        if (isAdmin) {
+          // Return user with site manager role
+          return User.fromJson({
+            ...userMap,
+            'roles': [2],
+          });
         }
 
-        print('🔐 User isSiteManager: ${user.isSiteManager}');
         return user;
-      } catch (e, stackTrace) {
-        print('🔐 Erreur lors du User.fromJson: $e');
-        print('🔐 StackTrace: $stackTrace');
+      } catch (e) {
+
         rethrow;
       }
     } else if (response.statusCode == 401) {
@@ -177,10 +155,6 @@ class AuthApiSources {
           },
         )
         .timeout(const Duration(seconds: 5));
-
-    print(
-      '🔐 /user/is-admin response: ${response.statusCode} - ${response.body}',
-    );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

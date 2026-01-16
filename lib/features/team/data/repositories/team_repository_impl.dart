@@ -29,8 +29,6 @@ class TeamRepositoryImpl implements TeamRepository {
       final remoteTeams = await apiSources.getRaceTeams(raceId);
       return remoteTeams;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       try {
         final localData = await localSources.getRaceTeams(raceId);
         return localData.map((data) => Team.fromJson(data)).toList();
@@ -46,8 +44,6 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       return await apiSources.getTeamById(teamId);
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       try {
         final localData = await localSources.getTeamById(teamId);
         if (localData != null) {
@@ -65,11 +61,6 @@ class TeamRepositoryImpl implements TeamRepository {
     try {
       _setAuthToken();
 
-      final token = authLocalSources.getToken();
-      print(
-        '🔑 Repository - Token from storage: ${token != null ? "YES" : "NO"}',
-      );
-
       // ✅ CORRECTION: Ne pas utiliser teamData directement s'il vient de toJson()
       // Au lieu de ça, s'assurer qu'on envoie le bon format
       final apiData = {
@@ -77,8 +68,6 @@ class TeamRepositoryImpl implements TeamRepository {
         if (teamData['TEA_IMAGE'] != null || teamData['image'] != null)
           'image': teamData['TEA_IMAGE'] ?? teamData['image'],
       };
-
-      print('📤 Sending to API: $apiData');
 
       final teamId = await apiSources.createTeam(apiData);
 
@@ -92,8 +81,6 @@ class TeamRepositoryImpl implements TeamRepository {
       await localSources.createTeam(team.toJson());
       return teamId;
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       // Fallback local
       return await localSources.createTeam(teamData);
     }
@@ -117,8 +104,6 @@ class TeamRepositoryImpl implements TeamRepository {
         });
       }
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       await localSources.addTeamMember(teamId, userId);
       if (raceId != null) {
         await localSources.registerUserToRace(userId, raceId);
@@ -138,8 +123,6 @@ class TeamRepositoryImpl implements TeamRepository {
       // Inscrire aussi l'utilisateur à la course en local
       await localSources.registerUserToRace(data['user_id'], data['race_id']);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       await localSources.addTeamMember(data['team_id'], data['user_id']);
       await localSources.registerUserToRace(data['user_id'], data['race_id']);
     }
@@ -154,8 +137,6 @@ class TeamRepositoryImpl implements TeamRepository {
       // Sauvegarder en local
       await localSources.registerTeamToRace(teamId, raceId);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       await localSources.registerTeamToRace(teamId, raceId);
     }
   }
@@ -185,8 +166,6 @@ class TeamRepositoryImpl implements TeamRepository {
 
       return remoteUsers;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       try {
         final localData = await localSources.getAvailableUsersForRace(raceId);
         return localData.map((data) => User.fromJson(data)).toList();
@@ -215,8 +194,6 @@ class TeamRepositoryImpl implements TeamRepository {
       // Mettre à jour en local
       await localSources.validateTeamForRace(teamId, raceId);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       await localSources.validateTeamForRace(teamId, raceId);
     }
   }
@@ -267,9 +244,7 @@ class TeamRepositoryImpl implements TeamRepository {
           if (fullTeam != null) {
             managerId = fullTeam.managerId;
           }
-        } catch (e) {
-          print('Secondary fetch for manager ID failed: $e');
-        }
+        } catch (e) {}
       }
 
       return Team(
@@ -281,7 +256,6 @@ class TeamRepositoryImpl implements TeamRepository {
         membersCount: (data['members'] as List?)?.length,
       );
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
       return await localSources.getTeamByIdWithRaceStatus(teamId, raceId);
     }
   }
@@ -313,7 +287,6 @@ class TeamRepositoryImpl implements TeamRepository {
       final members = data['members'] as List;
       return members.map((m) => m as Map<String, dynamic>).toList();
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
       return await localSources.getTeamMembersWithRaceDetails(teamId, raceId);
     }
   }
@@ -395,9 +368,7 @@ class TeamRepositoryImpl implements TeamRepository {
           }
         }
       }
-    } catch (e) {
-      print('Error syncing team data from API: $e');
-    }
+    } catch (e) {}
   }
 
   @override
@@ -408,8 +379,6 @@ class TeamRepositoryImpl implements TeamRepository {
 
       await localSources.invalidateTeamForRace(teamId, raceId);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       await localSources.invalidateTeamForRace(teamId, raceId);
     }
   }
@@ -431,7 +400,6 @@ class TeamRepositoryImpl implements TeamRepository {
       }
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
-      print('API sync failed: $e');
       // No offline queueing
       await localSources.removeMemberFromTeam(teamId, userId);
     }
@@ -448,7 +416,6 @@ class TeamRepositoryImpl implements TeamRepository {
       await apiSources.removeMemberFromTeamRace(teamId, raceId, userId);
       await localSources.removeMemberFromTeam(teamId, userId);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
       await localSources.removeMemberFromTeam(teamId, userId);
     }
   }
@@ -457,7 +424,6 @@ class TeamRepositoryImpl implements TeamRepository {
   Future<void> deleteTeam(int teamId, int raceId) async {
     try {
       _setAuthToken();
-      print('Deleting team $teamId from race $raceId...');
 
       // Fix: Use the race-specific delete endpoint
       await apiSources.deleteTeamFromRace(teamId, raceId);
@@ -465,7 +431,6 @@ class TeamRepositoryImpl implements TeamRepository {
       // Local cleanup
       await localSources.deleteTeam(teamId, raceId);
     } catch (e) {
-      print('API deletion failed: $e');
       // No offline queueing
       await localSources.deleteTeam(teamId, raceId);
     }
@@ -489,7 +454,6 @@ class TeamRepositoryImpl implements TeamRepository {
       );
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     } catch (e) {
-      print('API sync failed: $e');
       // No offline queueing
       await localSources.updateUserPPS(userId, ppsForm, raceId);
     }
@@ -514,7 +478,6 @@ class TeamRepositoryImpl implements TeamRepository {
 
       await localSources.updateUserChipNumber(userId, raceId, chipNumber);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
       await localSources.updateUserChipNumber(userId, raceId, chipNumber);
     }
   }
@@ -549,8 +512,6 @@ class TeamRepositoryImpl implements TeamRepository {
         await localSources.updateUserPPS(userId, ppsForm, raceId);
       }
     } catch (e) {
-      print('API sync failed, saving locally: $e');
-
       if (chipNumber != null && chipNumber.isNotEmpty) {
         await localSources.updateUserChipNumber(
           userId,
@@ -570,8 +531,6 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       return await apiSources.getRaceDetails(raceId);
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       return await localSources.getRaceDetails(raceId);
     }
   }
@@ -613,8 +572,6 @@ class TeamRepositoryImpl implements TeamRepository {
       // 3. Inscrire l'équipe à la course
       await registerTeamToRace(teamId, raceId);
     } catch (e) {
-      print('Full team creation failed: $e. Falling back to local...');
-
       // Fallback complet en local
       await localSources.createTeamAndRegisterToRace(
         team: team,
@@ -633,8 +590,6 @@ class TeamRepositoryImpl implements TeamRepository {
       _setAuthToken();
       return await apiSources.getTeamRaceDetails(teamId, raceId);
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       // Construire les détails depuis le local
       final team = await localSources.getTeamByIdWithRaceStatus(teamId, raceId);
       final members = await localSources.getTeamMembersWithRaceDetails(

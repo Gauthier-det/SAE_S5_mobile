@@ -30,8 +30,6 @@ class RaidRepositoryImpl implements RaidRepository {
 
       return null;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       // Fallback sur le cache local
       try {
         return await localSources.getRaidById(id);
@@ -53,8 +51,6 @@ class RaidRepositoryImpl implements RaidRepository {
 
       return remoteRaids;
     } catch (e) {
-      print('API fetch failed: $e. Falling back to local cache...');
-
       // Fallback sur le cache local
       try {
         return await localSources.getAllRaids();
@@ -76,7 +72,6 @@ class RaidRepositoryImpl implements RaidRepository {
       // Sauvegarder le raid créé (avec l'ID de l'API) en local
       await localSources.insertRaid(createdRaid);
     } catch (e) {
-      print('API sync failed, saving locally: $e');
       // Fallback: sauvegarder en local uniquement
       await localSources.insertRaid(raid);
     }

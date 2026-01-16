@@ -506,13 +506,10 @@ class _RaidListViewState extends State<RaidListView> {
         (c) => c.responsibleId == userId,
       );
 
-      if (isResponsible) {
-        print('✅ User $userId is responsible for a club. Can create raid.');
-      }
+      if (isResponsible) {}
 
       return isResponsible;
     } catch (e) {
-      print('Error checking permission: $e');
       return false;
     }
   }

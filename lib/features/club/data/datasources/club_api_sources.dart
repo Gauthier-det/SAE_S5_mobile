@@ -19,9 +19,6 @@ class ClubApiSources {
 
   /// Gets all clubs from the API
   Future<List<Club>> getClubs() async {
-    print('🏢 ClubApiSources.getClubs - Start');
-    print('🏢 ClubApiSources.getClubs - Token present: ${_authToken != null}');
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -29,19 +26,12 @@ class ClubApiSources {
       };
 
       final url = '$baseUrl/clubs';
-      print('🏢 ClubApiSources.getClubs - URL: $url');
 
       final response = await client.get(Uri.parse(url), headers: headers);
-
-      print(
-        '🏢 ClubApiSources.getClubs - Response status: ${response.statusCode}',
-      );
-      print('🏢 ClubApiSources.getClubs - Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> clubsJson = responseData['data'] ?? responseData;
-        print('✅ ClubApiSources.getClubs - Found ${clubsJson.length} clubs');
         return clubsJson.map((json) => Club.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -49,15 +39,12 @@ class ClubApiSources {
         throw Exception('Failed to fetch clubs: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ClubApiSources.getClubs - Error: $e');
       throw Exception('Network error: $e');
     }
   }
 
   /// Gets a club by ID from the API
   Future<Club?> getClubById(int id) async {
-    print('🏢 ClubApiSources.getClubById - Start, ID: $id');
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -65,18 +52,13 @@ class ClubApiSources {
       };
 
       final url = '$baseUrl/clubs/$id';
-      print('🏢 ClubApiSources.getClubById - URL: $url');
 
       final response = await client.get(Uri.parse(url), headers: headers);
-
-      print(
-        '🏢 ClubApiSources.getClubById - Response status: ${response.statusCode}',
-      );
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final clubJson = responseData['data'] ?? responseData;
-        print('✅ ClubApiSources.getClubById - Success');
+
         return Club.fromJson(clubJson);
       } else if (response.statusCode == 404) {
         return null;
@@ -86,15 +68,12 @@ class ClubApiSources {
         throw Exception('Failed to fetch club: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ClubApiSources.getClubById - Error: $e');
       throw Exception('Network error: $e');
     }
   }
 
   /// Gets members of a club from the API
   Future<List<User>> getClubMembers(int clubId) async {
-    print('🏢 ClubApiSources.getClubMembers - Start, Club ID: $clubId');
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -102,20 +81,13 @@ class ClubApiSources {
       };
 
       final url = '$baseUrl/clubs/$clubId/users';
-      print('🏢 ClubApiSources.getClubMembers - URL: $url');
 
       final response = await client.get(Uri.parse(url), headers: headers);
-
-      print(
-        '🏢 ClubApiSources.getClubMembers - Response status: ${response.statusCode}',
-      );
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final List<dynamic> membersJson = responseData['data'] ?? responseData;
-        print(
-          '✅ ClubApiSources.getClubMembers - Found ${membersJson.length} members',
-        );
+
         return membersJson.map((json) => User.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -123,7 +95,6 @@ class ClubApiSources {
         throw Exception('Failed to fetch club members: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ClubApiSources.getClubMembers - Error: $e');
       throw Exception('Network error: $e');
     }
   }
@@ -134,11 +105,6 @@ class ClubApiSources {
     required int responsibleId,
     required int addressId,
   }) async {
-    print('🏢 ClubApiSources.createClub - Start');
-    print(
-      '🏢 ClubApiSources.createClub - Name: $name, ResponsibleId: $responsibleId, AddressId: $addressId',
-    );
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -151,23 +117,16 @@ class ClubApiSources {
         'ADD_ID': addressId,
       });
 
-      print('🏢 ClubApiSources.createClub - Body: $body');
-
       final response = await client.post(
         Uri.parse('$baseUrl/clubs'),
         headers: headers,
         body: body,
       );
 
-      print(
-        '🏢 ClubApiSources.createClub - Response status: ${response.statusCode}',
-      );
-      print('🏢 ClubApiSources.createClub - Response body: ${response.body}');
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final clubJson = responseData['data'] ?? responseData;
-        print('✅ ClubApiSources.createClub - Success');
+
         return Club.fromJson(clubJson);
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié - Token invalide ou manquant');
@@ -182,7 +141,6 @@ class ClubApiSources {
         throw Exception('Failed to create club: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ClubApiSources.createClub - Error: $e');
       throw Exception('Network error: $e');
     }
   }
@@ -194,8 +152,6 @@ class ClubApiSources {
     int? responsibleId,
     int? addressId,
   }) async {
-    print('🏢 ClubApiSources.updateClub - Start, ID: $id');
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -208,7 +164,6 @@ class ClubApiSources {
       if (addressId != null) bodyMap['ADD_ID'] = addressId;
 
       final body = json.encode(bodyMap);
-      print('🏢 ClubApiSources.updateClub - Body: $body');
 
       final response = await client.put(
         Uri.parse('$baseUrl/clubs/$id'),
@@ -216,14 +171,10 @@ class ClubApiSources {
         body: body,
       );
 
-      print(
-        '🏢 ClubApiSources.updateClub - Response status: ${response.statusCode}',
-      );
-
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final clubJson = responseData['data'] ?? responseData;
-        print('✅ ClubApiSources.updateClub - Success');
+
         return Club.fromJson(clubJson);
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié');
@@ -233,15 +184,12 @@ class ClubApiSources {
         throw Exception('Failed to update club: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ClubApiSources.updateClub - Error: $e');
       throw Exception('Network error: $e');
     }
   }
 
   /// Deletes a club via API
   Future<void> deleteClub(int id) async {
-    print('🏢 ClubApiSources.deleteClub - Start, ID: $id');
-
     try {
       final headers = {
         'Content-Type': 'application/json',
@@ -253,12 +201,7 @@ class ClubApiSources {
         headers: headers,
       );
 
-      print(
-        '🏢 ClubApiSources.deleteClub - Response status: ${response.statusCode}',
-      );
-
       if (response.statusCode == 200 || response.statusCode == 204) {
-        print('✅ ClubApiSources.deleteClub - Success');
       } else if (response.statusCode == 401) {
         throw Exception('Non authentifié');
       } else if (response.statusCode == 403) {
@@ -267,7 +210,6 @@ class ClubApiSources {
         throw Exception('Failed to delete club: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ClubApiSources.deleteClub - Error: $e');
       throw Exception('Network error: $e');
     }
   }

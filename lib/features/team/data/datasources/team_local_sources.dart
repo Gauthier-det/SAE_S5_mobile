@@ -453,8 +453,6 @@ class TeamLocalSources {
 
     final teamData = result.first;
 
-    print('📊 Team data from DB: $teamData');
-
     // ✅ Créer l'équipe avec le statut de validation
     return Team(
       id: teamData['TEA_ID'] as int,

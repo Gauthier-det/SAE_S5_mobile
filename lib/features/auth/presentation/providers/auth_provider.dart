@@ -167,8 +167,6 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       if (_userRepository != null && _currentUser != null) {
-        print('📝 UpdateProfile - Using UserRepository');
-        print('📝 UpdateProfile - User ID: ${_currentUser!.id}');
 
         // Prepare fields for API update - use API field names (USE_* format)
         final fields = <String, dynamic>{};
@@ -178,15 +176,12 @@ class AuthProvider extends ChangeNotifier {
         if (birthDate != null) fields['USE_BIRTHDATE'] = birthDate;
         if (licenceNumber != null) fields['USE_LICENCE_NUMBER'] = licenceNumber;
 
-        print('📝 UpdateProfile - Fields to update: $fields');
 
         // Call UserRepository with fields map
         await _userRepository.updateUserFields(
           int.parse(_currentUser!.id),
           fields,
         );
-
-        print('📝 UpdateProfile - API call succeeded');
 
         // Update local state manually since we don't get a full user object back that matches Auth User
         _currentUser = _currentUser!.copyWith(
@@ -201,15 +196,8 @@ class AuthProvider extends ChangeNotifier {
           chipNumber: chipNumber,
           profileImageUrl: profileImageUrl,
         );
-        print('📝 UpdateProfile - Local state updated');
       } else {
-        print('📝 UpdateProfile - Falling back to AuthRepository');
-        print(
-          '📝 UpdateProfile - _userRepository is null: ${_userRepository == null}',
-        );
-        print(
-          '📝 UpdateProfile - _currentUser is null: ${_currentUser == null}',
-        );
+        
         // Fallback to legacy AuthRepository if UserRepository is not available
         final updatedUser = await _repository.updateProfile(
           firstName: firstName,
@@ -224,9 +212,7 @@ class AuthProvider extends ChangeNotifier {
         );
         _currentUser = updatedUser;
       }
-    } catch (e, stackTrace) {
-      print('❌ UpdateProfile - Error: $e');
-      print('❌ UpdateProfile - StackTrace: $stackTrace');
+    } catch (e) {
       _errorMessage = 'Erreur lors de la mise à jour du profil: $e';
     } finally {
       _isLoading = false;
