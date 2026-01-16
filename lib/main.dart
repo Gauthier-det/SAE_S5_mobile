@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sae5_g13_mobile/features/address/data/datasources/address_local_sources.dart';
+import 'package:sae5_g13_mobile/features/address/data/datasources/address_api_sources.dart';
 import 'package:sae5_g13_mobile/features/address/data/repositories/address_repository_impl.dart';
 import 'package:sae5_g13_mobile/features/address/domain/address_repository.dart';
 import 'package:sae5_g13_mobile/features/club/data/datasources/club_api_sources.dart';
@@ -187,6 +188,8 @@ class SanglierExplorerApp extends StatelessWidget {
       ),
       'addressRepository': AddressRepositoryImpl(
         localSources: AddressLocalSources(),
+        apiSources: AddressApiSources(baseUrl: AppConfig.apiBaseUrl),
+        authLocalSources: authLocalSources,
       ),
       'teamRepository': TeamRepositoryImpl(
         apiSources: TeamApiSources(baseUrl: AppConfig.apiBaseUrl),
